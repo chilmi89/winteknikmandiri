@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# winteknikmandiri
+
+Official website for **CV WIN TEKNIK MANDIRI** — Kontraktor AC, tata udara, instalasi VRF, fabrikasi ducting, dan maintenance komersial Kediri.
+
+Built with Next.js 16 (Turbopack), React 19, Tailwind CSS v4, and TypeScript.
 
 ## Getting Started
 
