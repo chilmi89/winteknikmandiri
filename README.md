@@ -8,7 +8,7 @@ Website resmi & REST API **CV WIN TEKNIK MANDIRI** — Kontraktor AC, instalasi 
 
 ```
 win-teknik-mandiri/
-├── docker-compose.yml       # Orkestrasi 4 container service
+├── docker-compose.yml       # Orkestrasi 3 container service (Frontend, Backend, PostgreSQL)
 ├── .env.example             # Template variabel lingkungan
 │
 ├── frontend/                # Next.js 16 + Tailwind v4 + TypeScript (Berbasis Bun)
@@ -31,14 +31,14 @@ win-teknik-mandiri/
 
 ### Opsi 1: Menggunakan Docker Compose (Satu Perintah untuk Semua)
 
-Pastikan Docker sudah terpasang, lalu jalankan:
+Pastikan Docker Desktop sudah terpasang dan berjalan, lalu jalankan:
 
 ```bash
-# Salin konfigurasi environment
+# Salin konfigurasi environment (jika belum ada)
 cp .env.example .env
 
-# Jalankan seluruh service (Frontend, Backend, PostgreSQL, pgAdmin)
-docker compose up --build -d
+# Jalankan seluruh service (Frontend, Backend, PostgreSQL)
+docker compose up -d
 ```
 
 Akses layanan di browser:
@@ -46,9 +46,6 @@ Akses layanan di browser:
 - ⚡ **Backend API (Go Gin)**: [http://localhost:8080](http://localhost:8080)
   - Health Check: `GET http://localhost:8080/health`
   - Inquiries API: `GET & POST http://localhost:8080/api/v1/inquiries`
-- 🐘 **pgAdmin 4 GUI**: [http://localhost:5050](http://localhost:5050)
-  - Email: `admin@winteknikmandiri.com`
-  - Password: `admin`
 - 🗄️ **PostgreSQL Database**: Port `5432` (`wtm_user` / `wtm_password_secret` / `wtm_db`)
 
 ---
@@ -57,24 +54,23 @@ Akses layanan di browser:
 
 #### 1. Frontend (Next.js via Bun / Node)
 ```bash
-cd frontend
-
-# Menggunakan Bun (Direkomendasikan)
-bun install
-bun run dev
-
-# Atau menggunakan npm
-npm install
+# Dari root
 npm run dev
+
+# Atau dari folder frontend
+cd frontend
+bun run dev    # atau: npm run dev
 ```
 
 Buka [http://localhost:3000](http://localhost:3000) di browser.
 
 #### 2. Backend (Go Gin)
 ```bash
-cd backend
+# Dari root
+npm run dev:backend
 
-# Jalankan server API
+# Atau dari folder backend
+cd backend
 go run main.go
 ```
 
