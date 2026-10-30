@@ -37,7 +37,7 @@ services:
       - "${PGADMIN_PORT:-5050}:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    dependsOn:
+    depends_on:
       - postgres
     networks:
       - wtm-network
@@ -61,7 +61,7 @@ services:
       DB_SSLMODE: disable
     ports:
       - "8080:8080"
-    dependsOn:
+    depends_on:
       postgres:
         condition: service_healthy
     networks:
@@ -81,7 +81,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8080
     ports:
       - "3000:3000"
-    dependsOn:
+    depends_on:
       - backend
     networks:
       - wtm-network
