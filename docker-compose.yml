@@ -1,0 +1,95 @@
+services:
+  # ========================================================
+  # 1. Database: PostgreSQL 16
+  # ========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: wtm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-wtm_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wtm_password_secret}
+      POSTGRES_DB: ${DB_NAME:-wtm_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-wtm_user} -d ${DB_NAME:-wtm_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wtm-network
+
+  # ========================================================
+  # 2. Database GUI: pgAdmin 4
+  # ========================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wtm-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@winteknikmandiri.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    dependsOn:
+      - postgres
+    networks:
+      - wtm-network
+
+  # ========================================================
+  # 3. Backend: Go (Golang) + Gin Framework
+  # ========================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wtm-backend
+    restart: always
+    environment:
+      PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-wtm_user}
+      DB_PASSWORD: ${DB_PASSWORD:-wtm_password_secret}
+      DB_NAME: ${DB_NAME:-wtm_db}
+      DB_SSLMODE: disable
+    ports:
+      - "8080:8080"
+    dependsOn:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wtm-network
+
+  # ========================================================
+  # 4. Frontend: Next.js 16 (Berbasis Bun)
+  # ========================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wtm-frontend
+    restart: always
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    dependsOn:
+      - backend
+    networks:
+      - wtm-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  wtm-network:
+    driver: bridge

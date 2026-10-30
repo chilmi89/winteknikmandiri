@@ -1,40 +1,91 @@
-# winteknikmandiri
+# CV WIN TEKNIK MANDIRI — Fullstack Monorepo
 
-Official website for **CV WIN TEKNIK MANDIRI** — Kontraktor AC, tata udara, instalasi VRF, fabrikasi ducting, dan maintenance komersial Kediri.
+Website resmi & REST API **CV WIN TEKNIK MANDIRI** — Kontraktor AC, instalasi sistem VRF, fabrikasi ducting BJLS, dan pemeliharaan gedung komersial/industri di Kediri Raya.
 
-Built with Next.js 16 (Turbopack), React 19, Tailwind CSS v4, and TypeScript.
+---
 
-## Getting Started
+## 🏛️ Arsitektur Monorepo
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+win-teknik-mandiri/
+├── docker-compose.yml       # Orkestrasi 4 container service
+├── .env.example             # Template variabel lingkungan
+│
+├── frontend/                # Next.js 16 + Tailwind v4 + TypeScript (Berbasis Bun)
+│   ├── Dockerfile           # Multi-stage image: oven/bun:alpine
+│   ├── app/                 # Halaman: /, /layanan, /tentang-kami, /galeri, /kontak
+│   └── ...
+│
+└── backend/                 # REST API: Go (Golang) + Gin Framework + GORM
+    ├── Dockerfile           # Multi-stage image: golang:alpine -> alpine
+    ├── main.go              # Server entrypoint & auto-migration
+    ├── config/              # Koneksi PostgreSQL & pool
+    ├── controllers/         # Handler API
+    ├── models/              # Schema database GORM
+    └── routes/              # Routing & CORS
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Cara Menjalankan
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Opsi 1: Menggunakan Docker Compose (Satu Perintah untuk Semua)
 
-## Learn More
+Pastikan Docker sudah terpasang, lalu jalankan:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Salin konfigurasi environment
+cp .env.example .env
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Jalankan seluruh service (Frontend, Backend, PostgreSQL, pgAdmin)
+docker compose up --build -d
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Akses layanan di browser:
+- 🌐 **Frontend (Next.js + Bun)**: [http://localhost:3000](http://localhost:3000)
+- ⚡ **Backend API (Go Gin)**: [http://localhost:8080](http://localhost:8080)
+  - Health Check: `GET http://localhost:8080/health`
+  - Inquiries API: `GET & POST http://localhost:8080/api/v1/inquiries`
+- 🐘 **pgAdmin 4 GUI**: [http://localhost:5050](http://localhost:5050)
+  - Email: `admin@winteknikmandiri.com`
+  - Password: `admin`
+- 🗄️ **PostgreSQL Database**: Port `5432` (`wtm_user` / `wtm_password_secret` / `wtm_db`)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Opsi 2: Menjalankan Secara Lokal (Non-Docker)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### 1. Frontend (Next.js via Bun / Node)
+```bash
+cd frontend
+
+# Menggunakan Bun (Direkomendasikan)
+bun install
+bun run dev
+
+# Atau menggunakan npm
+npm install
+npm run dev
+```
+
+Buka [http://localhost:3000](http://localhost:3000) di browser.
+
+#### 2. Backend (Go Gin)
+```bash
+cd backend
+
+# Jalankan server API
+go run main.go
+```
+
+API akan berjalan di port `8080` ([http://localhost:8080/health](http://localhost:8080/health)).
+
+---
+
+## 📡 Daftar Endpoint API Backend (Go Gin)
+
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| `GET` | `/health` | Cek status server Go & koneksi database PostgreSQL |
+| `POST` | `/api/v1/inquiries` | Simpan data formulir konsultasi pelanggan dari web |
+| `GET` | `/api/v1/inquiries` | Tampilkan daftar riwayat konsultasi (dengan pagination) |
