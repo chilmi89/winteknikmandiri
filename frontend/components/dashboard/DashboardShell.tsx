@@ -9,11 +9,6 @@ import Sidebar from "./Sidebar";
 
 const STORAGE_KEY = "wtm-dashboard-sidebar-collapsed";
 
-/* --------------------------------------------------------------------------
- * Store kecil untuk preferensi sidebar (tersimpan di localStorage).
- * Dibaca lewat useSyncExternalStore agar tidak memicu setState di dalam effect
- * dan tetap aman saat hydration.
- * ----------------------------------------------------------------------- */
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -49,8 +44,11 @@ type DashboardShellProps = {
 };
 
 /**
- * Master layout dashboard: sidebar merah + navbar sticky + konten + footer.
- * Semua halaman di `app/(dashboard)/` otomatis memakai shell ini.
+ * Master Container Dashboard:
+ * - Sidebar merah modern (kiri)
+ * - Sticky Navbar putih (atas)
+ * - Area Konten Fleksibel (tengah)
+ * - Footer (bawah)
  */
 export function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname();
@@ -60,11 +58,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
     getServerSnapshot
   );
 
-  // Drawer menyimpan path saat dibuka; pindah halaman otomatis menutupnya.
   const [drawerPath, setDrawerPath] = useState<string | null>(null);
   const mobileOpen = drawerPath === pathname;
 
-  // Cegah scroll body saat drawer terbuka.
+  // Cegah scroll body saat drawer terbuka di mobile
   useEffect(() => {
     if (!mobileOpen) return;
     const previous = document.body.style.overflow;
@@ -75,47 +72,47 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [mobileOpen]);
 
   return (
-    <div className="min-h-dvh bg-[#F4FAFE] text-[#0A2540]">
+    <div className="min-h-dvh bg-slate-50 text-slate-800">
       <a
         href="#dashboard-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[70] focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[#0A2540]"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[#8A1515] focus:shadow-md"
       >
         Lewati ke konten utama
       </a>
 
-      {/* ================= Sidebar desktop ================= */}
+      {/* ================= Sidebar Desktop ================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden transition-[width] duration-300 ease-out lg:block",
-          collapsed ? "w-[76px]" : "w-[264px]"
+          "fixed inset-y-0 left-0 z-40 hidden transition-all duration-300 ease-in-out lg:block",
+          collapsed ? "w-[72px]" : "w-[240px]"
         )}
       >
         <Sidebar collapsed={collapsed} />
       </aside>
 
-      {/* ================= Drawer mobile ================= */}
-      {mobileOpen ? (
+      {/* ================= Drawer Mobile ================= */}
+      {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            aria-label="Tutup menu dashboard"
+            aria-label="Tutup menu"
             onClick={() => setDrawerPath(null)}
-            className="absolute inset-0 bg-[#0A2540]/45 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs"
           />
-          <aside className="dash-drawer relative h-full w-[282px] shadow-[12px_0_40px_rgba(10,37,64,0.28)]">
+          <aside className="relative h-full w-[260px] shadow-2xl">
             <Sidebar
               onClose={() => setDrawerPath(null)}
               onNavigate={() => setDrawerPath(null)}
             />
           </aside>
         </div>
-      ) : null}
+      )}
 
-      {/* ================= Konten ================= */}
+      {/* ================= Area Konten Utama ================= */}
       <div
         className={cn(
-          "flex min-h-dvh flex-col transition-[padding] duration-300 ease-out",
-          collapsed ? "lg:pl-[76px]" : "lg:pl-[264px]"
+          "flex min-h-dvh flex-col transition-all duration-300 ease-in-out",
+          collapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"
         )}
       >
         <DashboardNavbar
@@ -124,11 +121,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
           onOpenMobile={() => setDrawerPath(pathname)}
         />
 
-        <main
-          id="dashboard-main"
-          className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
-        >
-          <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        <main id="dashboard-main" className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
 
         <DashboardFooter />
