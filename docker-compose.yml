@@ -35,7 +35,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       POSTGRES_DB: ${DB_NAME:-wtm_db}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
