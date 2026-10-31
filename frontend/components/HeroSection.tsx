@@ -78,19 +78,19 @@ export default function HeroSection() {
             Kontraktor AC · Kediri · Sejak 2014
           </p>
 
-          <h1 className="mt-6 max-w-4xl text-balance text-[3rem] font-semibold leading-[0.95] tracking-[-0.05em] text-white sm:text-[4.25rem] lg:text-[5rem]">
+          <h1 className="mt-6 max-w-6xl text-balance text-[3rem] font-semibold leading-[0.95] tracking-[-0.05em] text-white sm:text-[4.25rem] lg:text-[5rem]">
             <span className="text-[#FF6B6B]">WIN</span>{" "}
             <span className="text-[#8ACFF8]">TEKNIK MANDIRI</span>
-            <span className="mt-1 block text-white">AC KEDIRI.</span>
+            <span className="mt-1 block text-white">AC KEDIRI</span>
           </h1>
 
+
+          <p className="mt-4 font-mono text-[20px] uppercase tracking-[0.22em] text-white/80">
+            {site.tagline}
+          </p>
           <p className="mt-6 max-w-xl text-pretty text-[15px] leading-7 text-white/75 sm:text-base">
             Pengadaan, instalasi, dan pemeliharaan AC serta ducting untuk
-            hunian, komersial, dan industri di Kediri Raya.
-          </p>
-
-          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-[#8ACFF8]/80">
-            {site.tagline}
+            hunian, komersial, dan industri di Kediri Raya
           </p>
 
           <div className="mt-9 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -108,7 +108,7 @@ export default function HeroSection() {
             </Link>
 
             <Link
-              href="#layanan"
+              href="/layanan"
               className={`inline-flex items-center justify-center gap-2 border border-white/25 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:border-white hover:bg-white hover:text-[#0A2540] ${focusRing}`}
             >
               Lihat layanan

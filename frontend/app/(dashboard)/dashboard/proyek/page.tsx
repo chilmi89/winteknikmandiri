@@ -19,7 +19,7 @@ export default function ProjectsPage() {
         </div>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#8A1515] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#721111]"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#2279cf] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#721111]"
         >
           <Plus className="size-4" />
           Proyek Baru

@@ -30,7 +30,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-dvh flex-col bg-[#8A1515] text-white select-none transition-all duration-300",
+        "flex h-dvh flex-col bg-[#2279cf] text-white select-none transition-all duration-300",
         className
       )}
     >

@@ -43,7 +43,7 @@ export const dashboardNav: DashboardNavGroup[] = [
     items: [
       { label: "Permohonan", href: "/dashboard/inquiries", icon: Inbox },
       { label: "Proyek", href: "/dashboard/proyek", icon: FolderKanban },
-      { label: "Pelanggan", href: "/dashboard/pelanggan", icon: Users },
+      { label: "Tim", href: "/dashboard/tim", icon: Users },
     ],
   },
   {
@@ -56,6 +56,11 @@ export const dashboardNav: DashboardNavGroup[] = [
   {
     title: "Sistem",
     items: [{ label: "Pengaturan", href: "/dashboard/pengaturan", icon: Settings }],
+  },
+  {
+    title: "Setting User",
+    items: [
+      { label: "Pegawai", href: "/dashboard/pengaturan", icon: Settings }],
   },
 ];
 
