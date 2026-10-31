@@ -8,7 +8,8 @@ Website resmi & REST API **CV WIN TEKNIK MANDIRI** — Kontraktor AC, instalasi 
 
 ```
 win-teknik-mandiri/
-├── docker-compose.yml       # Orkestrasi 3 container service (Frontend, Backend, PostgreSQL)
+├── Caddyfile                # Reverse Proxy & Auto HTTPS (SSL Let's Encrypt)
+├── docker-compose.yml       # Orkestrasi 4 container service
 ├── .env.example             # Template variabel lingkungan
 │
 ├── frontend/                # Next.js 16 + Tailwind v4 + TypeScript (Berbasis Bun)
@@ -27,6 +28,33 @@ win-teknik-mandiri/
 
 ---
 
+## 🌐 Arsitektur Container & Network (Production Ready)
+
+```
+Pengunjung (Internet)
+         │
+         ▼  (Port 80 HTTP / Port 443 HTTPS dengan Auto-SSL)
+┌──────────────────────────────────────────────┐
+│             CADDY REVERSE PROXY              │
+└───────────────┬──────────────────────────────┘
+                │ (Internal Docker Network: wtm-network)
+      ┌─────────┴─────────┐
+      ▼                   ▼
+┌───────────┐       ┌───────────┐
+│ Frontend  │       │  Backend  │
+│ (Next.js) │       │ (Go Gin)  │
+│ Port 3000 │       │ Port 8080 │
+└───────────┘       └─────┬─────┘
+                          │ (Internal DB Connection)
+                          ▼
+                    ┌───────────┐
+                    │ PostgreSQL│
+                    │ Port 5432 │
+                    └───────────┘
+```
+
+---
+
 ## 🚀 Cara Menjalankan
 
 ### Opsi 1: Menggunakan Docker Compose (Satu Perintah untuk Semua)
@@ -37,20 +65,48 @@ Pastikan Docker Desktop sudah terpasang dan berjalan, lalu jalankan:
 # Salin konfigurasi environment (jika belum ada)
 cp .env.example .env
 
-# Jalankan seluruh service (Frontend, Backend, PostgreSQL)
+# Jalankan seluruh service (Caddy, Frontend, Backend, PostgreSQL)
 docker compose up -d
 ```
 
 Akses layanan di browser:
-- 🌐 **Frontend (Next.js + Bun)**: [http://localhost:3000](http://localhost:3000)
-- ⚡ **Backend API (Go Gin)**: [http://localhost:8080](http://localhost:8080)
-  - Health Check: `GET http://localhost:8080/health`
-  - Inquiries API: `GET & POST http://localhost:8080/api/v1/inquiries`
+- 🌐 **Website via Caddy (Auto HTTPS)**: [https://localhost](https://localhost) atau [http://localhost](http://localhost)
+- ⚡ **Backend API via Caddy**: [https://localhost/health](https://localhost/health)
 - 🗄️ **PostgreSQL Database**: Port `5432` (`wtm_user` / `wtm_password_secret` / `wtm_db`)
 
 ---
 
-### Opsi 2: Menjalankan Secara Lokal (Non-Docker)
+### Opsi 2: Deploy ke VPS (Production Live)
+
+1. **Arahkan DNS Domain**:
+   Arahkan DNS Record `A` domain Anda (misal: `winteknikmandiri.com`) ke IP Publik VPS Anda.
+
+2. **Clone Repository di VPS**:
+   ```bash
+   git clone https://github.com/chilmi89/winteknikmandiri.git
+   cd winteknikmandiri
+   ```
+
+3. **Atur Variabel Lingkungan (`.env`)**:
+   ```bash
+   cp .env.example .env
+   nano .env
+   ```
+   Ubah variabel domain dan email:
+   ```env
+   DOMAIN=winteknikmandiri.com
+   CADDY_EMAIL=cswinteknikmandiri@gmail.com
+   ```
+
+4. **Nyalakan dengan Satu Perintah**:
+   ```bash
+   docker compose up -d --build
+   ```
+   *Caddy akan otomatis mendaftarkan dan menerbitkan sertifikat SSL resmi (Let's Encrypt) untuk domain Anda. Website langsung LIVE dengan HTTPS tanpa konfigurasi tambahan!*
+
+---
+
+### Opsi 3: Menjalankan Secara Lokal (Non-Docker)
 
 #### 1. Frontend (Next.js via Bun / Node)
 ```bash

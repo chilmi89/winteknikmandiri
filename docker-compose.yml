@@ -1,6 +1,30 @@
 services:
   # ========================================================
-  # 1. Database: PostgreSQL 16
+  # 1. Reverse Proxy & Auto-HTTPS (SSL): Caddy
+  # ========================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: wtm-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      CADDY_EMAIL: ${CADDY_EMAIL:-admin@winteknikmandiri.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - wtm-network
+
+  # ========================================================
+  # 2. Database: PostgreSQL 16
   # ========================================================
   postgres:
     image: postgres:16-alpine
@@ -23,7 +47,7 @@ services:
       - wtm-network
 
   # ========================================================
-  # 2. Backend: Go (Golang) + Gin Framework
+  # 3. Backend: Go (Golang) + Gin Framework
   # ========================================================
   backend:
     build:
@@ -48,7 +72,7 @@ services:
       - wtm-network
 
   # ========================================================
-  # 3. Frontend: Next.js 16 (Berbasis Bun)
+  # 4. Frontend: Next.js 16 (Berbasis Bun)
   # ========================================================
   frontend:
     build:
@@ -68,6 +92,8 @@ services:
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   wtm-network:

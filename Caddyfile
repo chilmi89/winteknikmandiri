@@ -1,0 +1,24 @@
+{
+	# Email untuk notifikasi sertifikat SSL Let's Encrypt saat deploy ke VPS
+	email {$CADDY_EMAIL:admin@winteknikmandiri.com}
+}
+
+{$DOMAIN:localhost} {
+	# Kompresi performa tinggi
+	encode gzip zstd
+
+	# Routing Backend Go Gin API
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	# Routing Health Check API
+	handle /health {
+		reverse_proxy backend:8080
+	}
+
+	# Routing Frontend Next.js
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
