@@ -32,7 +32,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER:-wtm_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-wtm_password_secret}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       POSTGRES_DB: ${DB_NAME:-wtm_db}
     ports:
       - "${DB_PORT:-5432}:5432"
@@ -60,7 +60,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER:-wtm_user}
-      DB_PASSWORD: ${DB_PASSWORD:-wtm_password_secret}
+      DB_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       DB_NAME: ${DB_NAME:-wtm_db}
       DB_SSLMODE: disable
     ports:

@@ -72,7 +72,7 @@ docker compose up -d
 Akses layanan di browser:
 - 🌐 **Website via Caddy (Auto HTTPS)**: [https://localhost](https://localhost) atau [http://localhost](http://localhost)
 - ⚡ **Backend API via Caddy**: [https://localhost/health](https://localhost/health)
-- 🗄️ **PostgreSQL Database**: Port `5432` (`wtm_user` / `wtm_password_secret` / `wtm_db`)
+- 🗄️ **PostgreSQL Database**: Port `5432` (`wtm_user` / `Wtm_S3cur3#P0stgr3s!2026` / `wtm_db`)
 
 ---
 

@@ -27,7 +27,7 @@ func InitDatabase() *gorm.DB {
 	host := getEnv("DB_HOST", "localhost")
 	port := getEnv("DB_PORT", "5432")
 	user := getEnv("DB_USER", "wtm_user")
-	password := getEnv("DB_PASSWORD", "wtm_password_secret")
+	password := getEnv("DB_PASSWORD", "Wtm_S3cur3#P0stgr3s!2026")
 	dbname := getEnv("DB_NAME", "wtm_db")
 	sslmode := getEnv("DB_SSLMODE", "disable")
 
