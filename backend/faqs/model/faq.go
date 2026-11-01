@@ -1,11 +1,15 @@
 // Package model berisi representasi tabel faqs di database.
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // FAQ adalah satu pasangan pertanyaan-jawaban yang tampil di landing page.
 type FAQ struct {
-	ID        int64      `json:"id"`
+	ID        uuid.UUID  `json:"id"`
 	Question  string     `json:"question"`
 	Answer    string     `json:"answer"`
 	Category  string     `json:"category"`

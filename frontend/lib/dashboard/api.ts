@@ -21,7 +21,7 @@ export function resolveApiBase(): string {
 
 export const demoInquiries: Inquiry[] = [
   {
-    id: 1,
+    id: "1",
     name: "Budi Santoso",
     phone: "0812-1662-2840",
     service: "Instalasi VRF & Ducting",
@@ -32,7 +32,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-30T09:24:00+07:00",
   },
   {
-    id: 2,
+    id: "2",
     name: "Siti Aminah",
     phone: "0813-3355-1122",
     service: "Cuci AC Berkala",
@@ -43,7 +43,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-30T08:02:00+07:00",
   },
   {
-    id: 3,
+    id: "3",
     name: "PT Sinar Pangan",
     phone: "0812-9900-4411",
     service: "Fabrikasi Ducting BJLS",
@@ -54,7 +54,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-30T07:10:00+07:00",
   },
   {
-    id: 4,
+    id: "4",
     name: "Andi Pratama",
     phone: "0857-8181-2020",
     service: "Tambah Freon & Perbaikan",
@@ -65,7 +65,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-29T11:40:00+07:00",
   },
   {
-    id: 5,
+    id: "5",
     name: "Mall Galeria Bali",
     phone: "0361-770-881",
     service: "Maintenance AHU",
@@ -76,7 +76,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-29T09:00:00+07:00",
   },
   {
-    id: 6,
+    id: "6",
     name: "Dewi Lestari",
     phone: "0821-4477-9090",
     service: "Pemasangan AC Baru",
@@ -87,7 +87,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-28T15:45:00+07:00",
   },
   {
-    id: 7,
+    id: "7",
     name: "CV Bumi Teknik",
     phone: "0812-3555-7788",
     service: "Instalasi Exhaust",
@@ -98,7 +98,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-27T13:20:00+07:00",
   },
   {
-    id: 8,
+    id: "8",
     name: "Rudi Hartono",
     phone: "0856-1122-3344",
     service: "Service AC Panggilan",
@@ -109,7 +109,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-27T10:15:00+07:00",
   },
   {
-    id: 9,
+    id: "9",
     name: "SMA Negeri 2 Kediri",
     phone: "0354-771-220",
     service: "Instalasi AC Ruang Kelas",
@@ -120,7 +120,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-26T15:10:00+07:00",
   },
   {
-    id: 10,
+    id: "10",
     name: "Ayu Wulandari",
     phone: "0819-7788-5566",
     service: "Cuci AC Berkala",
@@ -131,7 +131,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-25T13:30:00+07:00",
   },
   {
-    id: 11,
+    id: "11",
     name: "Hotel Merdeka",
     phone: "0354-682-900",
     service: "Perbaikan Chiller",
@@ -142,7 +142,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-25T08:20:00+07:00",
   },
   {
-    id: 12,
+    id: "12",
     name: "Joko Susilo",
     phone: "0812-2020-3030",
     service: "Bongkar Pasang AC",
@@ -153,7 +153,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-24T12:00:00+07:00",
   },
   {
-    id: 13,
+    id: "13",
     name: "Toko Sumber Rejeki",
     phone: "0857-3344-8899",
     service: "Instalasi Cold Storage",
@@ -164,7 +164,7 @@ export const demoInquiries: Inquiry[] = [
     updated_at: "2026-10-23T14:25:00+07:00",
   },
   {
-    id: 14,
+    id: "14",
     name: "Rina Marlina",
     phone: "0821-6655-4433",
     service: "Tambah Freon & Perbaikan",

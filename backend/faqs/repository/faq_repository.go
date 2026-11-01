@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"winteknikmandiri-backend/faqs/model"
 	"winteknikmandiri-backend/internal/database"
 )
@@ -27,10 +29,10 @@ type ListFilter struct {
 // FAQRepository adalah kontrak akses data yang dipakai service.
 type FAQRepository interface {
 	Create(ctx context.Context, faq *model.FAQ) error
-	FindByID(ctx context.Context, id int64) (*model.FAQ, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.FAQ, error)
 	List(ctx context.Context, filter ListFilter) ([]model.FAQ, int64, error)
 	Update(ctx context.Context, faq *model.FAQ) error
-	SoftDelete(ctx context.Context, id int64) error
+	SoftDelete(ctx context.Context, id uuid.UUID) error
 }
 
 type faqRepository struct {
@@ -67,17 +69,17 @@ func (r *faqRepository) Create(ctx context.Context, faq *model.FAQ) error {
 	return nil
 }
 
-func (r *faqRepository) FindByID(ctx context.Context, id int64) (*model.FAQ, error) {
+func (r *faqRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.FAQ, error) {
 	if r.db == nil {
 		return nil, database.ErrUnavailable
 	}
 
 	query := `SELECT ` + faqColumns + `
 		FROM faqs
-		WHERE id = $1 AND deleted_at IS NULL`
+		WHERE id = $1::uuid AND deleted_at IS NULL`
 
 	var faq model.FAQ
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, id.String()).Scan(
 		&faq.ID, &faq.Question, &faq.Answer, &faq.Category,
 		&faq.SortOrder, &faq.IsActive, &faq.CreatedAt, &faq.UpdatedAt,
 	)
@@ -85,7 +87,7 @@ func (r *faqRepository) FindByID(ctx context.Context, id int64) (*model.FAQ, err
 		return nil, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("mengambil faq id %d: %w", id, err)
+		return nil, fmt.Errorf("mengambil faq id %s: %w", id, err)
 	}
 	return &faq, nil
 }
@@ -121,7 +123,7 @@ func (r *faqRepository) List(ctx context.Context, filter ListFilter) ([]model.FA
 
 	args = append(args, filter.Limit, filter.Offset)
 	query := `SELECT ` + faqColumns + ` FROM faqs` + where +
-		fmt.Sprintf(` ORDER BY sort_order ASC, id ASC LIMIT $%d OFFSET $%d`, len(args)-1, len(args))
+		fmt.Sprintf(` ORDER BY sort_order ASC, created_at ASC, id ASC LIMIT $%d OFFSET $%d`, len(args)-1, len(args))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -156,38 +158,38 @@ func (r *faqRepository) Update(ctx context.Context, faq *model.FAQ) error {
 		UPDATE faqs
 		SET question = $2, answer = $3, category = $4,
 		    sort_order = $5, is_active = $6, updated_at = NOW()
-		WHERE id = $1 AND deleted_at IS NULL
+		WHERE id = $1::uuid AND deleted_at IS NULL
 		RETURNING updated_at`
 
 	err := r.db.QueryRowContext(ctx, query,
-		faq.ID, faq.Question, faq.Answer, faq.Category, faq.SortOrder, faq.IsActive,
+		faq.ID.String(), faq.Question, faq.Answer, faq.Category, faq.SortOrder, faq.IsActive,
 	).Scan(&faq.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
 	if err != nil {
-		return fmt.Errorf("memperbarui faq id %d: %w", faq.ID, err)
+		return fmt.Errorf("memperbarui faq id %s: %w", faq.ID, err)
 	}
 	return nil
 }
 
-func (r *faqRepository) SoftDelete(ctx context.Context, id int64) error {
+func (r *faqRepository) SoftDelete(ctx context.Context, id uuid.UUID) error {
 	if r.db == nil {
 		return database.ErrUnavailable
 	}
 
 	result, err := r.db.ExecContext(
 		ctx,
-		`UPDATE faqs SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
-		id,
+		`UPDATE faqs SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1::uuid AND deleted_at IS NULL`,
+		id.String(),
 	)
 	if err != nil {
-		return fmt.Errorf("menghapus faq id %d: %w", id, err)
+		return fmt.Errorf("menghapus faq id %s: %w", id, err)
 	}
 
 	affected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("membaca hasil hapus faq id %d: %w", id, err)
+		return fmt.Errorf("membaca hasil hapus faq id %s: %w", id, err)
 	}
 	if affected == 0 {
 		return ErrNotFound

@@ -3,9 +3,9 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"winteknikmandiri-backend/faqs/dto"
 	"winteknikmandiri-backend/faqs/service"
@@ -59,7 +59,7 @@ func (h *FAQController) List(c *gin.Context) {
 // @Description Mengambil satu FAQ berdasarkan ID.
 // @Tags        faqs
 // @Produce     json
-// @Param       id path int true "ID FAQ"
+// @Param       id path string true "ID FAQ (UUID)"
 // @Success     200 {object} dto.FAQEnvelope
 // @Failure     400 {object} httpx.ErrorResponse "ID tidak valid"
 // @Failure     404 {object} httpx.ErrorResponse "FAQ tidak ditemukan"
@@ -116,7 +116,7 @@ func (h *FAQController) Create(c *gin.Context) {
 // @Tags        faqs
 // @Accept      json
 // @Produce     json
-// @Param       id      path int                   true "ID FAQ"
+// @Param       id      path string                true "ID FAQ (UUID)"
 // @Param       payload body dto.UpdateFAQRequest true "Data FAQ"
 // @Success     200 {object} dto.FAQEnvelope
 // @Failure     400 {object} httpx.ErrorResponse "Input tidak valid"
@@ -152,7 +152,7 @@ func (h *FAQController) Update(c *gin.Context) {
 // @Description Soft delete: data tidak dihapus permanen, hanya diisi deleted_at.
 // @Tags        faqs
 // @Produce     json
-// @Param       id path int true "ID FAQ"
+// @Param       id path string true "ID FAQ (UUID)"
 // @Success     200 {object} dto.FAQMessageResponse
 // @Failure     400 {object} httpx.ErrorResponse "ID tidak valid"
 // @Failure     404 {object} httpx.ErrorResponse "FAQ tidak ditemukan"
@@ -171,11 +171,11 @@ func (h *FAQController) Delete(c *gin.Context) {
 	httpx.JSON(c, http.StatusOK, dto.FAQMessageResponse{Message: "FAQ berhasil dihapus"})
 }
 
-func parseID(c *gin.Context) (int64, bool) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id <= 0 {
-		httpx.Fail(c, apperr.Validation("ID FAQ tidak valid", "id harus bilangan bulat positif"))
-		return 0, false
+func parseID(c *gin.Context) (uuid.UUID, bool) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil || id == uuid.Nil {
+		httpx.Fail(c, apperr.Validation("ID FAQ tidak valid", "id harus UUID yang valid"))
+		return uuid.Nil, false
 	}
 	return id, true
 }

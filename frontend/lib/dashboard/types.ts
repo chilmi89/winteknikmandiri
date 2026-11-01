@@ -1,7 +1,7 @@
 export type InquiryStatus = "pending" | "diproses" | "selesai" | "batal";
 
 export type Inquiry = {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   service: string;

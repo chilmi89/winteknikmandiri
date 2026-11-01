@@ -137,8 +137,8 @@ const docTemplate = `{
                 "summary": "Detail FAQ",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID FAQ",
+                        "type": "string",
+                        "description": "ID FAQ (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -185,8 +185,8 @@ const docTemplate = `{
                 "summary": "Perbarui FAQ",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID FAQ",
+                        "type": "string",
+                        "description": "ID FAQ (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -239,8 +239,8 @@ const docTemplate = `{
                 "summary": "Hapus FAQ",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID FAQ",
+                        "type": "string",
+                        "description": "ID FAQ (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -493,7 +493,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
                 },
                 "is_active": {
                     "type": "boolean"
@@ -519,7 +520,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
                 },
                 "name": {
                     "type": "string"

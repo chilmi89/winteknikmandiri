@@ -1,7 +1,11 @@
 // Package model berisi representasi tabel inquiries di database.
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // Status valid untuk sebuah inquiry.
 const (
@@ -13,7 +17,7 @@ const (
 
 // Inquiry adalah permohonan konsultasi/pengerjaan dari pelanggan.
 type Inquiry struct {
-	ID        int64      `json:"id"`
+	ID        uuid.UUID  `json:"id"`
 	Name      string     `json:"name"`
 	Phone     string     `json:"phone"`
 	Service   string     `json:"service"`

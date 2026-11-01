@@ -25,8 +25,9 @@ type ListInquiryQuery struct {
 }
 
 // InquiryResponse adalah representasi satu inquiry di response API.
+// ID bertipe string agar kontrak JSON dan Swagger tetap sederhana ("id": "uuid").
 type InquiryResponse struct {
-	ID        int64     `json:"id"`
+	ID        string    `json:"id" example:"0f8fad5b-d9cb-469f-a165-70867728950e"`
 	Name      string    `json:"name"`
 	Phone     string    `json:"phone"`
 	Service   string    `json:"service"`
@@ -54,7 +55,7 @@ type CreateInquiryResponse struct {
 // NewInquiryResponse memetakan model database ke DTO response.
 func NewInquiryResponse(m model.Inquiry) InquiryResponse {
 	return InquiryResponse{
-		ID:        m.ID,
+		ID:        m.ID.String(),
 		Name:      m.Name,
 		Phone:     m.Phone,
 		Service:   m.Service,

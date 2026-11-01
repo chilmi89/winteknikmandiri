@@ -38,8 +38,9 @@ type ListFAQQuery struct {
 }
 
 // FAQResponse adalah representasi satu FAQ di response API.
+// ID bertipe string agar kontrak JSON dan Swagger tetap sederhana ("id": "uuid").
 type FAQResponse struct {
-	ID        int64     `json:"id"`
+	ID        string    `json:"id" example:"0f8fad5b-d9cb-469f-a165-70867728950e"`
 	Question  string    `json:"question"`
 	Answer    string    `json:"answer"`
 	Category  string    `json:"category"`
@@ -71,7 +72,7 @@ type FAQMessageResponse struct {
 // NewFAQResponse memetakan model database ke DTO response.
 func NewFAQResponse(m model.FAQ) FAQResponse {
 	return FAQResponse{
-		ID:        m.ID,
+		ID:        m.ID.String(),
 		Question:  m.Question,
 		Answer:    m.Answer,
 		Category:  m.Category,

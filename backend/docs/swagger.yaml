@@ -74,7 +74,8 @@ definitions:
       created_at:
         type: string
       id:
-        type: integer
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
       is_active:
         type: boolean
       question:
@@ -91,7 +92,8 @@ definitions:
       created_at:
         type: string
       id:
-        type: integer
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
       name:
         type: string
       notes:
@@ -258,11 +260,11 @@ paths:
     delete:
       description: 'Soft delete: data tidak dihapus permanen, hanya diisi deleted_at.'
       parameters:
-      - description: ID FAQ
+      - description: ID FAQ (UUID)
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -288,11 +290,11 @@ paths:
     get:
       description: Mengambil satu FAQ berdasarkan ID.
       parameters:
-      - description: ID FAQ
+      - description: ID FAQ (UUID)
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -321,11 +323,11 @@ paths:
       description: Field opsional (category, sort_order, is_active) dipertahankan
         bila tidak dikirim.
       parameters:
-      - description: ID FAQ
+      - description: ID FAQ (UUID)
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: Data FAQ
         in: body
         name: payload

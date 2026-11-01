@@ -266,6 +266,44 @@ ssh -L 5432:localhost:5432 user@vps
 > Semua query memakai SQL native (`database/sql` + `pgx v5`), tanpa ORM.
 > Skema database dikelola lewat migrasi SQL di `backend/internal/database/migrations/`
 > dan dijalankan otomatis setiap backend start (idempoten, tercatat di tabel `schema_migrations`).
+> Parameter `:id` pada endpoint FAQ adalah **UUID** (contoh: `0f8fad5b-d9cb-469f-a165-70867728950e`), bukan angka.
+
+---
+
+## 🧬 Konvensi Skema Database (UUID)
+
+Semua tabel domain memakai UUID v4 sebagai primary key. `gen_random_uuid()` sudah
+bawaan PostgreSQL 13+ sehingga tidak perlu extension `pgcrypto`, dan aman dipakai
+di PostgreSQL 16 (VPS) maupun 18 (lokal).
+
+Template wajib untuk tabel baru:
+
+```sql
+CREATE TABLE IF NOT EXISTS contoh (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- kolom domain ...
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+```
+
+Aturan relasi antar tabel:
+
+```sql
+-- kolom relasi juga UUID, jangan INTEGER/BIGINT
+inquiry_id UUID NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE
+```
+
+- Beri index pada setiap kolom foreign key (`CREATE INDEX ... ON tabel (kolom_id)`).
+- Soft delete: cukup isi `deleted_at`, semua query baca menambahkan `WHERE deleted_at IS NULL`.
+- Urutan data tidak boleh bergantung pada `id` (UUID acak). Pakai kolom bisnis seperti
+  `sort_order` lalu `created_at` sebagai tie-breaker.
+- Tabel baru = file migrasi baru bernomor urut (`0004_...`). **Jangan** mengedit migrasi
+  yang sudah tercatat di `schema_migrations`; perubahan skema harus lewat migrasi baru.
+- Di Go, `model` memakai `uuid.UUID`; `dto` memakai `string` agar JSON dan Swagger tetap
+  terbaca sebagai string. Query `WHERE id = $1::uuid` (pgx v5 tidak menerima string mentah
+  untuk kolom UUID).
 
 ---
 

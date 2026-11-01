@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
+
 	"winteknikmandiri-backend/faqs/dto"
 	"winteknikmandiri-backend/faqs/model"
 	"winteknikmandiri-backend/faqs/repository"
@@ -49,7 +51,7 @@ func (s *FAQService) Create(ctx context.Context, req dto.CreateFAQRequest) (dto.
 }
 
 // Get mengambil satu FAQ berdasarkan ID.
-func (s *FAQService) Get(ctx context.Context, id int64) (dto.FAQResponse, error) {
+func (s *FAQService) Get(ctx context.Context, id uuid.UUID) (dto.FAQResponse, error) {
 	faq, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return dto.FAQResponse{}, mapRepoError(err)
@@ -87,7 +89,7 @@ func (s *FAQService) List(ctx context.Context, q dto.ListFAQQuery) (dto.ListFAQR
 
 // Update memperbarui FAQ. Field opsional yang tidak dikirim mempertahankan
 // nilai sebelumnya.
-func (s *FAQService) Update(ctx context.Context, id int64, req dto.UpdateFAQRequest) (dto.FAQResponse, error) {
+func (s *FAQService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateFAQRequest) (dto.FAQResponse, error) {
 	faq, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return dto.FAQResponse{}, mapRepoError(err)
@@ -112,7 +114,7 @@ func (s *FAQService) Update(ctx context.Context, id int64, req dto.UpdateFAQRequ
 }
 
 // Delete melakukan soft delete pada FAQ.
-func (s *FAQService) Delete(ctx context.Context, id int64) error {
+func (s *FAQService) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := s.repo.SoftDelete(ctx, id); err != nil {
 		return mapRepoError(err)
 	}
