@@ -1,23 +1,46 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 
-	"winteknikmandiri-backend/config"
+	_ "winteknikmandiri-backend/docs"
+	"winteknikmandiri-backend/internal/database"
 	"winteknikmandiri-backend/routes"
 )
 
+//go:generate go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g main.go -o docs --parseInternal
+
+// @title           CV Win Teknik Mandiri API
+// @version         1.0
+// @description     REST API layanan AC, ducting, dan cold storage CV Win Teknik Mandiri.
+// @description     Seluruh endpoint mengembalikan JSON. Data disimpan di PostgreSQL dengan query native (database/sql + pgx), tanpa ORM.
+// @BasePath        /
+// @securityDefinitions.apikey AdminToken
+// @in              header
+// @name            X-Admin-Token
 func main() {
 	// Load .env file if available (for local non-docker runs)
 	if err := godotenv.Load(); err != nil {
 		log.Println("[INFO] No .env file found; using environment variables.")
 	}
 
-	// Initialize database connection
-	config.InitDatabase()
+	ctx := context.Background()
+
+	// Initialize database connection (PostgreSQL native via pgx).
+	if _, err := database.Connect(ctx); err != nil {
+		log.Printf("[DB WARNING] %v (continuing in offline/standalone mode)", err)
+	} else {
+		defer database.Close()
+
+		// Schema dikelola lewat file SQL di internal/database/migrations.
+		if err := database.RunMigrations(ctx, database.DB); err != nil {
+			log.Fatalf("[DB ERROR] Migrasi gagal: %v", err)
+		}
+	}
 
 	// Setup Gin router
 	r := routes.SetupRouter()

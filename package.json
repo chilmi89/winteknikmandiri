@@ -11,6 +11,7 @@
     "start": "npm run start --prefix frontend",
     "lint": "npm run lint --prefix frontend",
     "dev:backend": "cd backend && go run main.go",
+    "docs:swagger": "cd backend && go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g main.go -o docs --parseInternal",
     "db:local:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-db.ps1",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down"

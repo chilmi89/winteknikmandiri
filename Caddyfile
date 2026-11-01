@@ -17,6 +17,12 @@
 		reverse_proxy backend:8080
 	}
 
+	# Dokumentasi API (Swagger UI). Nonaktifkan di backend dengan SWAGGER_ENABLED=false.
+	redir /swagger /swagger/index.html
+	handle /swagger/* {
+		reverse_proxy backend:8080
+	}
+
 	# Routing Frontend Next.js
 	handle {
 		reverse_proxy frontend:3000

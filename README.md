@@ -17,13 +17,20 @@ win-teknik-mandiri/
 │   ├── app/                 # Halaman: /, /layanan, /tentang-kami, /galeri, /kontak
 │   └── ...
 │
-└── backend/                 # REST API: Go (Golang) + Gin Framework + GORM
+└── backend/                 # REST API: Go (Golang) + Gin + PostgreSQL native (pgx)
     ├── Dockerfile           # Multi-stage image: golang:alpine -> alpine
-    ├── main.go              # Server entrypoint & auto-migration
-    ├── config/              # Koneksi PostgreSQL & pool
-    ├── controllers/         # Handler API
-    ├── models/              # Schema database GORM
-    └── routes/              # Routing & CORS
+    ├── main.go              # Server entrypoint: connect DB, migrate, serve
+    ├── internal/
+    │   ├── database/        # Pool database/sql + pgx, migrasi SQL embedded
+    │   ├── apperr/          # Error aplikasi (validation/not found/internal)
+    │   └── httpx/           # Helper respons JSON yang konsisten
+    ├── inquiries/           # Fitur permohonan konsultasi
+    │   ├── controller/  dto/  model/  repository/  router/  service/
+    ├── faqs/                # Fitur FAQ
+    │   ├── controller/  dto/  model/  repository/  router/  service/
+    ├── health/              # Health check
+    │   ├── controller/  router/
+    └── routes/              # Perakitan router & CORS (tipis, tanpa query)
 ```
 
 ---
@@ -159,7 +166,7 @@ DB_NAME=wtm_db_local
 
 **3. Jalankan:**
 ```bash
-npm run dev:backend   # GORM AutoMigrate membuat tabel otomatis
+npm run dev:backend   # migrasi SQL otomatis dijalankan saat backend start
 npm run dev           # frontend di :3000
 ```
 
@@ -167,7 +174,7 @@ npm run dev           # frontend di :3000
 ```sql
 CREATE DATABASE wtm_feat_proyek OWNER wtm_user;
 ```
-Lalu ganti `DB_NAME=wtm_feat_proyek` di `backend/.env` dan restart backend. Tabel dibuat otomatis; DB bisa dihapus dan dibuat ulang kapan saja tanpa risiko.
+Lalu ganti `DB_NAME=wtm_feat_proyek` di `backend/.env` dan restart backend. Migrasi SQL di `internal/database/migrations/` dijalankan otomatis saat start; DB bisa dihapus dan dibuat ulang kapan saja tanpa risiko.
 
 **5. Akses lewat DBeaver:**
 
@@ -181,7 +188,7 @@ Lalu ganti `DB_NAME=wtm_feat_proyek` di `backend/.env` dan restart backend. Tabe
 
 **6. Naik ke database server setelah fitur lolos uji:**
 ```bash
-# Struktur tabel: cukup deploy backend, AutoMigrate menambah tabel/kolom baru
+# Struktur tabel: cukup deploy backend, migrasi SQL menambah tabel/kolom baru
 ssh user@vps "cd ~/win-teknik-mandiri && git pull && docker compose up -d --build backend"
 
 # Data seed tertentu saja (tanpa menimpa data produksi)
@@ -200,3 +207,82 @@ ssh user@vps "docker exec -i wtm-postgres psql -U wtm_user -d wtm_db < /tmp/seed
 | `GET` | `/health` | Cek status server Go & koneksi database PostgreSQL |
 | `POST` | `/api/v1/inquiries` | Simpan data formulir konsultasi pelanggan dari web |
 | `GET` | `/api/v1/inquiries` | Tampilkan daftar riwayat konsultasi (dengan pagination) |
+| `GET` | `/api/v1/faqs` | Daftar FAQ aktif (`?category=&search=&include_inactive=&limit=&offset=`) |
+| `GET` | `/api/v1/faqs/:id` | Detail satu FAQ |
+| `POST` | `/api/v1/faqs` | Buat FAQ baru (belum ber-auth, lihat `TODO(auth)`) |
+| `PUT` | `/api/v1/faqs/:id` | Perbarui FAQ (field opsional dipertahankan bila tidak dikirim) |
+| `DELETE` | `/api/v1/faqs/:id` | Soft delete FAQ |
+
+> Semua query memakai SQL native (`database/sql` + `pgx v5`), tanpa ORM.
+> Skema database dikelola lewat migrasi SQL di `backend/internal/database/migrations/`
+> dan dijalankan otomatis setiap backend start (idempoten, tercatat di tabel `schema_migrations`).
+
+---
+
+## 📘 Dokumentasi API (Swagger / OpenAPI)
+
+Dokumentasi digenerate dari anotasi di handler (swaggo), lalu disajikan langsung oleh Gin.
+
+| URL | Isi |
+|---|---|
+| `/swagger/index.html` | Swagger UI interaktif (bisa "Try it out") |
+| `/swagger/doc.json` | Spesifikasi OpenAPI 2.0 dalam JSON |
+
+Lokal: <http://localhost:8080/swagger/index.html>
+
+### Kapan aktif
+
+| Environment | `SWAGGER_ENABLED` | Hasil |
+|---|---|---|
+| Lokal (`backend/.env`) | `true` | UI aktif |
+| VPS (`docker-compose.yml`) | `${SWAGGER_ENABLED:-false}` | mati secara default, route tidak didaftarkan |
+| VPS (dibuka sengaja) | `true` di `.env` VPS | aktif, lalu `docker compose up -d backend` |
+
+Kalau UI perlu dibuka di VPS tapi tidak untuk publik, tambahkan basic auth di `Caddyfile`:
+
+```
+handle /swagger/* {
+    basic_auth {
+        admin $2a$14$HASH_BCRYPT_ANDA
+    }
+    reverse_proxy backend:8080
+}
+```
+Buat hash dengan `caddy hash-password --plaintext 'passwordAnda'`.
+
+### Regenerate dokumentasi
+
+Tidak perlu install CLI — script memakai `go run` dengan versi `swag` yang sudah dipin:
+
+```bash
+npm run docs:swagger
+# ekuivalen dengan:
+cd backend && go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g main.go -o docs --parseInternal
+# atau dari folder backend:
+go generate ./...
+```
+
+Kalau ingin memakai perintah `swag` langsung, install sekali per mesin:
+`go install github.com/swaggo/swag/cmd/swag@latest` (pastikan `$(go env GOPATH)/bin` ada di `PATH`).
+
+Hasil generate (`backend/docs/docs.go`, `swagger.json`, `swagger.yaml`) **ikut di-commit** supaya
+`docker compose up -d --build backend` tetap jalan tanpa `swag` CLI dan tanpa network tambahan.
+
+### Menambah dokumentasi endpoint baru
+
+Anotasi diletakkan tepat di atas fungsi handler, contoh:
+
+```go
+// @Summary     Daftar FAQ
+// @Tags        faqs
+// @Produce     json
+// @Param       limit query int false "Jumlah data" default(20)
+// @Success     200 {object} dto.ListFAQResponse
+// @Failure     503 {object} httpx.ErrorResponse
+// @Router      /api/v1/faqs [get]
+func (h *FAQController) List(c *gin.Context) { ... }
+```
+
+Gunakan path lengkap di `@Router` (termasuk `/api/v1/...`) karena `@BasePath` diset `/`
+agar endpoint `/health` yang berada di luar `/api/v1` tetap terdokumentasi dengan benar.
+

@@ -1,0 +1,437 @@
+basePath: /
+definitions:
+  dto.CreateFAQRequest:
+    properties:
+      answer:
+        minLength: 5
+        type: string
+      category:
+        maxLength: 100
+        type: string
+      is_active:
+        type: boolean
+      question:
+        minLength: 5
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - answer
+    - question
+    type: object
+  dto.CreateInquiryRequest:
+    properties:
+      address:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      notes:
+        type: string
+      phone:
+        maxLength: 50
+        minLength: 6
+        type: string
+      service:
+        maxLength: 100
+        type: string
+    required:
+    - name
+    - notes
+    - phone
+    - service
+    type: object
+  dto.CreateInquiryResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.InquiryResponse'
+      message:
+        example: Permohonan konsultasi berhasil disimpan
+        type: string
+    type: object
+  dto.FAQEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.FAQResponse'
+      message:
+        example: FAQ berhasil dibuat
+        type: string
+    type: object
+  dto.FAQMessageResponse:
+    properties:
+      message:
+        example: FAQ berhasil dihapus
+        type: string
+    type: object
+  dto.FAQResponse:
+    properties:
+      answer:
+        type: string
+      category:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      question:
+        type: string
+      sort_order:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.InquiryResponse:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notes:
+        type: string
+      phone:
+        type: string
+      service:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ListFAQResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.FAQResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ListInquiryResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.InquiryResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.UpdateFAQRequest:
+    properties:
+      answer:
+        minLength: 5
+        type: string
+      category:
+        maxLength: 100
+        type: string
+      is_active:
+        type: boolean
+      question:
+        minLength: 5
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - answer
+    - question
+    type: object
+  httpx.ErrorResponse:
+    properties:
+      details: {}
+      error:
+        example: Validasi gagal
+        type: string
+    type: object
+  httpx.HealthResponse:
+    properties:
+      database:
+        example: connected
+        type: string
+      service:
+        example: CV Win Teknik Mandiri API
+        type: string
+      status:
+        example: healthy
+        type: string
+      timestamp:
+        example: "2026-11-01T08:00:00+07:00"
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    REST API layanan AC, ducting, dan cold storage CV Win Teknik Mandiri.
+    Seluruh endpoint mengembalikan JSON. Data disimpan di PostgreSQL dengan query native (database/sql + pgx), tanpa ORM.
+  title: CV Win Teknik Mandiri API
+  version: "1.0"
+paths:
+  /api/v1/faqs:
+    get:
+      description: Endpoint publik. Secara default hanya mengembalikan FAQ aktif,
+        urut sort_order.
+      parameters:
+      - description: Filter kategori
+        in: query
+        name: category
+        type: string
+      - description: Cari pada pertanyaan atau jawaban
+        in: query
+        name: search
+        type: string
+      - description: Ikutkan FAQ non-aktif (untuk dashboard)
+        in: query
+        name: include_inactive
+        type: boolean
+      - default: 20
+        description: Jumlah data per halaman (default 20, maks 100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListFAQResponse'
+        "400":
+          description: Parameter query tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar FAQ
+      tags:
+      - faqs
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan FAQ. is_active default true bila tidak dikirim.
+      parameters:
+      - description: Data FAQ
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateFAQRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.FAQEnvelope'
+        "400":
+          description: Input tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Buat FAQ baru
+      tags:
+      - faqs
+  /api/v1/faqs/{id}:
+    delete:
+      description: 'Soft delete: data tidak dihapus permanen, hanya diisi deleted_at.'
+      parameters:
+      - description: ID FAQ
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FAQMessageResponse'
+        "400":
+          description: ID tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: FAQ tidak ditemukan
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus FAQ
+      tags:
+      - faqs
+    get:
+      description: Mengambil satu FAQ berdasarkan ID.
+      parameters:
+      - description: ID FAQ
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FAQEnvelope'
+        "400":
+          description: ID tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: FAQ tidak ditemukan
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail FAQ
+      tags:
+      - faqs
+    put:
+      consumes:
+      - application/json
+      description: Field opsional (category, sort_order, is_active) dipertahankan
+        bila tidak dikirim.
+      parameters:
+      - description: ID FAQ
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data FAQ
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFAQRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FAQEnvelope'
+        "400":
+          description: Input tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: FAQ tidak ditemukan
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui FAQ
+      tags:
+      - faqs
+  /api/v1/inquiries:
+    get:
+      description: Menampilkan permohonan terbaru beserta total data (untuk dashboard).
+      parameters:
+      - default: 20
+        description: Jumlah data per halaman (default 20, maks 100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListInquiryResponse'
+        "400":
+          description: Parameter query tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar permohonan konsultasi
+      tags:
+      - inquiries
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan permohonan dari formulir kontak website. Status awal
+        selalu "pending".
+      parameters:
+      - description: Data permohonan
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateInquiryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreateInquiryResponse'
+        "400":
+          description: Input tidak valid
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "503":
+          description: Database tidak terhubung
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Kirim permohonan konsultasi
+      tags:
+      - inquiries
+  /health:
+    get:
+      description: Menunjukkan status server dan koneksi database PostgreSQL.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.HealthResponse'
+      summary: Health check
+      tags:
+      - system
+securityDefinitions:
+  AdminToken:
+    in: header
+    name: X-Admin-Token
+    type: apiKey
+swagger: "2.0"
