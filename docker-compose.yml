@@ -35,7 +35,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       POSTGRES_DB: ${DB_NAME:-wtm_db}
     ports:
-      - "${DB_HOST_PORT:-5432}:5432"
+      # Bind ke loopback saja: tidak terekspos ke internet, tetap bisa
+      # diakses lewat SSH tunnel untuk DBeaver/psql.
+      - "127.0.0.1:${DB_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -65,8 +67,9 @@ services:
       DB_SSLMODE: disable
       # Dokumentasi API mati secara default di server; set true untuk membukanya.
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
-    ports:
-      - "8080:8080"
+    # Tanpa ports host: backend hanya diakses Caddy lewat network internal.
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,9 +87,10 @@ services:
     restart: always
     environment:
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:8080
-    ports:
-      - "3000:3000"
+      # API dipanggil lewat path relatif (/api/...) sehingga diteruskan Caddy.
+    # Tanpa ports host: frontend hanya diakses Caddy lewat network internal.
+    expose:
+      - "3000"
     depends_on:
       - backend
     networks:

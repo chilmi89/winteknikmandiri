@@ -76,12 +76,16 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Akses layanan di browser:
-- 🌐 **Website via Caddy (Auto HTTPS)**: [https://localhost](https://localhost) atau [http://localhost](http://localhost)
-- ⚡ **Backend API via Caddy**: [https://localhost/health](https://localhost/health)
-- 🗄️ **PostgreSQL Database**: Port host `5433` (`wtm_user` / `Wtm_S3cur3#P0stgr3s!2026` / `wtm_db`).
+Akses layanan di browser (semua lewat Caddy, port 80/443):
+- 🌐 **Website**: [http://localhost](http://localhost) / [https://localhost](https://localhost)
+- ⚡ **Backend API via Caddy**: [http://localhost/health](http://localhost/health)
+- 🗄️ **PostgreSQL Database**: hanya terikat ke `127.0.0.1:5433` (`wtm_user` / `Wtm_S3cur3#P0stgr3s!2026` / `wtm_db`).
   Port internal container tetap `5432`. Di VPS, port host tetap `5432` karena `DB_HOST_PORT` tidak diisi.
   Jika PostgreSQL native sudah memakai `5432`, Docker otomatis memakai `5433` sesuai `.env` lokal.
+
+> Backend (`8080`) dan frontend (`3000`) **tidak dipublikasikan ke host** — hanya Caddy yang punya port host.
+> Jadi akses langsung ke `http://localhost:8080` hanya berlaku saat memakai `npm run dev:backend` (Go native),
+> bukan saat mode Docker. Lihat bagian [Keamanan Port](#-keamanan-port-production).
 
 ---
 
@@ -184,7 +188,7 @@ Lalu ganti `DB_NAME=wtm_feat_proyek` di `backend/.env` dan restart backend. Migr
 | Docker (jika Docker Desktop jalan) | `localhost` | `5433` | `wtm_db` | `wtm_user` |
 | VPS (via SSH tunnel) | `localhost` | `5432` | `wtm_db` | `wtm_user` |
 
-> Port host Docker dipisah ke `5433` lewat `DB_HOST_PORT` di `.env` agar tidak bentrok dengan PostgreSQL native. Di VPS variabel itu tidak diisi, sehingga tetap `5432`.
+> Port host Docker dipisah ke `5433` lewat `DB_HOST_PORT` di `.env` agar tidak bentrok dengan PostgreSQL native. Di VPS variabel itu tidak diisi, sehingga tetap `5432`. Port di-bind ke `127.0.0.1` saja, jadi **tidak bisa diakses langsung dari internet** — gunakan SSH tunnel (`ssh -L 5432:localhost:5432 user@vps`).
 
 **6. Naik ke database server setelah fitur lolos uji:**
 ```bash
@@ -196,6 +200,52 @@ ssh user@vps "cd ~/win-teknik-mandiri && git pull && docker compose up -d --buil
   --data-only --table=inquiries --inserts --on-conflict-do-nothing -f seed_inquiries.sql
 scp seed_inquiries.sql user@vps:/tmp/
 ssh user@vps "docker exec -i wtm-postgres psql -U wtm_user -d wtm_db < /tmp/seed_inquiries.sql"
+```
+
+---
+
+## 🔐 Keamanan Port (Production)
+
+Hanya Caddy yang membuka port ke publik. Service lain hanya bisa diakses di dalam network Docker.
+
+| Service | Port host | Akses dari internet |
+|---|---|---|
+| `caddy` | `80`, `443` (TCP) + `443` (UDP) | publik — pintu masuk satu-satunya |
+| `backend` | tidak ada (hanya `expose: 8080`) | tidak bisa; lewat Caddy `/api/*` dan `/health` |
+| `frontend` | tidak ada (hanya `expose: 3000`) | tidak bisa; lewat Caddy `/` |
+| `postgres` | `127.0.0.1:5432` | tidak bisa; lewat SSH tunnel |
+
+Verifikasi di server:
+
+```bash
+docker compose ps
+# harapan: backend & frontend tanpa kolom PORTS, postgres 127.0.0.1:5432->5432
+
+ss -tlnp | grep -E ':(5432|8080|3000)\b'
+# harapan: hanya 127.0.0.1:5432
+
+curl -s -o /dev/null -w 'web=%{http_code}\n'    https://domain-anda.com/
+curl -s -o /dev/null -w 'api=%{http_code}\n'    https://domain-anda.com/api/v1/faqs
+```
+
+Dari komputer lain (bukan server), port berikut harus **timeout/gagal**:
+
+```powershell
+Test-NetConnection <IP-VPS> -Port 5432
+Test-NetConnection <IP-VPS> -Port 8080
+Test-NetConnection <IP-VPS> -Port 3000
+```
+
+> ⚠️ **UFW tidak menutup port yang di-publish Docker**, karena Docker menulis rule langsung ke chain
+> `DOCKER` (melewati UFW). Karena itu port di-bind ke `127.0.0.1` atau dihapus dari `docker-compose.yml`,
+> bukan sekadar diblokir firewall. Untuk lapisan kedua, tutup juga `3000`/`8080`/`5432` di
+> security group cloud provider dan sisakan `22`, `80`, `443`.
+
+Akses database dari laptop tetap bisa lewat SSH tunnel:
+
+```bash
+ssh -L 5432:localhost:5432 user@vps
+# lalu hubungkan DBeaver ke localhost:5432
 ```
 
 ---
