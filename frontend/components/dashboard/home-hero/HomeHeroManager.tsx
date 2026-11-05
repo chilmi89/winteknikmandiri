@@ -106,14 +106,20 @@ const DEFAULT_HERO: HomeHeroData = {
     11: "#F59E0B",
   },
   media_type: "video",
-  media_url: "/hero-section/video_hero_ac.mp4",
-  thumbnail_url: "/images/wtm-pemasangan.jpg",
+  media_url: "",
+  thumbnail_url: "",
   cta_primary_text: "Konsultasi via WhatsApp",
   cta_primary_url: "https://wa.me/6281216622840",
   cta_secondary_text: "Lihat layanan",
   cta_secondary_url: "#layanan",
   is_active: true,
 };
+
+/** Normalisasi URL MinIO lokal dari http://localhost(:80|:443)/media ke relative /media */
+export function normalizeMediaUrl(url: string): string {
+  if (!url) return "";
+  return url.replace(/^https?:\/\/localhost(:80|:443)?\/media/, "/media");
+}
 
 /** Komponen editor kata interaktif dengan input bebas tanpa lag/spasi hilang */
 type WordColorEditorProps = {
@@ -383,7 +389,7 @@ export function HomeHeroManager() {
 
         // 2. Upload file WebP ke backend storage (MinIO)
         const uploaded = await uploadHeroMedia(result.file);
-        handleChange("media_url", uploaded.url);
+        handleChange("media_url", normalizeMediaUrl(uploaded.url));
 
         setCompressionStats({
           original: formatBytes(result.originalSize),
@@ -404,13 +410,13 @@ export function HomeHeroManager() {
 
         // 1. Upload file video ke backend storage (MinIO)
         const uploadedVideo = await uploadHeroMedia(file);
-        handleChange("media_url", uploadedVideo.url);
+        handleChange("media_url", normalizeMediaUrl(uploadedVideo.url));
 
         // 2. Ekstrak frame poster thumbnail ke WebP & upload ke backend
         try {
           const poster = await extractVideoPosterWebP(file);
           const uploadedPoster = await uploadHeroMedia(poster.posterFile);
-          handleChange("thumbnail_url", uploadedPoster.url);
+          handleChange("thumbnail_url", normalizeMediaUrl(uploadedPoster.url));
         } catch {
           // Poster opsional
         }
@@ -460,7 +466,11 @@ export function HomeHeroManager() {
     async function loadData() {
       const hero = await fetchHomeHero();
       if (active && hero) {
-        setData(hero);
+        setData({
+          ...hero,
+          media_url: normalizeMediaUrl(hero.media_url),
+          thumbnail_url: normalizeMediaUrl(hero.thumbnail_url),
+        });
       }
     }
     void loadData();
@@ -611,7 +621,7 @@ export function HomeHeroManager() {
                   <Film className="size-3.5" />
                 </span>
                 <h2 className="text-sm font-bold text-slate-900">
-                  2. Media Latar Belakang (Video / Foto)
+                  2. Media Latar Belakang
                 </h2>
               </div>
 
@@ -642,6 +652,58 @@ export function HomeHeroManager() {
                   Foto / Gambar
                 </button>
               </div>
+            </div>
+
+            {/* SAKLAR TOGGLE ON / OFF PRIORITAS VIDEO vs FOTO */}
+            <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-slate-50/80 p-4 shadow-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`size-2.5 rounded-full ${
+                      data.media_type === "video"
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-amber-500"
+                    }`}
+                  />
+                  <span className="text-sm font-bold text-slate-900">
+                    {data.media_type === "video"
+                      ? "Saklar: Video Aktif (Prioritas Video Bergerak)"
+                      : "Saklar: Foto Aktif (Prioritas Foto Statis)"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {data.media_type === "video"
+                    ? "Website publik akan memutar video background secara otomatis."
+                    : "Website publik akan menampilkan foto/gambar latar belakang."}
+                </p>
+              </div>
+
+              {/* Saklar Toggle */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={data.media_type === "video"}
+                onClick={() =>
+                  handleChange(
+                    "media_type",
+                    data.media_type === "video" ? "image" : "video"
+                  )
+                }
+                className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-xs ${
+                  data.media_type === "video"
+                    ? "bg-emerald-600"
+                    : "bg-slate-300"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block size-7 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    data.media_type === "video"
+                      ? "translate-x-6"
+                      : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -826,27 +888,38 @@ export function HomeHeroManager() {
           {/* Frame Miniatur Hero */}
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-slate-700/80 bg-[#0A2540] shadow-xl text-center select-none">
             {/* Latar Belakang Media */}
-            {data.media_type === "video" ? (
-              <video
-                key={data.media_url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster={data.thumbnail_url || undefined}
-                className="absolute inset-0 size-full object-cover object-center opacity-60"
-              >
-                <source src={data.media_url} type="video/mp4" />
-              </video>
+            {data.media_url ? (
+              data.media_type === "video" ? (
+                <video
+                  key={normalizeMediaUrl(data.media_url)}
+                  src={normalizeMediaUrl(data.media_url)}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  poster={normalizeMediaUrl(data.thumbnail_url) || undefined}
+                  onLoadedData={(e) => {
+                    e.currentTarget.muted = true;
+                    e.currentTarget.play().catch(() => {});
+                  }}
+                  className="absolute inset-0 size-full object-cover object-center opacity-60"
+                >
+                  <source
+                    src={normalizeMediaUrl(data.media_url)}
+                    type="video/mp4"
+                  />
+                </video>
+              ) : (
+                <div
+                  className="absolute inset-0 size-full bg-cover bg-center opacity-60"
+                  style={{
+                    backgroundImage: `url(${normalizeMediaUrl(data.media_url)})`,
+                  }}
+                />
+              )
             ) : (
-              <div
-                className="absolute inset-0 size-full bg-cover bg-center opacity-60"
-                style={{
-                  backgroundImage: `url(${
-                    data.media_url || "/images/wtm-pemasangan.jpg"
-                  })`,
-                }}
-              />
+              <div className="absolute inset-0 size-full bg-gradient-to-br from-[#071a2e] to-[#0A2540]" />
             )}
 
             {/* Gradient Overlay Gelap khas WTM */}

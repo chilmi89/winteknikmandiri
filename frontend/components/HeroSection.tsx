@@ -79,8 +79,18 @@ export default function HeroSection() {
   );
 
   const mediaType = hero?.media_type || "video";
-  const mediaUrl = hero?.media_url || "/hero-section/video_hero_ac.mp4";
-  const thumbnailUrl = hero?.thumbnail_url || "/images/wtm-pemasangan.jpg";
+  const rawMediaUrl = hero?.media_url || "";
+  const rawThumbnailUrl = hero?.thumbnail_url || "";
+
+  // Normalisasi URL dari http://localhost/media/... menjadi /media/...
+  const mediaUrl = rawMediaUrl.replace(
+    /^https?:\/\/localhost(:80|:443)?\/media/,
+    "/media"
+  );
+  const thumbnailUrl = rawThumbnailUrl.replace(
+    /^https?:\/\/localhost(:80|:443)?\/media/,
+    "/media"
+  );
 
   return (
     <section
@@ -92,26 +102,36 @@ export default function HeroSection() {
         scale={1.12}
         className="absolute inset-0 overflow-hidden"
       >
-        {mediaType === "video" ? (
-          <video
-            ref={videoRef}
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster={thumbnailUrl}
-            aria-hidden="true"
-            tabIndex={-1}
-            key={mediaUrl}
-            className="h-full w-full object-cover object-center"
-          >
-            <source src={mediaUrl} type="video/mp4" />
-          </video>
+        {mediaUrl ? (
+          mediaType === "video" ? (
+            <video
+              ref={videoRef}
+              src={mediaUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={thumbnailUrl || undefined}
+              onLoadedData={(e) => {
+                e.currentTarget.muted = true;
+                e.currentTarget.play().catch(() => {});
+              }}
+              aria-hidden="true"
+              tabIndex={-1}
+              key={mediaUrl}
+              className="h-full w-full object-cover object-center"
+            >
+              <source src={mediaUrl} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              className="h-full w-full bg-cover bg-center object-cover"
+              style={{ backgroundImage: `url(${mediaUrl})` }}
+            />
+          )
         ) : (
-          <div
-            className="h-full w-full bg-cover bg-center object-cover"
-            style={{ backgroundImage: `url(${mediaUrl})` }}
-          />
+          <div className="size-full bg-gradient-to-br from-[#071a2e] to-[#0A2540]" />
         )}
       </ParallaxMedia>
 

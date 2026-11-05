@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/media/:path*",
+        destination: "http://127.0.0.1:9000/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

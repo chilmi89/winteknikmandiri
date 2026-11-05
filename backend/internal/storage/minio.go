@@ -212,7 +212,11 @@ func (c *Client) DeleteObject(ctx context.Context, objectKey string) error {
 // Contoh: services/20261103-abc.jpg -> /media/wtm-media/services/20261103-abc.jpg
 func (c *Client) GetPublicURL(objectKey string) string {
 	cleanedKey := strings.TrimLeft(objectKey, "/")
-	return fmt.Sprintf("%s/%s/%s", c.publicBaseURL, c.bucket, cleanedKey)
+	baseURL := strings.TrimRight(c.publicBaseURL, "/")
+	if baseURL == "http://localhost/media" || baseURL == "https://localhost/media" {
+		baseURL = "/media"
+	}
+	return fmt.Sprintf("%s/%s/%s", baseURL, c.bucket, cleanedKey)
 }
 
 // S3 mengekspos client asli bila ada kebutuhan operasi S3 tingkat rendah.

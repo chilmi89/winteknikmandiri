@@ -154,8 +154,8 @@ services:
       done;
       echo 'Memeriksa bucket $${MINIO_BUCKET:-wtm-media}...';
       mc mb --ignore-existing myminio/$${MINIO_BUCKET:-wtm-media};
-      echo 'Mengatur hak download publik untuk folder foto layanan (services/)...';
-      mc anonymous set download myminio/$${MINIO_BUCKET:-wtm-media}/services;
+      echo 'Mengatur hak download publik untuk bucket wtm-media (services/ & hero/)...';
+      mc anonymous set download myminio/$${MINIO_BUCKET:-wtm-media};
       echo 'Menyiapkan marker folder services/...';
       mc ls myminio/$${MINIO_BUCKET:-wtm-media}/services/ > /dev/null 2>&1 || (echo 'CV WIN TEKNIK MANDIRI - Folder Foto Layanan' | mc pipe myminio/$${MINIO_BUCKET:-wtm-media}/services/.keep > /dev/null 2>&1);
       echo 'Inisialisasi MinIO bucket wtm-media/services selesai!';
