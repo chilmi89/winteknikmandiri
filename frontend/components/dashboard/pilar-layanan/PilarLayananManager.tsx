@@ -28,7 +28,7 @@ type DialogState = { item: PilarLayananItem | null } | null;
 export function PilarLayananManager() {
   const [items, setItems] = useState<PilarLayananItem[]>([]);
   const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(true);
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +59,19 @@ export function PilarLayananManager() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Shortcut Ctrl/Cmd + K untuk fokus ke search
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -124,17 +137,25 @@ export function PilarLayananManager() {
     }
   }
 
-  const hasFilters = Boolean(search.trim());
+  const hasFilters = Boolean(search.trim()) || includeInactive;
+
+  function resetFilters() {
+    setSearch("");
+    setIncludeInactive(false);
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header Halaman */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-5">
+      {/* Header Halaman (Persis seperti FAQ) */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Pilar Layanan Publik
-          </h1>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Pilar Layanan Publik
+            </h1>
+            <span className="text-xs text-slate-400">{items.length} data</span>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">
             Kelola 6 kartu pilar yang tampil di section &quot;Pilar Layanan&quot; Beranda situs.
           </p>
         </div>
@@ -143,97 +164,134 @@ export function PilarLayananManager() {
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            onClick={load}
+            size="lg"
+            onClick={() => void load()}
             disabled={loading}
-            aria-label="Muat ulang data pilar layanan"
+            aria-label="Muat ulang data pilar"
+            className="h-9 rounded-md border-slate-200 bg-white text-xs font-medium text-slate-600"
           >
             <RefreshCw
+              aria-hidden="true"
               className={`size-3.5 ${loading ? "animate-spin" : ""}`}
             />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">Muat ulang</span>
           </Button>
 
           <Button
             type="button"
-            size="sm"
             onClick={() => setDialog({ item: null })}
-            className="bg-[#A82020] text-white hover:bg-[#8e1919]"
+            className="h-9 gap-1.5 rounded-md bg-[#0A2540] px-4 text-xs font-semibold text-white hover:bg-[#0A2540]/90"
           >
-            <Plus className="size-3.5" />
+            <Plus aria-hidden="true" className="size-4" />
             Tambah Pilar
           </Button>
         </div>
       </div>
 
       {/* Banner Error jika Fetch Gagal */}
-      {error && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50/70 p-4 text-rose-900"
-        >
-          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-rose-600" />
-          <div className="flex-1 text-xs">
-            <p className="font-semibold">Gagal memuat pilar layanan</p>
-            <p className="mt-0.5 text-rose-700">{error}</p>
+      {error ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50/60 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2.5">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold">Gagal memuat pilar layanan</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-rose-600">
+                {error}
+              </p>
+            </div>
           </div>
           <Button
             type="button"
             variant="outline"
-            size="xs"
-            onClick={load}
-            className="border-rose-300 text-rose-900 hover:bg-rose-100"
+            onClick={() => void load()}
+            className="h-8 self-start rounded-md border-rose-200 bg-white text-xs font-medium text-rose-700 hover:bg-rose-50 sm:self-auto"
           >
             Coba lagi
           </Button>
         </div>
-      )}
+      ) : (
+        <DataTableShell>
+          <DataTableToolbar>
+            <DataTableToolbarGroup className="flex-1">
+              <div className="relative flex-1 sm:max-w-sm">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  ref={searchRef}
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Cari pilar layanan…"
+                  aria-label="Cari pilar layanan"
+                  className="h-9 rounded-md border-slate-200 bg-white pr-12 pl-9 text-xs text-slate-700 placeholder:text-slate-400"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    aria-label="Hapus kata kunci pencarian"
+                    className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X aria-hidden="true" className="size-3.5" />
+                  </button>
+                ) : (
+                  <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[9px] text-slate-400 sm:block">
+                    Ctrl K
+                  </kbd>
+                )}
+              </div>
 
-      {/* Tabel & Toolbar */}
-      <DataTableShell>
-        <DataTableToolbar>
-          <DataTableToolbarGroup className="w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
-            <div className="relative w-full sm:w-72">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
-              <Input
-                ref={searchRef}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari pilar layanan..."
-                aria-label="Cari pilar layanan"
-                className="h-9 w-full pl-9 pr-8 text-xs bg-white"
-              />
-              {search && (
+              <label className="flex h-9 cursor-pointer items-center gap-2 px-1 text-xs font-medium text-slate-600">
+                <Checkbox
+                  checked={includeInactive}
+                  onCheckedChange={(checked) => setIncludeInactive(Boolean(checked))}
+                />
+                Tampilkan non-aktif
+              </label>
+            </DataTableToolbarGroup>
+
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              {hasFilters && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={resetFilters}
+                  className="text-xs text-slate-500 transition-colors hover:text-slate-800"
                 >
-                  <X className="size-3.5" />
+                  Reset
                 </button>
               )}
+              {loading && items.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <Spinner className="size-3" />
+                  Memuat…
+                </span>
+              )}
             </div>
+          </DataTableToolbar>
 
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer">
-              <Checkbox
-                checked={includeInactive}
-                onCheckedChange={(c) => setIncludeInactive(Boolean(c))}
-              />
-              <span>Sertakan Non-aktif</span>
-            </label>
-          </DataTableToolbarGroup>
-        </DataTableToolbar>
+          <PilarLayananTable
+            items={filteredItems}
+            loading={loading}
+            onEdit={(it) => setDialog({ item: it })}
+            onDelete={(it) => {
+              setDeleteError(null);
+              setToDelete(it);
+            }}
+            onCreate={() => setDialog({ item: null })}
+            onResetFilters={resetFilters}
+            hasFilters={hasFilters}
+          />
 
-        <PilarLayananTable
-          items={filteredItems}
-          loading={loading}
-          onEdit={(it) => setDialog({ item: it })}
-          onDelete={(it) => setToDelete(it)}
-          onCreate={() => setDialog({ item: null })}
-          onResetFilters={() => setSearch("")}
-          hasFilters={hasFilters}
-        />
-      </DataTableShell>
+          {/* Footer Ringkasan (Persis seperti FAQ) */}
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+            <span>
+              Menampilkan {filteredItems.length} dari {items.length} data
+            </span>
+          </div>
+        </DataTableShell>
+      )}
 
       {/* Dialog Form Tambah / Edit */}
       {dialog && (
