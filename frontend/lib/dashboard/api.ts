@@ -6,6 +6,11 @@ import type { Inquiry, InquiriesResponse } from "@/lib/dashboard/types";
  * Di `next dev` (port 3000/3001) backend Go berjalan di :8080.
  */
 export function resolveApiBase(): string {
+  const internal = process.env.INTERNAL_API_URL?.trim();
+  if (typeof window === "undefined" && internal) {
+    return internal.replace(/\/$/, "");
+  }
+
   const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (configured) return configured.replace(/\/$/, "");
 
@@ -14,6 +19,11 @@ export function resolveApiBase(): string {
     if (port === "3000" || port === "3001") {
       return `${protocol}//${hostname}:8080`;
     }
+  }
+
+  // Server-side fallback untuk development lokal
+  if (typeof window === "undefined") {
+    return "http://localhost:8080";
   }
 
   return "";

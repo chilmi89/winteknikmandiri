@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import { Toaster } from "@/components/ui/toast";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: {
@@ -20,5 +22,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <TooltipProvider delay={180}>
+      <Toaster>
+        <DashboardShell>{children}</DashboardShell>
+      </Toaster>
+    </TooltipProvider>
+  );
 }

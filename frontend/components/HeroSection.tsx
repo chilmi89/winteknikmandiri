@@ -80,7 +80,7 @@ export default function HeroSection() {
 
           <h1 className="mt-6 max-w-6xl text-balance text-[3rem] font-semibold leading-[0.95] tracking-[-0.05em] text-white sm:text-[4.25rem] lg:text-[5rem]">
             <span className="text-[#FF6B6B]">WIN</span>{" "}
-            <span className="text-[#8ACFF8]">TEKNIK MANDIRI</span>
+            <span className="text-[#2279cf]">TEKNIK MANDIRI</span>
             <span className="mt-1 block text-white">AC KEDIRI</span>
           </h1>
 

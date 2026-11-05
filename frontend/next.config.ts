@@ -19,6 +19,16 @@ const nextConfig: NextConfig = {
         destination: "/#faq",
         permanent: false,
       },
+      {
+        source: "/dashboard/layanan",
+        destination: "/dashboard/publik/layanan",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/galeri",
+        destination: "/dashboard/publik/galeri",
+        permanent: true,
+      },
     ];
   },
 };

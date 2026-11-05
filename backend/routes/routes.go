@@ -23,6 +23,10 @@ import (
 	inquiryservice "winteknikmandiri-backend/inquiries/service"
 	"winteknikmandiri-backend/internal/database"
 	"winteknikmandiri-backend/internal/httpx"
+	servicecontroller "winteknikmandiri-backend/services/controller"
+	servicerepository "winteknikmandiri-backend/services/repository"
+	servicerouter "winteknikmandiri-backend/services/router"
+	serviceservice "winteknikmandiri-backend/services/service"
 )
 
 // SetupRouter merakit middleware, dependency per fitur, dan seluruh route.
@@ -51,6 +55,7 @@ func SetupRouter() *gin.Engine {
 	v1 := r.Group("/api/v1")
 	registerInquiryRoutes(v1)
 	registerFAQRoutes(v1)
+	registerServiceRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -73,6 +78,14 @@ func registerFAQRoutes(rg *gin.RouterGroup) {
 	svc := faqservice.NewFAQService(repo)
 	ctrl := faqcontroller.NewFAQController(svc)
 	faqrouter.RegisterRoutes(rg, ctrl)
+}
+
+// registerServiceRoutes merakit layer fitur Layanan.
+func registerServiceRoutes(rg *gin.RouterGroup) {
+	repo := servicerepository.NewServiceRepository(database.DB)
+	svc := serviceservice.NewServiceService(repo)
+	ctrl := servicecontroller.NewServiceController(svc)
+	servicerouter.RegisterRoutes(rg, ctrl)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

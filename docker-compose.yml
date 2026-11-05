@@ -20,6 +20,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - minio
     networks:
       - wtm-network
 
@@ -67,11 +68,20 @@ services:
       DB_SSLMODE: disable
       # Dokumentasi API mati secara default di server; set true untuk membukanya.
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+      # Konfigurasi MinIO Object Storage
+      STORAGE_ENDPOINT: minio:9000
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-wtm_admin}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-Wtm_M1n10#S3cur3!2026}
+      STORAGE_BUCKET: ${MINIO_BUCKET:-wtm-media}
+      STORAGE_SSL: "false"
+      STORAGE_PUBLIC_BASE_URL: ${MINIO_PUBLIC_URL:-http://localhost/media}
     # Tanpa ports host: backend hanya diakses Caddy lewat network internal.
     expose:
       - "8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - wtm-network
@@ -96,10 +106,69 @@ services:
     networks:
       - wtm-network
 
+  # ========================================================
+  # 5. Object Storage: MinIO (S3-Compatible)
+  # ========================================================
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: wtm-minio
+    user: "0:0"
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-wtm_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-Wtm_M1n10#S3cur3!2026}
+    ports:
+      # S3 API: bind ke loopback (127.0.0.1) agar tidak terekspos ke internet publik VPS.
+      # Akses dari luar hanya lewat reverse proxy Caddy (/media/*).
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      # Web Console MinIO: bind ke loopback saja.
+      # Di VPS, akses aman lewat SSH tunnel: ssh -L 9091:localhost:9091 user@vps
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9091}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", ": >/dev/tcp/localhost/9000"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wtm-network
+
+  # ========================================================
+  # 6. MinIO Initializer: Otomatis Buat Bucket & Set Akses Foto Layanan
+  # ========================================================
+  minio-init:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: wtm-minio-init
+    user: "0:0"
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/bash -c "
+      until mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER:-wtm_admin} $${MINIO_ROOT_PASSWORD:-Wtm_M1n10#S3cur3!2026}; do
+        echo 'Menunggu MinIO siap...';
+        sleep 2;
+      done;
+      echo 'Memeriksa bucket $${MINIO_BUCKET:-wtm-media}...';
+      mc mb --ignore-existing myminio/$${MINIO_BUCKET:-wtm-media};
+      echo 'Mengatur hak download publik untuk folder foto layanan (services/)...';
+      mc anonymous set download myminio/$${MINIO_BUCKET:-wtm-media}/services;
+      echo 'Menyiapkan marker folder services/...';
+      mc ls myminio/$${MINIO_BUCKET:-wtm-media}/services/ > /dev/null 2>&1 || (echo 'CV WIN TEKNIK MANDIRI - Folder Foto Layanan' | mc pipe myminio/$${MINIO_BUCKET:-wtm-media}/services/.keep > /dev/null 2>&1);
+      echo 'Inisialisasi MinIO bucket wtm-media/services selesai!';
+      exit 0;
+      "
+    networks:
+      - wtm-network
+
 volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  minio_data:
 
 networks:
   wtm-network:

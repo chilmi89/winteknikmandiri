@@ -41,23 +41,24 @@ win-teknik-mandiri/
 Pengunjung (Internet)
          │
          ▼  (Port 80 HTTP / Port 443 HTTPS dengan Auto-SSL)
-┌──────────────────────────────────────────────┐
-│             CADDY REVERSE PROXY              │
-└───────────────┬──────────────────────────────┘
-                │ (Internal Docker Network: wtm-network)
-      ┌─────────┴─────────┐
-      ▼                   ▼
-┌───────────┐       ┌───────────┐
-│ Frontend  │       │  Backend  │
-│ (Next.js) │       │ (Go Gin)  │
-│ Port 3000 │       │ Port 8080 │
-└───────────┘       └─────┬─────┘
-                          │ (Internal DB Connection)
-                          ▼
-                    ┌───────────┐
-                    │ PostgreSQL│
-                    │ Port 5432 │
-                    └───────────┘
+┌───────────────────────────────────────────────────────────┐
+│                    CADDY REVERSE PROXY                    │
+└───────┬──────────────────────┬────────────────────┬───────┘
+        │ /                    │ /api/*             │ /media/*
+        │                      │ /health            │
+        ▼                      ▼                    ▼
+  ┌───────────┐          ┌───────────┐        ┌───────────┐
+  │ Frontend  │          │  Backend  │        │   MinIO   │
+  │ (Next.js) │          │ (Go Gin)  ├───────►│  Storage  │
+  │ Port 3000 │          │ Port 8080 │ (S3)   │ Port 9000 │
+  └───────────┘          └─────┬─────┘        └───────────┘
+                               │ (Internal DB)      ▲
+                               ▼                    │
+                         ┌───────────┐              │ (Auto-init)
+                         │ PostgreSQL│        ┌─────┴───────┐
+                         │ Port 5432 │        │  MinIO Init │
+                         └───────────┘        │   (mc cli)  │
+                                              └─────────────┘
 ```
 
 ---
@@ -82,6 +83,9 @@ Akses layanan di browser (semua lewat Caddy, port 80/443):
 - 🗄️ **PostgreSQL Database**: hanya terikat ke `127.0.0.1:5433` (`wtm_user` / `Wtm_S3cur3#P0stgr3s!2026` / `wtm_db`).
   Port internal container tetap `5432`. Di VPS, port host tetap `5432` karena `DB_HOST_PORT` tidak diisi.
   Jika PostgreSQL native sudah memakai `5432`, Docker otomatis memakai `5433` sesuai `.env` lokal.
+- 🪣 **MinIO Web Console**: [http://localhost:9001](http://localhost:9001) (`wtm_admin` / `Wtm_M1n10#S3cur3!2026`).
+  Bucket `wtm-media` dan folder `services/` dibuat otomatis oleh container `wtm-minio-init`.
+- 🖼️ **Akses Media Publik**: [http://localhost/media/wtm-media/services/...](http://localhost/media/wtm-media/services/...) (diteruskan Caddy ke MinIO).
 
 > Backend (`8080`) dan frontend (`3000`) **tidak dipublikasikan ke host** — hanya Caddy yang punya port host.
 > Jadi akses langsung ke `http://localhost:8080` hanya berlaku saat memakai `npm run dev:backend` (Go native),
@@ -214,6 +218,8 @@ Hanya Caddy yang membuka port ke publik. Service lain hanya bisa diakses di dala
 | `backend` | tidak ada (hanya `expose: 8080`) | tidak bisa; lewat Caddy `/api/*` dan `/health` |
 | `frontend` | tidak ada (hanya `expose: 3000`) | tidak bisa; lewat Caddy `/` |
 | `postgres` | `127.0.0.1:5432` | tidak bisa; lewat SSH tunnel |
+| `minio` (API) | `127.0.0.1:9000` | tidak bisa langsung; foto publik lewat Caddy `/media/*` |
+| `minio` (Console) | `127.0.0.1:9001` | tidak bisa; di VPS lewat SSH tunnel (`ssh -L 9001:localhost:9001 user@vps`) |
 
 Verifikasi di server:
 

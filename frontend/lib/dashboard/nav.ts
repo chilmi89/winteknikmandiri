@@ -1,10 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import {
   FolderKanban,
+  Globe,
   Images,
   Inbox,
   LayoutDashboard,
+  MessageCircleQuestion,
   Settings,
+  Share2,
   Users,
   Wrench,
 } from "lucide-react";
@@ -15,6 +18,8 @@ export type DashboardNavItem = {
   icon: LucideIcon;
   /** Hanya aktif saat path persis sama (dipakai untuk "/dashboard"). */
   exact?: boolean;
+  /** Submenu; bila ada, parent dirender sebagai tombol buka/tutup. */
+  children?: DashboardNavItem[];
 };
 
 export type DashboardNavGroup = {
@@ -47,10 +52,35 @@ export const dashboardNav: DashboardNavGroup[] = [
     ],
   },
   {
-    title: "Konten",
+    title: "Publik",
     items: [
-      { label: "Layanan", href: "/dashboard/layanan", icon: Wrench },
-      { label: "Galeri", href: "/dashboard/galeri", icon: Images },
+      {
+        label: "Publik",
+        href: "/dashboard/publik",
+        icon: Globe,
+        children: [
+          {
+            label: "FAQ",
+            href: "/dashboard/publik/faqs",
+            icon: MessageCircleQuestion,
+          },
+          {
+            label: "Layanan",
+            href: "/dashboard/publik/layanan",
+            icon: Wrench,
+          },
+          {
+            label: "Sosmed",
+            href: "/dashboard/publik/sosmed",
+            icon: Share2,
+          },
+          {
+            label: "Galeri",
+            href: "/dashboard/publik/galeri",
+            icon: Images,
+          },
+        ],
+      },
     ],
   },
   {
@@ -64,11 +94,12 @@ export const dashboardNav: DashboardNavGroup[] = [
   },
 ];
 
-export const dashboardNavItems: DashboardNavItem[] = dashboardNav.flatMap(
-  (group) => group.items
+/** Seluruh item (parent + anak) dalam satu daftar datar. */
+export const dashboardNavItems: DashboardNavItem[] = dashboardNav.flatMap((group) =>
+  group.items.flatMap((item) => [item, ...(item.children ?? [])])
 );
 
-/** Cari item menu yang cocok dengan pathname saat ini (prefix-aware). */
+/** Cari item menu yang cocok dengan pathname saat ini (prefix-aware, anak didahulukan). */
 export function findNavItem(pathname: string): DashboardNavItem | undefined {
   const exact = dashboardNavItems.find(
     (item) => item.exact && item.href === pathname

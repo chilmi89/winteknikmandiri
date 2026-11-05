@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { resolveApiBase } from "@/lib/dashboard/api";
+import type { PublicFaqItem } from "@/lib/dashboard/faqs";
 
-const faqs = [
+const defaultFaqs: PublicFaqItem[] = [
   {
     number: "01",
     question: "Area mana saja yang dilayani oleh CV Win Teknik Mandiri?",
@@ -45,18 +47,65 @@ const faqs = [
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
 
-export default function FaqAccordion() {
+type FaqAccordionProps = {
+  initialItems?: PublicFaqItem[];
+};
+
+export default function FaqAccordion({ initialItems }: FaqAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [items, setItems] = useState<PublicFaqItem[]>(
+    initialItems && initialItems.length > 0 ? initialItems : defaultFaqs
+  );
+
+  useEffect(() => {
+    if (initialItems && initialItems.length > 0) {
+      setItems(initialItems);
+      return;
+    }
+
+    let active = true;
+
+    async function loadFaqs() {
+      try {
+        const res = await fetch(`${resolveApiBase()}/api/v1/faqs?limit=50`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+
+        const json = await res.json();
+        if (active && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped = json.data.map(
+            (
+              item: { question: string; answer: string },
+              idx: number
+            ) => ({
+              number: String(idx + 1).padStart(2, "0"),
+              question: item.question,
+              answer: item.answer,
+            })
+          );
+          setItems(mapped);
+        }
+      } catch {
+        // Fallback default
+      }
+    }
+
+    void loadFaqs();
+    return () => {
+      active = false;
+    };
+  }, [initialItems]);
 
   return (
     <div className="border-t border-[#0A2540]/10">
-      {faqs.map((faq, index) => {
+      {items.map((faq, index) => {
         const isOpen = openIndex === index;
         const panelId = `faq-panel-${index}`;
         const buttonId = `faq-button-${index}`;
 
         return (
-          <div key={faq.question} className="border-b border-[#0A2540]/10">
+          <div key={`${faq.question}-${index}`} className="border-b border-[#0A2540]/10">
             <h3>
               <button
                 type="button"

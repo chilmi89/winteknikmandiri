@@ -77,7 +77,7 @@ func NewFAQResponse(m model.FAQ) FAQResponse {
 		Answer:    m.Answer,
 		Category:  m.Category,
 		SortOrder: m.SortOrder,
-		IsActive:  m.IsActive,
+		IsActive:  m.IsActive,	
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	}
