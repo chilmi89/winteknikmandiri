@@ -17,6 +17,10 @@ import (
 	faqservice "winteknikmandiri-backend/faqs/service"
 	healthcontroller "winteknikmandiri-backend/health/controller"
 	healthrouter "winteknikmandiri-backend/health/router"
+	homeherocontroller "winteknikmandiri-backend/home_hero/controller"
+	homeherorepository "winteknikmandiri-backend/home_hero/repository"
+	homeherorouter "winteknikmandiri-backend/home_hero/router"
+	homeheroservice "winteknikmandiri-backend/home_hero/service"
 	inquirycontroller "winteknikmandiri-backend/inquiries/controller"
 	inquiryrepository "winteknikmandiri-backend/inquiries/repository"
 	inquiryrouter "winteknikmandiri-backend/inquiries/router"
@@ -56,6 +60,7 @@ func SetupRouter() *gin.Engine {
 	registerInquiryRoutes(v1)
 	registerFAQRoutes(v1)
 	registerServiceRoutes(v1)
+	registerHomeHeroRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -86,6 +91,14 @@ func registerServiceRoutes(rg *gin.RouterGroup) {
 	svc := serviceservice.NewServiceService(repo)
 	ctrl := servicecontroller.NewServiceController(svc)
 	servicerouter.RegisterRoutes(rg, ctrl)
+}
+
+// registerHomeHeroRoutes merakit layer fitur Home Hero banner.
+func registerHomeHeroRoutes(rg *gin.RouterGroup) {
+	repo := homeherorepository.NewHomeHeroRepository(database.DB)
+	svc := homeheroservice.NewHomeHeroService(repo)
+	ctrl := homeherocontroller.NewHomeHeroController(svc)
+	homeherorouter.RegisterRoutes(rg, ctrl)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

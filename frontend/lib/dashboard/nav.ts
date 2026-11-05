@@ -70,6 +70,11 @@ export const dashboardNav: DashboardNavGroup[] = [
             icon: Wrench,
           },
           {
+            label: "Home",
+            href: "/dashboard/publik/home",
+            icon: LayoutDashboard,
+          },
+          {
             label: "Sosmed",
             href: "/dashboard/publik/sosmed",
             icon: Share2,
