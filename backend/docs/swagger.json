@@ -359,6 +359,227 @@
                 }
             }
         },
+        "/api/v1/pilar-layanan": {
+            "get": {
+                "description": "Mengambil daftar pilar layanan aktif untuk homepage.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pilar_layanan"
+                ],
+                "summary": "Daftar pilar layanan",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan yang nonaktif (khusus admin)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListPilarLayananEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan data kartu pilar layanan baru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pilar_layanan"
+                ],
+                "summary": "Tambah pilar layanan baru",
+                "parameters": [
+                    {
+                        "description": "Payload pilar layanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePilarLayananRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PilarLayananEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pilar-layanan/{id}": {
+            "get": {
+                "description": "Mengambil detail pilar layanan berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pilar_layanan"
+                ],
+                "summary": "Detail satu pilar layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Pilar Layanan (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PilarLayananEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui pilar layanan berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pilar_layanan"
+                ],
+                "summary": "Perbarui data pilar layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Pilar Layanan (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePilarLayananRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PilarLayananEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus pilar layanan berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pilar_layanan"
+                ],
+                "summary": "Hapus pilar layanan (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Pilar Layanan (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PilarLayananMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Menunjukkan status server dan koneksi database PostgreSQL.",
@@ -449,6 +670,46 @@
                 "message": {
                     "type": "string",
                     "example": "Permohonan konsultasi berhasil disimpan"
+                }
+            }
+        },
+        "dto.CreatePilarLayananRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "01"
+                },
+                "cta_text": {
+                    "type": "string",
+                    "example": "Konsultasi"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Keterangan singkat..."
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_featured": {
+                    "type": "boolean"
+                },
+                "link_url": {
+                    "type": "string",
+                    "example": "/layanan"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2,
+                    "example": "Supply \u0026 pengadaan AC"
                 }
             }
         },
@@ -576,6 +837,86 @@
                 }
             }
         },
+        "dto.ListPilarLayananEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PilarLayananResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PilarLayananEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.PilarLayananResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PilarLayananMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PilarLayananResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "01"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "cta_text": {
+                    "type": "string",
+                    "example": "Konsultasi"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Split, cassette, floor standing, hingga VRF/VRV dari berbagai merk."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_featured": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "link_url": {
+                    "type": "string",
+                    "example": "/layanan"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Supply \u0026 pengadaan AC"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateFAQRequest": {
             "type": "object",
             "required": [
@@ -600,6 +941,38 @@
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.UpdatePilarLayananRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "cta_text": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_featured": {
+                    "type": "boolean"
+                },
+                "link_url": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2
                 }
             }
         },

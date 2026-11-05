@@ -51,6 +51,35 @@ definitions:
         example: Permohonan konsultasi berhasil disimpan
         type: string
     type: object
+  dto.CreatePilarLayananRequest:
+    properties:
+      code:
+        example: "01"
+        maxLength: 10
+        type: string
+      cta_text:
+        example: Konsultasi
+        type: string
+      description:
+        example: Keterangan singkat...
+        type: string
+      is_active:
+        type: boolean
+      is_featured:
+        type: boolean
+      link_url:
+        example: /layanan
+        type: string
+      sort_order:
+        type: integer
+      title:
+        example: Supply & pengadaan AC
+        maxLength: 200
+        minLength: 2
+        type: string
+    required:
+    - title
+    type: object
   dto.FAQEnvelope:
     properties:
       data:
@@ -133,6 +162,61 @@ definitions:
       total:
         type: integer
     type: object
+  dto.ListPilarLayananEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.PilarLayananResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  dto.PilarLayananEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.PilarLayananResponse'
+      message:
+        type: string
+    type: object
+  dto.PilarLayananMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.PilarLayananResponse:
+    properties:
+      code:
+        example: "01"
+        type: string
+      created_at:
+        type: string
+      cta_text:
+        example: Konsultasi
+        type: string
+      description:
+        example: Split, cassette, floor standing, hingga VRF/VRV dari berbagai merk.
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      is_featured:
+        example: false
+        type: boolean
+      link_url:
+        example: /layanan
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      title:
+        example: Supply & pengadaan AC
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.UpdateFAQRequest:
     properties:
       answer:
@@ -151,6 +235,28 @@ definitions:
     required:
     - answer
     - question
+    type: object
+  dto.UpdatePilarLayananRequest:
+    properties:
+      code:
+        maxLength: 10
+        type: string
+      cta_text:
+        type: string
+      description:
+        type: string
+      is_active:
+        type: boolean
+      is_featured:
+        type: boolean
+      link_url:
+        type: string
+      sort_order:
+        type: integer
+      title:
+        maxLength: 200
+        minLength: 2
+        type: string
     type: object
   httpx.ErrorResponse:
     properties:
@@ -418,6 +524,152 @@ paths:
       summary: Kirim permohonan konsultasi
       tags:
       - inquiries
+  /api/v1/pilar-layanan:
+    get:
+      description: Mengambil daftar pilar layanan aktif untuk homepage.
+      parameters:
+      - description: Sertakan yang nonaktif (khusus admin)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListPilarLayananEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar pilar layanan
+      tags:
+      - pilar_layanan
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan data kartu pilar layanan baru.
+      parameters:
+      - description: Payload pilar layanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePilarLayananRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PilarLayananEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah pilar layanan baru
+      tags:
+      - pilar_layanan
+  /api/v1/pilar-layanan/{id}:
+    delete:
+      description: Menghapus pilar layanan berdasarkan ID UUID.
+      parameters:
+      - description: ID Pilar Layanan (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PilarLayananMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus pilar layanan (soft delete)
+      tags:
+      - pilar_layanan
+    get:
+      description: Mengambil detail pilar layanan berdasarkan ID UUID.
+      parameters:
+      - description: ID Pilar Layanan (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PilarLayananEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail satu pilar layanan
+      tags:
+      - pilar_layanan
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui pilar layanan berdasarkan ID UUID.
+      parameters:
+      - description: ID Pilar Layanan (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePilarLayananRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PilarLayananEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui data pilar layanan
+      tags:
+      - pilar_layanan
   /health:
     get:
       description: Menunjukkan status server dan koneksi database PostgreSQL.
