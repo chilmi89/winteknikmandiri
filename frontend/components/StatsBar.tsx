@@ -103,65 +103,60 @@ function StatCell({
   onComplete,
   className = "",
 }: StatCellProps) {
-  const [currentVal, setCurrentVal] = useState(0);
+  // Teks lengkap target yang diformat (misal "2.014" atau "364")
+  const fullText = numberFormatter.format(stat.target);
+  const [typedLength, setTypedLength] = useState(0);
 
   useEffect(() => {
     if (reducedMotion || hasFinished) {
+      setTypedLength(fullText.length);
       return;
     }
 
     if (!isActive) {
+      if (!hasStarted) {
+        setTypedLength(0);
+      }
       return;
     }
 
-    let startTime: number | null = null;
-    let animationFrameId: number;
+    let current = 0;
+    setTypedLength(0);
 
-    const easeOutExpo = (t: number) =>
-      t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    // Kecepatan ketik: ~130ms per karakter agar terasa ritme typing-nya
+    const intervalId = window.setInterval(() => {
+      current += 1;
+      setTypedLength(current);
 
-    const step = (timestamp: number) => {
-      if (startTime === null) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / stat.duration, 1);
-      const easedProgress = easeOutExpo(progress);
-
-      setCurrentVal(Math.round(stat.target * easedProgress));
-
-      if (progress < 1) {
-        animationFrameId = requestAnimationFrame(step);
-      } else {
-        setCurrentVal(stat.target);
-        setTimeout(() => onComplete(index), 80);
+      if (current >= fullText.length) {
+        window.clearInterval(intervalId);
+        // Beri jeda sejenak sebelum pindah mengetik kolom berikutnya
+        window.setTimeout(() => onComplete(index), 180);
       }
-    };
-
-    animationFrameId = requestAnimationFrame(step);
+    }, 130);
 
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      window.clearInterval(intervalId);
     };
   }, [
     isActive,
     hasFinished,
     hasStarted,
     reducedMotion,
-    stat.target,
-    stat.duration,
+    fullText,
     index,
     onComplete,
   ]);
 
   const staticValue = !mounted || reducedMotion;
-  const value = staticValue
-    ? stat.target
-    : hasFinished
-      ? stat.target
-      : hasStarted
-        ? currentVal
-        : 0;
+  const displayedText = staticValue || hasFinished
+    ? fullText
+    : hasStarted
+      ? fullText.slice(0, typedLength)
+      : "";
 
-  const showPlus = stat.hasPlus && (staticValue || hasFinished);
+  const isTyping = isActive && typedLength < fullText.length && !reducedMotion;
+  const showPlus = stat.hasPlus && (staticValue || hasFinished || typedLength >= fullText.length);
 
   return (
     <div
@@ -180,8 +175,14 @@ function StatCell({
         {stat.label}
       </dt>
 
-      <dd className="flex items-baseline justify-center text-[2.25rem] font-semibold leading-none tracking-[-0.04em] text-[#0A2540] tabular-nums sm:text-[2.75rem]">
-        {numberFormatter.format(value)}
+      <dd className="relative flex items-baseline justify-center text-[2.25rem] font-semibold leading-none tracking-[-0.04em] text-[#0A2540] tabular-nums sm:text-[2.75rem] min-h-[1.15em]">
+        <span>{displayedText}</span>
+        {isTyping ? (
+          <span
+            aria-hidden="true"
+            className="ml-0.5 inline-block w-[3px] h-[0.8em] bg-[#A82020] animate-pulse align-baseline"
+          />
+        ) : null}
         {stat.hasPlus ? (
           <span
             className={`ml-0.5 text-[#A82020] transition-all duration-300 ${
