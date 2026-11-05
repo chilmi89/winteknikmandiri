@@ -121,6 +121,85 @@ func (c *Client) UploadServicePhoto(
 	return objectKey, publicURL, nil
 }
 
+// UploadHeroMedia mengunggah file video/foto banner hero ke folder "hero/" pada bucket wtm-media.
+func (c *Client) UploadHeroMedia(
+	ctx context.Context,
+	originalFilename string,
+	reader io.Reader,
+	size int64,
+	contentType string,
+) (objectKey string, publicURL string, err error) {
+	if c == nil || c.s3 == nil {
+		return "", "", fmt.Errorf("storage client MinIO belum terinisialisasi")
+	}
+
+	ext := strings.ToLower(path.Ext(originalFilename))
+	if ext == "" {
+		if strings.HasPrefix(contentType, "video/") {
+			ext = ".mp4"
+		} else {
+			ext = ".webp"
+		}
+	}
+
+	// Format objectKey: hero/YYYYMMDD-uuid.ext
+	datePrefix := time.Now().Format("20060102")
+	uniqueName := fmt.Sprintf("%s-%s%s", datePrefix, uuid.New().String()[:8], ext)
+	objectKey = path.Join("hero", uniqueName)
+
+	if contentType == "" {
+		if ext == ".mp4" {
+			contentType = "video/mp4"
+		} else if ext == ".webm" {
+			contentType = "video/webm"
+		} else if ext == ".webp" {
+			contentType = "image/webp"
+		} else {
+			contentType = "application/octet-stream"
+		}
+	}
+
+	_, err = c.s3.PutObject(ctx, c.bucket, objectKey, reader, size, minio.PutObjectOptions{
+		ContentType: contentType,
+		UserMetadata: map[string]string{
+			"original-name": url.QueryEscape(originalFilename),
+			"category":      "hero",
+		},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("gagal upload media hero ke MinIO: %w", err)
+	}
+
+	publicURL = c.GetPublicURL(objectKey)
+	return objectKey, publicURL, nil
+}
+
+// ExtractObjectKey mengekstrak path objectKey (misal "hero/20261105-abc.mp4") dari URL publik.
+func (c *Client) ExtractObjectKey(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	for _, folder := range []string{"hero/", "services/"} {
+		if idx := strings.Index(rawURL, folder); idx != -1 {
+			return strings.TrimPrefix(rawURL[idx:], "/")
+		}
+	}
+	return ""
+}
+
+// DeleteIfManaged menghapus file di MinIO jika file tersebut berada dalam folder kelolaan ("hero/" atau "services/").
+func (c *Client) DeleteIfManaged(ctx context.Context, rawURL string) error {
+	if c == nil || c.s3 == nil {
+		return nil
+	}
+	key := c.ExtractObjectKey(rawURL)
+	if key == "" {
+		return nil
+	}
+	log.Printf("[STORAGE] Menghapus file lama dari MinIO: %s", key)
+	return c.DeleteObject(ctx, key)
+}
+
 // DeleteObject menghapus objek dari bucket berdasarkan objectKey.
 func (c *Client) DeleteObject(ctx context.Context, objectKey string) error {
 	if c == nil || c.s3 == nil {

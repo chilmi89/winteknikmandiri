@@ -32,7 +32,11 @@ import {
   extractVideoPosterWebP,
   formatBytes,
 } from "@/lib/mediaCompressor";
-import { fetchHomeHero, updateHomeHero } from "@/lib/dashboard/homeHero";
+import {
+  fetchHomeHero,
+  updateHomeHero,
+  uploadHeroMedia,
+} from "@/lib/dashboard/homeHero";
 
 export type HomeHeroData = {
   badge_text: string;
@@ -374,16 +378,22 @@ export function HomeHeroManager() {
         if (!file.type.startsWith("image/")) {
           throw new Error("File harus berupa gambar (.jpg, .png, .webp, .avif)");
         }
+        // 1. Kompresi gambar ke WebP di browser
         const result = await compressImageToWebP(file);
-        handleChange("media_url", result.previewUrl);
+
+        // 2. Upload file WebP ke backend storage (MinIO)
+        const uploaded = await uploadHeroMedia(result.file);
+        handleChange("media_url", uploaded.url);
+
         setCompressionStats({
           original: formatBytes(result.originalSize),
           compressed: formatBytes(result.compressedSize),
           percent: result.savedPercent,
           type: "image",
         });
+
         toast.add({
-          title: "Foto berhasil dikompres ke WebP",
+          title: "Foto berhasil dikompres ke WebP & diunggah",
           description: `Hemat ${result.savedPercent}% (${formatBytes(result.originalSize)} ➔ ${formatBytes(result.compressedSize)})`,
           type: "success",
         });
@@ -391,12 +401,16 @@ export function HomeHeroManager() {
         if (!file.type.startsWith("video/")) {
           throw new Error("File harus berupa video (.mp4, .webm, .mov)");
         }
-        const videoUrl = URL.createObjectURL(file);
-        handleChange("media_url", videoUrl);
 
+        // 1. Upload file video ke backend storage (MinIO)
+        const uploadedVideo = await uploadHeroMedia(file);
+        handleChange("media_url", uploadedVideo.url);
+
+        // 2. Ekstrak frame poster thumbnail ke WebP & upload ke backend
         try {
           const poster = await extractVideoPosterWebP(file);
-          handleChange("thumbnail_url", poster.posterUrl);
+          const uploadedPoster = await uploadHeroMedia(poster.posterFile);
+          handleChange("thumbnail_url", uploadedPoster.url);
         } catch {
           // Poster opsional
         }
@@ -407,8 +421,9 @@ export function HomeHeroManager() {
           percent: 0,
           type: "video",
         });
+
         toast.add({
-          title: "Video siap & poster WebP dibuat otomatis",
+          title: "Video berhasil diunggah & poster WebP dibuat otomatis",
           type: "success",
         });
       }

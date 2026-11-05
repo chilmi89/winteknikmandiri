@@ -11,4 +11,5 @@ func RegisterRoutes(rg *gin.RouterGroup, ctrl *controller.HomeHeroController) {
 	group := rg.Group("/home-hero")
 	group.GET("", ctrl.Get)
 	group.PUT("", ctrl.Update)
+	group.POST("/upload", ctrl.UploadMedia)
 }

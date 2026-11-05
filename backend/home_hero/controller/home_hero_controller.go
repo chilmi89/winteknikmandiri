@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -50,5 +51,40 @@ func (h *HomeHeroController) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.HomeHeroEnvelope{
 		Message: "Konfigurasi hero berhasil disimpan",
 		Data:    *updated,
+	})
+}
+
+// UploadMedia menangani POST /api/v1/home-hero/upload (multipart form-data).
+func (h *HomeHeroController) UploadMedia(c *gin.Context) {
+	// Batasi ukuran upload maksimal 100MB untuk video hero
+	const maxUploadSize = 100 << 20
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		fileHeader, err = c.FormFile("media")
+		if err != nil {
+			httpx.Fail(c, apperr.Validation("File tidak ditemukan", "Wajib menyertakan file pada field 'file' atau 'media'"))
+			return
+		}
+	}
+
+	src, err := fileHeader.Open()
+	if err != nil {
+		httpx.Fail(c, fmt.Errorf("membuka file upload: %w", err))
+		return
+	}
+	defer src.Close()
+
+	contentType := fileHeader.Header.Get("Content-Type")
+	publicURL, err := h.svc.UploadMedia(c.Request.Context(), fileHeader.Filename, src, fileHeader.Size, contentType)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "File berhasil diunggah",
+		"url":     publicURL,
 	})
 }

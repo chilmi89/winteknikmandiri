@@ -135,3 +135,30 @@ export async function updateHomeHero(data: HomeHeroData): Promise<HomeHeroRespon
 
   return (await res.json()) as HomeHeroResponse;
 }
+
+/**
+ * Mengunggah file media (video/foto) banner hero ke backend (MinIO / storage).
+ */
+export async function uploadHeroMedia(file: File): Promise<{ url: string }> {
+  const url = `${resolveApiBase()}/api/v1/home-hero/upload`;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      details?: string;
+    };
+    throw new Error(
+      err.details || err.error || `Upload gagal (HTTP ${res.status})`
+    );
+  }
+
+  const json = (await res.json()) as { message?: string; url: string };
+  return { url: json.url };
+}
