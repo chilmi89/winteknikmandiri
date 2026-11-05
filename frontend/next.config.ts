@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 
+const minioInternalUrl =
+  process.env.MINIO_INTERNAL_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "http://minio:9000"
+    : "http://127.0.0.1:9000");
+
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
@@ -35,7 +41,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/media/:path*",
-        destination: "http://127.0.0.1:9000/:path*",
+        destination: `${minioInternalUrl}/:path*`,
       },
     ];
   },

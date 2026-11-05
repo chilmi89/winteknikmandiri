@@ -57,8 +57,29 @@ export default function HeroSection() {
       return;
     }
 
-    video.play().catch(() => {});
-  }, [reducedMotion]);
+    const tryPlay = () => {
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    };
+
+    // Upayakan play saat mount/kembali ke halaman
+    tryPlay();
+
+    // Pulihkan playback jika tab/halaman kembali aktif
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tryPlay();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [reducedMotion, hero?.media_url]);
 
   // Ekstrak kata untuk render warna kustom per kata
   const badgeWords = useMemo(
@@ -114,8 +135,18 @@ export default function HeroSection() {
               preload="auto"
               poster={thumbnailUrl || undefined}
               onLoadedData={(e) => {
-                e.currentTarget.muted = true;
-                e.currentTarget.play().catch(() => {});
+                const v = e.currentTarget;
+                v.muted = true;
+                const p = v.play();
+                if (p !== undefined) p.catch(() => {});
+              }}
+              onCanPlay={(e) => {
+                const v = e.currentTarget;
+                if (v.paused && !reducedMotion) {
+                  v.muted = true;
+                  const p = v.play();
+                  if (p !== undefined) p.catch(() => {});
+                }
               }}
               aria-hidden="true"
               tabIndex={-1}
