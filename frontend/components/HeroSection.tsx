@@ -17,10 +17,14 @@ const DEFAULT_SLOGAN = "FRESH AIR, FRESH MIND, YOUR AC SOLUTIONS";
 const DEFAULT_DESC =
   "Pengadaan, instalasi, dan pemeliharaan AC serta ducting untuk hunian, komersial, dan industri di Kediri Raya";
 
+// Cache hero data in module memory so route changes (Home -> Layanan -> Home)
+// instantly render the video/media without unmounting or waiting for an async fetch.
+let cachedHeroData: HomeHeroData | null = null;
+
 export default function HeroSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [hero, setHero] = useState<HomeHeroData | null>(null);
+  const [hero, setHero] = useState<HomeHeroData | null>(() => cachedHeroData);
 
   useEffect(() => {
     let active = true;
@@ -28,6 +32,7 @@ export default function HeroSection() {
     async function loadHero() {
       const data = await fetchHomeHero();
       if (active && data && data.is_active) {
+        cachedHeroData = data;
         setHero(data);
       }
     }
@@ -65,8 +70,10 @@ export default function HeroSection() {
       }
     };
 
-    // Upayakan play saat mount/kembali ke halaman
-    tryPlay();
+    // Panggil video.load() bila src sudah siap tapi belum memutar
+    if (video.paused) {
+      tryPlay();
+    }
 
     // Pulihkan playback jika tab/halaman kembali aktif
     const onVisibilityChange = () => {
@@ -134,6 +141,12 @@ export default function HeroSection() {
               playsInline
               preload="auto"
               poster={thumbnailUrl || undefined}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                v.muted = true;
+                const p = v.play();
+                if (p !== undefined) p.catch(() => {});
+              }}
               onLoadedData={(e) => {
                 const v = e.currentTarget;
                 v.muted = true;
@@ -150,11 +163,8 @@ export default function HeroSection() {
               }}
               aria-hidden="true"
               tabIndex={-1}
-              key={mediaUrl}
               className="h-full w-full object-cover object-center"
-            >
-              <source src={mediaUrl} type="video/mp4" />
-            </video>
+            />
           ) : (
             <div
               className="h-full w-full bg-cover bg-center object-cover"
