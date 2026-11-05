@@ -10,11 +10,29 @@ export type PilarLayananItem = {
   cta_text: string;
   sort_order: number;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type PilarLayananListResponse = {
   message?: string;
   data: PilarLayananItem[];
+};
+
+export type PilarLayananSingleResponse = {
+  message?: string;
+  data: PilarLayananItem;
+};
+
+export type PilarLayananPayload = {
+  code: string;
+  title: string;
+  description: string;
+  link_url: string;
+  is_featured: boolean;
+  cta_text: string;
+  sort_order: number;
+  is_active: boolean;
 };
 
 export const defaultPilarLayanan: PilarLayananItem[] = [
@@ -117,5 +135,87 @@ export async function fetchPilarLayanan(): Promise<PilarLayananItem[]> {
     return defaultPilarLayanan;
   } catch {
     return defaultPilarLayanan;
+  }
+}
+
+/**
+ * Mengambil seluruh daftar pilar layanan untuk dashboard admin (bisa menyertakan inactive).
+ */
+export async function listPilarLayananAdmin(includeInactive = true): Promise<PilarLayananItem[]> {
+  const url = `${resolveApiBase()}/api/v1/pilar-layanan?include_inactive=${includeInactive ? "true" : "false"}`;
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gagal memuat data pilar layanan (${res.status})`);
+  }
+
+  const json = (await res.json()) as PilarLayananListResponse;
+  return json.data || [];
+}
+
+/**
+ * Menambahkan data kartu pilar layanan baru.
+ */
+export async function createPilarLayanan(payload: PilarLayananPayload): Promise<PilarLayananItem> {
+  const url = `${resolveApiBase()}/api/v1/pilar-layanan`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = (await res.json()) as { error?: string; data?: PilarLayananItem };
+  if (!res.ok || !json.data) {
+    throw new Error(json.error || `Gagal menambahkan pilar layanan (${res.status})`);
+  }
+
+  return json.data;
+}
+
+/**
+ * Memperbarui data pilar layanan yang ada.
+ */
+export async function updatePilarLayanan(id: string, payload: PilarLayananPayload): Promise<PilarLayananItem> {
+  const url = `${resolveApiBase()}/api/v1/pilar-layanan/${id}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = (await res.json()) as { error?: string; data?: PilarLayananItem };
+  if (!res.ok || !json.data) {
+    throw new Error(json.error || `Gagal memperbarui pilar layanan (${res.status})`);
+  }
+
+  return json.data;
+}
+
+/**
+ * Menghapus pilar layanan (soft delete).
+ */
+export async function deletePilarLayanan(id: string): Promise<void> {
+  const url = `${resolveApiBase()}/api/v1/pilar-layanan/${id}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(json.error || `Gagal menghapus pilar layanan (${res.status})`);
   }
 }
