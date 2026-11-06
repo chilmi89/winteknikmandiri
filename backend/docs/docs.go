@@ -366,6 +366,273 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/jam-operasional": {
+            "get": {
+                "description": "Mengembalikan setting kartu jadwal dan seluruh baris hari kerja.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Ambil bundle jadwal \u0026 setting jam operasional",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan baris non-aktif (khusus dashboard)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalBundleEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan baris jadwal kerja baru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Tambah baris jadwal jam operasional",
+                "parameters": [
+                    {
+                        "description": "Payload baris jadwal",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateJamOperasionalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalItemEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jam-operasional/setting": {
+            "put": {
+                "description": "Mengubah badge teks atas, judul, dan catatan kaki berbintang.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Perbarui pengaturan kartu jam operasional",
+                "parameters": [
+                    {
+                        "description": "Payload setting",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateJamOperasionalSettingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalSettingEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jam-operasional/{id}": {
+            "get": {
+                "description": "Mengambil satu baris jadwal berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Ambil satu baris jadwal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Baris Jadwal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalItemEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui baris jadwal kerja berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Perbarui baris jadwal jam operasional",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Baris Jadwal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateJamOperasionalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalItemEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus satu baris jadwal kerja berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jam_operasional"
+                ],
+                "summary": "Hapus baris jadwal (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Baris Jadwal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JamOperasionalMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pilar-layanan": {
             "get": {
                 "description": "Mengambil daftar pilar layanan aktif untuk homepage.",
@@ -680,6 +947,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateJamOperasionalRequest": {
+            "type": "object",
+            "required": [
+                "day_label",
+                "hours"
+            ],
+            "properties": {
+                "day_label": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "Senin – Jumat"
+                },
+                "hours": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "08.00 – 16.00"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_closed": {
+                    "type": "boolean"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.CreatePilarLayananRequest": {
             "type": "object",
             "required": [
@@ -798,6 +1095,116 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalBundleEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.JamOperasionalBundleResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalBundleResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.JamOperasionalItemResponse"
+                    }
+                },
+                "setting": {
+                    "$ref": "#/definitions/dto.JamOperasionalSettingResponse"
+                }
+            }
+        },
+        "dto.JamOperasionalItemEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.JamOperasionalItemResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalItemResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "day_label": {
+                    "type": "string",
+                    "example": "Senin – Jumat"
+                },
+                "hours": {
+                    "type": "string",
+                    "example": "08.00 – 16.00"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_closed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalSettingEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.JamOperasionalSettingResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JamOperasionalSettingResponse": {
+            "type": "object",
+            "properties": {
+                "badge_text": {
+                    "type": "string",
+                    "example": "Buka Hari Kerja"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "* Untuk mitra kontrak..."
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Jam Operasional"
                 },
                 "updated_at": {
                     "type": "string"
@@ -948,6 +1355,46 @@ const docTemplate = `{
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateJamOperasionalRequest": {
+            "type": "object",
+            "properties": {
+                "day_label": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "hours": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_closed": {
+                    "type": "boolean"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateJamOperasionalSettingRequest": {
+            "type": "object",
+            "properties": {
+                "badge_text": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "note": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 100
                 }
             }
         },

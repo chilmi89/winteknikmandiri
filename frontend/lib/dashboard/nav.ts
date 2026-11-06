@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Clock,
   Columns3,
   FolderKanban,
   Globe,
@@ -69,6 +70,11 @@ export const dashboardNav: DashboardNavGroup[] = [
             label: "Pilar Layanan",
             href: "/dashboard/publik/pilar-layanan",
             icon: Columns3,
+          },
+          {
+            label: "Jam Operasional",
+            href: "/dashboard/publik/jam-operasional",
+            icon: Clock,
           },
           {
             label: "Layanan",

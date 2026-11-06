@@ -27,6 +27,7 @@ import (
 	inquiryservice "winteknikmandiri-backend/inquiries/service"
 	"winteknikmandiri-backend/internal/database"
 	"winteknikmandiri-backend/internal/httpx"
+	jamrouter "winteknikmandiri-backend/jam_operasional/router"
 	pilarrouter "winteknikmandiri-backend/pilar_layanan/router"
 	servicecontroller "winteknikmandiri-backend/services/controller"
 	servicerepository "winteknikmandiri-backend/services/repository"
@@ -63,6 +64,7 @@ func SetupRouter() *gin.Engine {
 	registerServiceRoutes(v1)
 	registerHomeHeroRoutes(v1)
 	registerPilarLayananRoutes(v1)
+	registerJamOperasionalRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -106,6 +108,11 @@ func registerHomeHeroRoutes(rg *gin.RouterGroup) {
 // registerPilarLayananRoutes merakit layer fitur Pilar Layanan homepage.
 func registerPilarLayananRoutes(rg *gin.RouterGroup) {
 	pilarrouter.RegisterPilarLayananRoutes(rg, database.DB)
+}
+
+// registerJamOperasionalRoutes merakit layer fitur Jam Operasional.
+func registerJamOperasionalRoutes(rg *gin.RouterGroup) {
+	jamrouter.RegisterJamOperasionalRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

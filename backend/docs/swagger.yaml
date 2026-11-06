@@ -51,6 +51,28 @@ definitions:
         example: Permohonan konsultasi berhasil disimpan
         type: string
     type: object
+  dto.CreateJamOperasionalRequest:
+    properties:
+      day_label:
+        example: Senin – Jumat
+        maxLength: 100
+        minLength: 2
+        type: string
+      hours:
+        example: 08.00 – 16.00
+        maxLength: 100
+        minLength: 2
+        type: string
+      is_active:
+        type: boolean
+      is_closed:
+        type: boolean
+      sort_order:
+        type: integer
+    required:
+    - day_label
+    - hours
+    type: object
   dto.CreatePilarLayananRequest:
     properties:
       code:
@@ -132,6 +154,80 @@ definitions:
       service:
         type: string
       status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.JamOperasionalBundleEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.JamOperasionalBundleResponse'
+      message:
+        type: string
+    type: object
+  dto.JamOperasionalBundleResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.JamOperasionalItemResponse'
+        type: array
+      setting:
+        $ref: '#/definitions/dto.JamOperasionalSettingResponse'
+    type: object
+  dto.JamOperasionalItemEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.JamOperasionalItemResponse'
+      message:
+        type: string
+    type: object
+  dto.JamOperasionalItemResponse:
+    properties:
+      created_at:
+        type: string
+      day_label:
+        example: Senin – Jumat
+        type: string
+      hours:
+        example: 08.00 – 16.00
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      is_closed:
+        example: false
+        type: boolean
+      sort_order:
+        example: 1
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.JamOperasionalMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.JamOperasionalSettingEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.JamOperasionalSettingResponse'
+      message:
+        type: string
+    type: object
+  dto.JamOperasionalSettingResponse:
+    properties:
+      badge_text:
+        example: Buka Hari Kerja
+        type: string
+      note:
+        example: '* Untuk mitra kontrak...'
+        type: string
+      title:
+        example: Jam Operasional
         type: string
       updated_at:
         type: string
@@ -235,6 +331,34 @@ definitions:
     required:
     - answer
     - question
+    type: object
+  dto.UpdateJamOperasionalRequest:
+    properties:
+      day_label:
+        maxLength: 100
+        minLength: 2
+        type: string
+      hours:
+        maxLength: 100
+        minLength: 2
+        type: string
+      is_active:
+        type: boolean
+      is_closed:
+        type: boolean
+      sort_order:
+        type: integer
+    type: object
+  dto.UpdateJamOperasionalSettingRequest:
+    properties:
+      badge_text:
+        maxLength: 100
+        type: string
+      note:
+        type: string
+      title:
+        maxLength: 100
+        type: string
     type: object
   dto.UpdatePilarLayananRequest:
     properties:
@@ -524,6 +648,182 @@ paths:
       summary: Kirim permohonan konsultasi
       tags:
       - inquiries
+  /api/v1/jam-operasional:
+    get:
+      description: Mengembalikan setting kartu jadwal dan seluruh baris hari kerja.
+      parameters:
+      - description: Sertakan baris non-aktif (khusus dashboard)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalBundleEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Ambil bundle jadwal & setting jam operasional
+      tags:
+      - jam_operasional
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan baris jadwal kerja baru.
+      parameters:
+      - description: Payload baris jadwal
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateJamOperasionalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalItemEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah baris jadwal jam operasional
+      tags:
+      - jam_operasional
+  /api/v1/jam-operasional/{id}:
+    delete:
+      description: Menghapus satu baris jadwal kerja berdasarkan ID UUID.
+      parameters:
+      - description: ID Baris Jadwal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus baris jadwal (soft delete)
+      tags:
+      - jam_operasional
+    get:
+      description: Mengambil satu baris jadwal berdasarkan ID UUID.
+      parameters:
+      - description: ID Baris Jadwal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalItemEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Ambil satu baris jadwal
+      tags:
+      - jam_operasional
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui baris jadwal kerja berdasarkan ID UUID.
+      parameters:
+      - description: ID Baris Jadwal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateJamOperasionalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalItemEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui baris jadwal jam operasional
+      tags:
+      - jam_operasional
+  /api/v1/jam-operasional/setting:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah badge teks atas, judul, dan catatan kaki berbintang.
+      parameters:
+      - description: Payload setting
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateJamOperasionalSettingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JamOperasionalSettingEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui pengaturan kartu jam operasional
+      tags:
+      - jam_operasional
   /api/v1/pilar-layanan:
     get:
       description: Mengambil daftar pilar layanan aktif untuk homepage.
