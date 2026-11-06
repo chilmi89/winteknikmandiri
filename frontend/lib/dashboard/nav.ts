@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Clock,
   Columns3,
+  Compass,
   FolderKanban,
   Globe,
   Images,
@@ -90,6 +91,11 @@ export const dashboardNav: DashboardNavGroup[] = [
             label: "Sosmed",
             href: "/dashboard/publik/sosmed",
             icon: Share2,
+          },
+          {
+            label: "Visi & Misi",
+            href: "/dashboard/publik/visi-misi",
+            icon: Compass,
           },
           {
             label: "Galeri",

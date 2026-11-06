@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
+import VisiMisiSection from "@/components/VisiMisiSection";
 import { waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -61,37 +62,6 @@ const milestones = [
     title: "Kontraktor HVAC & Tata Udara Penuh",
     description:
       "Menyediakan solusi menyeluruh dari pengadaan unit, instalasi VRF/VRV, fabrikasi ducting BJLS, hingga kontrak pemeliharaan korporasi.",
-  },
-];
-
-const missions = [
-  {
-    number: "01",
-    title: "Layanan Prima",
-    tagline: "Presisi & Tepat Waktu",
-    description:
-      "Menghadirkan pengerjaan instalasi, perawatan berkala, dan reparasi unit AC yang rapi, tepat jadwal, serta berstandar teknis pabrikan.",
-  },
-  {
-    number: "02",
-    title: "Solusi Efisien",
-    tagline: "Kalkulasi Beban Ruang",
-    description:
-      "Merancang sistem tata udara yang hemat konsumsi daya dan presisi sesuai perhitungan beban termal ruang hunian, komersial, maupun industri.",
-  },
-  {
-    number: "03",
-    title: "Teknisi Profesional",
-    tagline: "SOP & Integritas Tinggi",
-    description:
-      "Menerjunkan teknisi bersertifikasi yang berintegritas tinggi, teliti dalam pengelasan pipa, dan mengutamakan keselamatan kerja.",
-  },
-  {
-    number: "04",
-    title: "Kemitraan Berkelanjutan",
-    tagline: "Garansi Tertulis 30 Hari",
-    description:
-      "Membangun hubungan jangka panjang melalui transparansi rincian biaya, respon tanggap darurat, dan jaminan garansi resmi tertulis.",
   },
 ];
 
@@ -453,72 +423,8 @@ export default function TentangKamiPage() {
               titleId="visi-misi-title"
             />
 
-            {/* Visi Card Elegan & Besar */}
-            <ScrollReveal direction="up" delay={50}>
-              <div className="group relative mt-10 border-l-4 border-[#A82020] border-y border-r border-[#0A2540]/10 bg-white p-7 shadow-[0_12px_32px_rgba(10,37,64,0.04)] transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-20px_rgba(10,37,64,0.25)] sm:p-9">
-                <span
-                  aria-hidden="true"
-                  className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                />
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#A82020]">
-                  Visi Perusahaan
-                </p>
-                <blockquote className="mt-3">
-                  <p className="text-balance text-xl font-medium leading-relaxed tracking-[-0.015em] text-[#0A2540] sm:text-2xl">
-                    “Menghadirkan layanan tata udara yang terpercaya, efisien,
-                    dan inovatif untuk memenuhi kebutuhan sektor hunian,
-                    komersial, hingga industri.”
-                  </p>
-                </blockquote>
-              </div>
-            </ScrollReveal>
-
-            {/* 4 Misi Card — Format Grid 2x2 Luas, Besar & Ber-Hover Merah */}
-            <div className="mt-8 grid gap-6 sm:grid-cols-2">
-              {missions.map((mission, index) => (
-                <ScrollReveal
-                  key={mission.number}
-                  delay={index * 100}
-                  direction="up"
-                  className="h-full"
-                >
-                  <div className="group relative flex h-full flex-col justify-between overflow-hidden border border-[#0A2540]/10 bg-white p-7 sm:p-8 transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1.5 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)]">
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                    />
-
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-lg font-bold text-[#A82020]">
-                          {mission.number}
-                        </span>
-                        <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#0A2540]/45 group-hover:text-[#A82020] transition-colors">
-                          {mission.tagline}
-                        </span>
-                      </div>
-
-                      <h3 className="mt-4 text-xl font-semibold tracking-tight text-[#0A2540] transition-colors duration-300 group-hover:text-[#A82020]">
-                        {mission.title}
-                      </h3>
-
-                      <p className="mt-2.5 text-[14.5px] leading-7 text-[#0A2540]/65 sm:text-[15px]">
-                        {mission.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 flex items-center gap-2 border-t border-[#0A2540]/10 pt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#0A2540]/50 transition-colors group-hover:text-[#A82020]">
-                      <span className="size-1.5 bg-[#A82020]" />
-                      Standar Prosedur CV WTM
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+            {/* Visi & Misi Dinamis dari API */}
+            <VisiMisiSection />
           </div>
         </section>
 
