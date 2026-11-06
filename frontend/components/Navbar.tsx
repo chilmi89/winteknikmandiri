@@ -4,8 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogIn, Menu, MessageCircle, X } from "lucide-react";
-import { site, waLink } from "@/lib/site";
+import { LogIn } from "lucide-react";
+import { site } from "@/lib/site";
+import {
+  InstagramIcon,
+  TikTokIcon,
+  FacebookIcon,
+  socialBrandConfig,
+} from "@/components/SocialIcons";
 
 interface NavbarProps {
   /**
@@ -19,6 +25,15 @@ interface NavbarProps {
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
+
+const socialIconsMap: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  Instagram: InstagramIcon,
+  TikTok: TikTokIcon,
+  Facebook: FacebookIcon,
+};
 
 export default function Navbar({
   variant = "solid",
@@ -116,89 +131,118 @@ export default function Navbar({
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Mobile Login Button */}
-          <Link
-            href="/login"
-            aria-label="Login ke akun"
-            className={`inline-flex size-10 items-center justify-center border transition-colors sm:hidden ${
-              lightText
-                ? "border-white/30 text-white hover:bg-white/10"
-                : "border-[#0A2540]/15 text-[#0A2540] hover:bg-[#F4FAFE]"
-            } ${focusRing}`}
-          >
-            <LogIn className="size-4" aria-hidden="true" />
-          </Link>
-
-          {/* Mobile WA Button */}
-          <Link
-            href={waLink(
-              "Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai kebutuhan AC."
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Konsultasi via WhatsApp"
-            className={`inline-flex size-10 items-center justify-center border bg-[#A82020] text-white transition-colors hover:bg-[#8e1919] sm:hidden ${focusRing}`}
-          >
-            <MessageCircle className="size-4" aria-hidden="true" />
-          </Link>
-
           {/* Desktop Login Button */}
           <Link
             href="/login"
-            className={`hidden h-10 items-center gap-2 border px-4 text-[13px] font-medium transition-colors sm:inline-flex ${
+            className={`hidden h-10 items-center gap-2 rounded-lg border px-3.5 text-[13px] font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:inline-flex ${
               lightText
                 ? "border-white/30 text-white hover:border-white hover:bg-white/10"
                 : "border-[#0A2540]/20 text-[#0A2540] hover:border-[#0A2540] hover:bg-[#0A2540]/5"
             } ${focusRing}`}
           >
             <LogIn className="size-4" aria-hidden="true" />
-            Login
+            <span>Login</span>
           </Link>
 
-          {/* Desktop Konsultasi Button */}
+          {/* 3 Tombol Ikon Media Sosial Bersebelahan (Desktop & Tablet) */}
+          <div className="hidden items-center gap-1.5 sm:flex">
+            {site.socials.map((social) => {
+              const IconComponent = socialIconsMap[social.label];
+              if (!IconComponent) return null;
+
+              const hoverColorClass =
+                social.label === "Instagram"
+                  ? lightText
+                    ? "hover:border-[#E1306C] hover:bg-[#E1306C]/20 hover:text-[#E1306C] hover:shadow-[0_0_14px_rgba(225,48,108,0.4)]"
+                    : "hover:border-[#E1306C] hover:bg-[#E1306C]/10 hover:text-[#E1306C] hover:shadow-[0_0_12px_rgba(225,48,108,0.25)]"
+                  : social.label === "TikTok"
+                  ? lightText
+                    ? "hover:border-white hover:bg-white/20 hover:text-white hover:shadow-[0_0_14px_rgba(255,255,255,0.35)]"
+                    : "hover:border-[#010101] hover:bg-slate-100 hover:text-[#010101] hover:shadow-[0_0_12px_rgba(0,0,0,0.15)]"
+                  : lightText
+                  ? "hover:border-[#1877F2] hover:bg-[#1877F2]/20 hover:text-[#1877F2] hover:shadow-[0_0_14px_rgba(24,119,242,0.4)]"
+                  : "hover:border-[#1877F2] hover:bg-[#1877F2]/10 hover:text-[#1877F2] hover:shadow-[0_0_12px_rgba(24,119,242,0.25)]";
+
+              return (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Kunjungi akun ${social.label} CV Win Teknik Mandiri`}
+                  className={`inline-flex size-10 items-center justify-center rounded-lg border transition-all duration-300 hover:-translate-y-0.5 active:scale-95 ${
+                    lightText
+                      ? "border-white/25 bg-white/5 text-white/90"
+                      : "border-[#0A2540]/15 bg-white text-[#0A2540] shadow-xs"
+                  } ${hoverColorClass} ${focusRing}`}
+                >
+                  <IconComponent className="size-4.5" />
+                </a>
+              );
+            })}
+          </div>
+
+          {/* Mobile Login Button (Hanya tampil di layar kecil < sm) */}
           <Link
-            href={waLink(
-              "Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai kebutuhan AC."
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`hidden h-10 items-center gap-2 bg-[#A82020] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#8e1919] sm:inline-flex ${focusRing}`}
+            href="/login"
+            aria-label="Login ke akun"
+            className={`inline-flex size-10 items-center justify-center rounded-lg border transition-all duration-200 active:scale-95 sm:hidden ${
+              lightText
+                ? "border-white/30 text-white hover:bg-white/10"
+                : "border-[#0A2540]/15 text-[#0A2540] hover:bg-[#F4FAFE]"
+            } ${focusRing}`}
           >
-            <MessageCircle className="size-4" aria-hidden="true" />
-            Konsultasi
+            <LogIn className="size-4" aria-hidden="true" />
           </Link>
 
+          {/* Tombol Hamburger Animatif (Mobile) */}
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="mobile-navigation"
             aria-label={open ? "Tutup menu" : "Buka menu"}
-            className={`inline-flex size-10 items-center justify-center border transition-colors lg:hidden ${
+            className={`relative flex size-10 flex-col items-center justify-center gap-1.5 rounded-lg border transition-all duration-200 active:scale-95 lg:hidden ${
               lightText
                 ? "border-white/30 text-white hover:bg-white/10"
                 : "border-[#0A2540]/15 text-[#0A2540] hover:bg-[#F4FAFE]"
             } ${focusRing}`}
           >
-            {open ? (
-              <X className="size-5" aria-hidden="true" />
-            ) : (
-              <Menu className="size-5" aria-hidden="true" />
-            )}
+            <span
+              className={`h-[2px] w-5 rounded-full transition-all duration-300 ease-in-out ${
+                lightText ? "bg-white" : "bg-[#0A2540]"
+              } ${open ? "translate-y-[8px] rotate-45" : ""}`}
+            />
+            <span
+              className={`h-[2px] w-5 rounded-full transition-all duration-200 ease-in-out ${
+                lightText ? "bg-white" : "bg-[#0A2540]"
+              } ${open ? "opacity-0 scale-x-0" : "opacity-100"}`}
+            />
+            <span
+              className={`h-[2px] w-5 rounded-full transition-all duration-300 ease-in-out ${
+                lightText ? "bg-white" : "bg-[#0A2540]"
+              } ${open ? "-translate-y-[8px] -rotate-45" : ""}`}
+            />
           </button>
         </div>
       </div>
 
-      {open ? (
-        <div
-          id="mobile-navigation"
-          className="border-t border-[#0A2540]/10 bg-white lg:hidden"
-        >
+      {/* Mobile Drawer yang Rapi, Minimalis & Animatif */}
+      <div
+        id="mobile-navigation"
+        className={`grid transition-all duration-300 ease-in-out lg:hidden ${
+          open
+            ? "grid-rows-[1fr] opacity-100 border-t border-[#0A2540]/10"
+            : "grid-rows-[0fr] opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="overflow-hidden bg-white/98 shadow-xl backdrop-blur-md">
           <nav
             aria-label="Navigasi seluler"
-            className="mx-auto max-w-7xl px-4 py-3 sm:px-6"
+            className="mx-auto max-w-7xl px-4 py-4 sm:px-6 space-y-4"
           >
-            <ul className="divide-y divide-[#0A2540]/10">
+            {/* List Menu Link */}
+            <ul className="divide-y divide-[#0A2540]/5">
               {site.navLinks.map((link) => {
                 const isActive =
                   link.href === "/"
@@ -211,42 +255,70 @@ export default function Navbar({
                       href={link.href}
                       onClick={() => setOpen(false)}
                       aria-current={isActive ? "page" : undefined}
-                      className={`block py-3.5 text-sm font-medium transition-colors hover:text-[#A82020] ${
-                        isActive ? "text-[#A82020]" : "text-[#0A2540]"
+                      className={`flex items-center justify-between py-3 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "text-[#A82020] font-semibold"
+                          : "text-[#0A2540]/80 hover:text-[#0A2540]"
                       } ${focusRing}`}
                     >
-                      {link.label}
+                      <span>{link.label}</span>
+                      {isActive ? (
+                        <span className="size-1.5 rounded-full bg-[#A82020]" />
+                      ) : null}
                     </Link>
                   </li>
                 );
               })}
             </ul>
 
-            <div className="mt-4 flex flex-col gap-2.5">
+            {/* Bagian 3 Ikon Media Sosial di Mobile Drawer */}
+            <div className="pt-2 border-t border-[#0A2540]/10">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#0A2540]/50 mb-2.5">
+                Media Sosial Resmi
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {site.socials.map((social) => {
+                  const IconComponent = socialIconsMap[social.label];
+                  const brand =
+                    socialBrandConfig[
+                      social.label as keyof typeof socialBrandConfig
+                    ];
+                  return (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border border-[#0A2540]/10 bg-[#0A2540]/[0.02] p-2.5 text-xs text-[#0A2540]/80 transition-all duration-200 active:scale-95 hover:border-current hover:bg-white ${
+                        brand ? brand.footerHover : "hover:text-[#A82020]"
+                      } ${focusRing}`}
+                    >
+                      {IconComponent ? (
+                        <IconComponent className="size-4" />
+                      ) : null}
+                      <span className="text-[11px] font-medium">
+                        {social.label}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tombol Login di Mobile Drawer */}
+            <div className="pt-1">
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                className={`flex h-11 items-center justify-center gap-2 border border-[#0A2540]/20 px-4 text-sm font-medium text-[#0A2540] transition-colors hover:bg-[#0A2540]/5 ${focusRing}`}
+                className={`flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#0A2540]/20 bg-[#0A2540]/[0.02] text-xs font-semibold text-[#0A2540] transition-colors hover:bg-[#0A2540]/5 ${focusRing}`}
               >
-                <LogIn className="size-4" aria-hidden="true" />
-                Login ke Akun
-              </Link>
-              <Link
-                href={waLink(
-                  "Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai kebutuhan AC."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className={`flex h-11 items-center justify-center gap-2 bg-[#A82020] px-4 text-sm font-medium text-white transition-colors hover:bg-[#8e1919] ${focusRing}`}
-              >
-                <MessageCircle className="size-4" aria-hidden="true" />
-                Konsultasi via WhatsApp
+                <LogIn className="size-3.5" aria-hidden="true" />
+                <span>Login ke Akun</span>
               </Link>
             </div>
           </nav>
         </div>
-      ) : null}
+      </div>
     </header>
   );
 }

@@ -848,7 +848,115 @@ export function HomeHeroManager() {
             </div>
           </div>
 
-          
+          {/* Section 3: Tombol Aksi (Call to Action) */}
+          <div className="rounded-xl border border-slate-300 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <span className="flex size-7 items-center justify-center rounded-md bg-[#0A2540]/5 text-[#0A2540]">
+                <ArrowRight className="size-3.5" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  3. Pengaturan Tombol Aksi (CTA)
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Kelola teks dan tautan tombol di bawah judul utama hero
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Tombol Utama (Primary) */}
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span className="size-2 rounded-full bg-[#A82020]" />
+                  Tombol Utama (WhatsApp)
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="cta_primary_text"
+                    className="text-[12px] font-semibold text-slate-700 block mb-1"
+                  >
+                    Teks Tombol
+                  </label>
+                  <Input
+                    id="cta_primary_text"
+                    value={data.cta_primary_text}
+                    onChange={(e) =>
+                      handleChange("cta_primary_text", e.target.value)
+                    }
+                    placeholder="Konsultasi via WhatsApp"
+                    className="h-9 text-xs rounded-lg border border-slate-300 bg-white px-3 shadow-xs"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="cta_primary_url"
+                    className="text-[12px] font-semibold text-slate-700 block mb-1"
+                  >
+                    Tautan / Link URL
+                  </label>
+                  <Input
+                    id="cta_primary_url"
+                    value={data.cta_primary_url}
+                    onChange={(e) =>
+                      handleChange("cta_primary_url", e.target.value)
+                    }
+                    placeholder="https://wa.me/6281216622840"
+                    className="h-9 font-mono text-[11px] rounded-lg border border-slate-300 bg-white px-3 shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Tombol Sekunder (Secondary) */}
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span className="size-2 rounded-full bg-slate-400" />
+                  Tombol Sekunder (Layanan)
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="cta_secondary_text"
+                    className="text-[12px] font-semibold text-slate-700 block mb-1"
+                  >
+                    Teks Tombol
+                  </label>
+                  <Input
+                    id="cta_secondary_text"
+                    value={data.cta_secondary_text}
+                    onChange={(e) =>
+                      handleChange("cta_secondary_text", e.target.value)
+                    }
+                    placeholder="Lihat layanan"
+                    className="h-9 text-xs rounded-lg border border-slate-300 bg-white px-3 shadow-xs"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="cta_secondary_url"
+                    className="text-[12px] font-semibold text-slate-700 block mb-1"
+                  >
+                    Tautan / Link URL
+                  </label>
+                  <Input
+                    id="cta_secondary_url"
+                    value={data.cta_secondary_url}
+                    onChange={(e) =>
+                      handleChange("cta_secondary_url", e.target.value)
+                    }
+                    placeholder="#layanan atau /layanan"
+                    className="h-9 font-mono text-[11px] rounded-lg border border-slate-300 bg-white px-3 shadow-xs"
+                  />
+                  <span className="mt-1 block text-[10px] text-slate-400">
+                    Gunakan <code>#layanan</code> untuk scroll beranda, atau <code>/layanan</code> untuk halaman penuh.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Section 4: Status Banner */}
           <div className="flex items-center gap-3 rounded-xl border border-slate-300 bg-slate-50/70 p-4 shadow-xs">

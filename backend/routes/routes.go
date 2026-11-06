@@ -33,6 +33,7 @@ import (
 	servicerepository "winteknikmandiri-backend/services/repository"
 	servicerouter "winteknikmandiri-backend/services/router"
 	serviceservice "winteknikmandiri-backend/services/service"
+	sosmedrouter "winteknikmandiri-backend/sosial_media/router"
 )
 
 // SetupRouter merakit middleware, dependency per fitur, dan seluruh route.
@@ -65,6 +66,7 @@ func SetupRouter() *gin.Engine {
 	registerHomeHeroRoutes(v1)
 	registerPilarLayananRoutes(v1)
 	registerJamOperasionalRoutes(v1)
+	registerSosialMediaRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -113,6 +115,11 @@ func registerPilarLayananRoutes(rg *gin.RouterGroup) {
 // registerJamOperasionalRoutes merakit layer fitur Jam Operasional.
 func registerJamOperasionalRoutes(rg *gin.RouterGroup) {
 	jamrouter.RegisterJamOperasionalRoutes(rg, database.DB)
+}
+
+// registerSosialMediaRoutes merakit layer fitur Sosial Media.
+func registerSosialMediaRoutes(rg *gin.RouterGroup) {
+	sosmedrouter.RegisterSosialMediaRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

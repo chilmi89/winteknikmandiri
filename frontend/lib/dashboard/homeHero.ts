@@ -77,7 +77,10 @@ export async function fetchHomeHero(): Promise<HomeHeroData | null> {
       cta_primary_text: d.cta_primary_text || "Konsultasi via WhatsApp",
       cta_primary_url: d.cta_primary_url || "https://wa.me/6281216622840",
       cta_secondary_text: d.cta_secondary_text || "Lihat layanan",
-      cta_secondary_url: d.cta_secondary_url || "#layanan",
+      cta_secondary_url:
+        d.cta_secondary_url && d.cta_secondary_url !== "#sosial-media"
+          ? d.cta_secondary_url
+          : "#layanan",
       is_active: d.is_active ?? true,
     };
   } catch {
