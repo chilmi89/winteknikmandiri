@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { Globe, LogIn } from "lucide-react";
 import { site } from "@/lib/site";
 import {
   InstagramIcon,
   TikTokIcon,
   FacebookIcon,
-  socialBrandConfig,
+  YouTubeIcon,
 } from "@/components/SocialIcons";
+import {
+  defaultSosialMedia,
+  fetchSosialMediaList,
+  type SosialMediaItem,
+} from "@/lib/sosialMedia";
 
 interface NavbarProps {
   /**
@@ -26,14 +31,57 @@ interface NavbarProps {
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
 
-const socialIconsMap: Record<
-  string,
-  React.ComponentType<{ className?: string }>
-> = {
-  Instagram: InstagramIcon,
-  TikTok: TikTokIcon,
-  Facebook: FacebookIcon,
-};
+function getSocialMeta(item: SosialMediaItem, lightText: boolean) {
+  const key = (item.icon || item.nama).toLowerCase();
+
+  if (key.includes("instagram")) {
+    return {
+      Icon: InstagramIcon,
+      hoverClass: lightText
+        ? "hover:border-[#E1306C] hover:bg-[#E1306C]/20 hover:text-[#E1306C] hover:shadow-[0_0_14px_rgba(225,48,108,0.4)]"
+        : "hover:border-[#E1306C] hover:bg-[#E1306C]/10 hover:text-[#E1306C] hover:shadow-[0_0_12px_rgba(225,48,108,0.25)]",
+      footerHover: "hover:text-[#E1306C]",
+    };
+  }
+
+  if (key.includes("tiktok")) {
+    return {
+      Icon: TikTokIcon,
+      hoverClass: lightText
+        ? "hover:border-white hover:bg-white/20 hover:text-white hover:shadow-[0_0_14px_rgba(255,255,255,0.35)]"
+        : "hover:border-[#010101] hover:bg-slate-100 hover:text-[#010101] hover:shadow-[0_0_12px_rgba(0,0,0,0.15)]",
+      footerHover: "hover:text-black",
+    };
+  }
+
+  if (key.includes("facebook")) {
+    return {
+      Icon: FacebookIcon,
+      hoverClass: lightText
+        ? "hover:border-[#1877F2] hover:bg-[#1877F2]/20 hover:text-[#1877F2] hover:shadow-[0_0_14px_rgba(24,119,242,0.4)]"
+        : "hover:border-[#1877F2] hover:bg-[#1877F2]/10 hover:text-[#1877F2] hover:shadow-[0_0_12px_rgba(24,119,242,0.25)]",
+      footerHover: "hover:text-[#1877F2]",
+    };
+  }
+
+  if (key.includes("youtube")) {
+    return {
+      Icon: YouTubeIcon,
+      hoverClass: lightText
+        ? "hover:border-[#FF0000] hover:bg-[#FF0000]/20 hover:text-[#FF0000] hover:shadow-[0_0_14px_rgba(255,0,0,0.4)]"
+        : "hover:border-[#FF0000] hover:bg-[#FF0000]/10 hover:text-[#FF0000] hover:shadow-[0_0_12px_rgba(255,0,0,0.25)]",
+      footerHover: "hover:text-[#FF0000]",
+    };
+  }
+
+  return {
+    Icon: Globe,
+    hoverClass: lightText
+      ? "hover:border-[#8ACFF8] hover:bg-[#8ACFF8]/20 hover:text-[#8ACFF8] hover:shadow-[0_0_14px_rgba(138,207,248,0.4)]"
+      : "hover:border-[#2279CF] hover:bg-[#2279CF]/10 hover:text-[#2279CF] hover:shadow-[0_0_12px_rgba(34,121,207,0.25)]",
+    footerHover: "hover:text-[#2279CF]",
+  };
+}
 
 export default function Navbar({
   variant = "solid",
@@ -41,7 +89,22 @@ export default function Navbar({
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [socials, setSocials] = useState<SosialMediaItem[]>(defaultSosialMedia);
   const pathname = usePathname();
+
+  useEffect(() => {
+    let active = true;
+    async function loadSocials() {
+      const data = await fetchSosialMediaList();
+      if (active && Array.isArray(data) && data.length > 0) {
+        setSocials(data);
+      }
+    }
+    void loadSocials();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const transparent = variant === "overlay" && !scrolled;
   const solidHeader = !transparent || open;
@@ -144,37 +207,24 @@ export default function Navbar({
             <span>Login</span>
           </Link>
 
-          {/* 3 Tombol Ikon Media Sosial Bersebelahan (Desktop & Tablet) */}
+          {/* Tombol Ikon Media Sosial Bersebelahan (Desktop & Tablet) */}
           <div className="hidden items-center gap-1.5 sm:flex">
-            {site.socials.map((social) => {
-              const IconComponent = socialIconsMap[social.label];
-              if (!IconComponent) return null;
-
-              const hoverColorClass =
-                social.label === "Instagram"
-                  ? lightText
-                    ? "hover:border-[#E1306C] hover:bg-[#E1306C]/20 hover:text-[#E1306C] hover:shadow-[0_0_14px_rgba(225,48,108,0.4)]"
-                    : "hover:border-[#E1306C] hover:bg-[#E1306C]/10 hover:text-[#E1306C] hover:shadow-[0_0_12px_rgba(225,48,108,0.25)]"
-                  : social.label === "TikTok"
-                  ? lightText
-                    ? "hover:border-white hover:bg-white/20 hover:text-white hover:shadow-[0_0_14px_rgba(255,255,255,0.35)]"
-                    : "hover:border-[#010101] hover:bg-slate-100 hover:text-[#010101] hover:shadow-[0_0_12px_rgba(0,0,0,0.15)]"
-                  : lightText
-                  ? "hover:border-[#1877F2] hover:bg-[#1877F2]/20 hover:text-[#1877F2] hover:shadow-[0_0_14px_rgba(24,119,242,0.4)]"
-                  : "hover:border-[#1877F2] hover:bg-[#1877F2]/10 hover:text-[#1877F2] hover:shadow-[0_0_12px_rgba(24,119,242,0.25)]";
+            {socials.map((social) => {
+              const meta = getSocialMeta(social, lightText);
+              const IconComponent = meta.Icon;
 
               return (
                 <a
-                  key={social.label}
-                  href={social.href}
+                  key={social.id || social.nama}
+                  href={social.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Kunjungi akun ${social.label} CV Win Teknik Mandiri`}
+                  aria-label={`Kunjungi akun ${social.nama} CV Win Teknik Mandiri`}
                   className={`inline-flex size-10 items-center justify-center rounded-lg border transition-all duration-300 hover:-translate-y-0.5 active:scale-95 ${
                     lightText
                       ? "border-white/25 bg-white/5 text-white/90"
                       : "border-[#0A2540]/15 bg-white text-[#0A2540] shadow-xs"
-                  } ${hoverColorClass} ${focusRing}`}
+                  } ${meta.hoverClass} ${focusRing}`}
                 >
                   <IconComponent className="size-4.5" />
                 </a>
@@ -271,33 +321,27 @@ export default function Navbar({
               })}
             </ul>
 
-            {/* Bagian 3 Ikon Media Sosial di Mobile Drawer */}
+            {/* Bagian Ikon Media Sosial di Mobile Drawer */}
             <div className="pt-2 border-t border-[#0A2540]/10">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#0A2540]/50 mb-2.5">
                 Media Sosial Resmi
               </p>
               <div className="grid grid-cols-3 gap-2">
-                {site.socials.map((social) => {
-                  const IconComponent = socialIconsMap[social.label];
-                  const brand =
-                    socialBrandConfig[
-                      social.label as keyof typeof socialBrandConfig
-                    ];
+                {socials.map((social) => {
+                  const meta = getSocialMeta(social, false);
+                  const IconComponent = meta.Icon;
+
                   return (
                     <a
-                      key={social.label}
-                      href={social.href}
+                      key={social.id || social.nama}
+                      href={social.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border border-[#0A2540]/10 bg-[#0A2540]/[0.02] p-2.5 text-xs text-[#0A2540]/80 transition-all duration-200 active:scale-95 hover:border-current hover:bg-white ${
-                        brand ? brand.footerHover : "hover:text-[#A82020]"
-                      } ${focusRing}`}
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border border-[#0A2540]/10 bg-[#0A2540]/[0.02] p-2.5 text-xs text-[#0A2540]/80 transition-all duration-200 active:scale-95 hover:border-current hover:bg-white ${meta.footerHover} ${focusRing}`}
                     >
-                      {IconComponent ? (
-                        <IconComponent className="size-4" />
-                      ) : null}
-                      <span className="text-[11px] font-medium">
-                        {social.label}
+                      <IconComponent className="size-4" />
+                      <span className="text-[11px] font-medium truncate max-w-full">
+                        {social.nama}
                       </span>
                     </a>
                   );

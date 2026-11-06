@@ -1,8 +1,25 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Mail, MapPin, MessageCircle } from "lucide-react";
+import { ArrowUpRight, Globe, Mail, MapPin, MessageCircle } from "lucide-react";
 import { site, waLink } from "@/lib/site";
-import { socialBrandConfig } from "@/components/SocialIcons";
+import {
+  InstagramIcon,
+  TikTokIcon,
+  FacebookIcon,
+  YouTubeIcon,
+} from "@/components/SocialIcons";
+import {
+  defaultSosialMedia,
+  fetchSosialMediaList,
+  type SosialMediaItem,
+} from "@/lib/sosialMedia";
+import {
+  fetchJamOperasional,
+  type JamOperasionalItem,
+} from "@/lib/jamOperasional";
 
 type SiteFooterProps = {
   activeHref?: string;
@@ -11,7 +28,74 @@ type SiteFooterProps = {
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A82020]";
 
+function getFooterSocialMeta(item: SosialMediaItem) {
+  const key = (item.icon || item.nama).toLowerCase();
+
+  if (key.includes("instagram")) {
+    return {
+      Icon: InstagramIcon,
+      hoverClass: "hover:text-[#E1306C] hover:border-[#E1306C]/40",
+    };
+  }
+  if (key.includes("tiktok")) {
+    return {
+      Icon: TikTokIcon,
+      hoverClass: "hover:text-black hover:border-black/40",
+    };
+  }
+  if (key.includes("facebook")) {
+    return {
+      Icon: FacebookIcon,
+      hoverClass: "hover:text-[#1877F2] hover:border-[#1877F2]/40",
+    };
+  }
+  if (key.includes("youtube")) {
+    return {
+      Icon: YouTubeIcon,
+      hoverClass: "hover:text-[#FF0000] hover:border-[#FF0000]/40",
+    };
+  }
+  return {
+    Icon: Globe,
+    hoverClass: "hover:text-[#2279CF] hover:border-[#2279CF]/40",
+  };
+}
+
 export default function SiteFooter({ activeHref }: SiteFooterProps) {
+  const [socials, setSocials] = useState<SosialMediaItem[]>(defaultSosialMedia);
+  const [hours, setHours] = useState<{ label: string; value: string }[]>(() =>
+    site.hours.map((it) => ({ label: it.label, value: it.value }))
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFooterData() {
+      const [sosmedData, jamData] = await Promise.all([
+        fetchSosialMediaList(),
+        fetchJamOperasional(),
+      ]);
+
+      if (active) {
+        if (Array.isArray(sosmedData) && sosmedData.length > 0) {
+          setSocials(sosmedData);
+        }
+        if (jamData && Array.isArray(jamData.items) && jamData.items.length > 0) {
+          setHours(
+            jamData.items.map((it: JamOperasionalItem) => ({
+              label: it.day_label,
+              value: it.is_closed ? "Libur" : it.hours,
+            }))
+          );
+        }
+      }
+    }
+
+    void loadFooterData();
+    return () => {
+      active = false;
+    };
+  }, []);
   return (
     <footer className="border-t border-[#0A2540]/10 bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -81,7 +165,7 @@ export default function SiteFooter({ activeHref }: SiteFooterProps) {
             </p>
 
             <dl className="mt-4 space-y-1.5">
-              {site.hours.map((entry) => (
+              {hours.map((entry) => (
                 <div
                   key={entry.label}
                   className="flex items-baseline justify-between gap-4 text-sm"
@@ -115,27 +199,20 @@ export default function SiteFooter({ activeHref }: SiteFooterProps) {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              {site.socials.map((social) => {
-                const brand =
-                  socialBrandConfig[
-                    social.label as keyof typeof socialBrandConfig
-                  ];
-                const IconComponent = brand?.Icon;
+              {socials.map((social) => {
+                const meta = getFooterSocialMeta(social);
+                const IconComponent = meta.Icon;
 
                 return (
                   <a
-                    key={social.label}
-                    href={social.href}
+                    key={social.id || social.nama}
+                    href={social.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 border border-[#0A2540]/10 bg-[#0A2540]/5 px-2.5 py-1 text-xs text-[#0A2540]/65 transition-all duration-300 hover:border-current hover:bg-white ${
-                      brand ? brand.footerHover : "hover:text-[#A82020]"
-                    } ${focusRing}`}
+                    className={`inline-flex items-center gap-1.5 border border-[#0A2540]/10 bg-[#0A2540]/5 px-2.5 py-1 text-xs text-[#0A2540]/65 transition-all duration-300 hover:border-current hover:bg-white ${meta.hoverClass} ${focusRing}`}
                   >
-                    {IconComponent ? (
-                      <IconComponent className="size-3.5" />
-                    ) : null}
-                    <span>{social.label}</span>
+                    <IconComponent className="size-3.5" />
+                    <span>{social.nama}</span>
                     <ArrowUpRight className="size-2.5 opacity-60" aria-hidden="true" />
                   </a>
                 );

@@ -17,7 +17,7 @@ import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
-import { socialBrandConfig } from "@/components/SocialIcons";
+import SosialMediaCards from "@/components/SosialMediaCards";
 import { site, waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -393,87 +393,9 @@ export default function KontakPage() {
                 </ScrollReveal>
               </div>
 
-              {/* Kolom Kanan: 3 Media Sosial Resmi dengan Ikon & Hover Warna Asli */}
+              {/* Kolom Kanan: Media Sosial Resmi Dinamis dari API */}
               <div className="lg:col-span-6">
-                <div className="space-y-4">
-                  {site.socials.map((social, index) => {
-                    const brand =
-                      socialBrandConfig[
-                        social.label as keyof typeof socialBrandConfig
-                      ];
-                    const IconComponent = brand?.Icon;
-
-                    return (
-                      <ScrollReveal
-                        key={social.label}
-                        delay={index * 100}
-                        direction="up"
-                      >
-                        <a
-                          href={social.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`group relative flex items-center justify-between overflow-hidden border border-[#0A2540]/10 bg-white p-6 transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1 ${
-                            brand ? brand.borderColor : "hover:border-[#A82020]"
-                          } ${
-                            brand
-                              ? brand.shadowHover
-                              : "hover:shadow-[0_16px_36px_-16px_rgba(10,37,64,0.2)]"
-                          } ${focusRing}`}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100 ${
-                              brand ? brand.topLineColor : "bg-[#A82020]"
-                            }`}
-                          />
-                          <span
-                            aria-hidden="true"
-                            className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0"
-                          />
-
-                          <div className="flex items-center gap-4">
-                            <span
-                              className={`flex size-12 shrink-0 items-center justify-center border border-[#0A2540]/10 bg-[#0A2540]/5 text-[#0A2540] transition-all duration-300 ${
-                                brand
-                                  ? brand.iconBoxHover
-                                  : "group-hover:bg-[#A82020] group-hover:text-white"
-                              }`}
-                            >
-                              {IconComponent ? (
-                                <IconComponent className="size-5" />
-                              ) : null}
-                            </span>
-
-                            <div>
-                              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#0A2540]/50">
-                                Media Sosial Resmi
-                              </p>
-                              <h4
-                                className={`mt-0.5 text-lg font-bold text-[#0A2540] transition-colors ${
-                                  brand
-                                    ? brand.textColor
-                                    : "group-hover:text-[#A82020]"
-                                }`}
-                              >
-                                {social.label}
-                              </h4>
-                              <p className="mt-0.5 font-mono text-xs text-[#0A2540]/65">
-                                {brand
-                                  ? `${brand.handle} · ${brand.tagline}`
-                                  : social.label}
-                              </p>
-                            </div>
-                          </div>
-
-                          <span className="flex size-9 shrink-0 items-center justify-center text-[#0A2540]/40 transition-colors group-hover:text-[#0A2540]">
-                            <ArrowUpRight className="size-4" />
-                          </span>
-                        </a>
-                      </ScrollReveal>
-                    );
-                  })}
-                </div>
+                <SosialMediaCards />
               </div>
             </div>
           </div>
