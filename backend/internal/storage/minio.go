@@ -174,23 +174,39 @@ func (c *Client) UploadHeroMedia(
 	return objectKey, publicURL, nil
 }
 
-// UploadTeamPhoto mengunggah foto tim (yang sudah dikonversi ke WebP) ke folder "teams/" pada bucket wtm-media.
+// UploadTeamPhoto mengunggah foto tim ke folder "teams/" pada bucket wtm-media.
 func (c *Client) UploadTeamPhoto(
 	ctx context.Context,
 	originalFilename string,
 	reader io.Reader,
 	size int64,
+	isWebP bool,
 ) (objectKey string, publicURL string, err error) {
 	if c == nil || c.s3 == nil {
 		return "", "", fmt.Errorf("storage client belum terinisialisasi")
 	}
 
 	datePrefix := time.Now().Format("20060102")
-	uniqueName := fmt.Sprintf("%s-%s.webp", datePrefix, uuid.New().String()[:8])
+	ext := ".webp"
+	contentType := "image/webp"
+
+	if !isWebP {
+		ext = strings.ToLower(path.Ext(originalFilename))
+		if ext == "" {
+			ext = ".jpg"
+		}
+		if ext == ".png" {
+			contentType = "image/png"
+		} else {
+			contentType = "image/jpeg"
+		}
+	}
+
+	uniqueName := fmt.Sprintf("%s-%s%s", datePrefix, uuid.New().String()[:8], ext)
 	objectKey = path.Join("teams", uniqueName)
 
 	_, err = c.s3.PutObject(ctx, c.bucket, objectKey, reader, size, minio.PutObjectOptions{
-		ContentType: "image/webp",
+		ContentType: contentType,
 		UserMetadata: map[string]string{
 			"original-name": url.QueryEscape(originalFilename),
 			"category":      "teams",

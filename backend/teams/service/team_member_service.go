@@ -142,23 +142,29 @@ func (s *TeamMemberService) UploadPhoto(ctx context.Context, originalFilename st
 		return nil, apperr.Validation("Format gambar tidak didukung", "Format yang diizinkan: JPG, JPEG, PNG, WEBP, GIF")
 	}
 
-	// Konversi & kompres otomatis ke WebP kualitas 82 (sangat tajam & hemat ruang)
-	webpReader, size, err := imaging.ConvertToWebP(r, 82)
+	// Konversi & kompres otomatis ke WebP kualitas 82 (sangat tajam & hemat ruang).
+	// Jika cwebp belum terpasang, otomatis fallback menyimpan format gambar asli tanpa error.
+	imgReader, size, isWebP, err := imaging.ConvertToWebP(r, 82)
 	if err != nil {
-		return nil, fmt.Errorf("kompresi gambar ke WebP gagal: %w", err)
+		return nil, fmt.Errorf("pemrosesan gambar gagal: %w", err)
 	}
 
 	// Upload ke MinIO folder teams/
-	objKey, pubURL, err := storage.S3Client.UploadTeamPhoto(ctx, originalFilename, webpReader, size)
+	objKey, pubURL, err := storage.S3Client.UploadTeamPhoto(ctx, originalFilename, imgReader, size, isWebP)
 	if err != nil {
 		return nil, fmt.Errorf("unggah ke MinIO gagal: %w", err)
+	}
+
+	format := "image/webp"
+	if !isWebP {
+		format = ext
 	}
 
 	return &dto.UploadTeamPhotoResponse{
 		ImageURL:     pubURL,
 		ImageKey:     objKey,
 		OriginalName: originalFilename,
-		Format:       "image/webp",
+		Format:       format,
 		Size:         size,
 	}, nil
 }

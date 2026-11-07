@@ -21,7 +21,8 @@ FROM alpine:3.21
 
 WORKDIR /app
 
-RUN apk --no-cache add ca-certificates tzdata
+# Install ca-certificates, tzdata, and libwebp-tools (provides cwebp binary for WebP conversion)
+RUN apk --no-cache add ca-certificates tzdata libwebp-tools
 ENV TZ=Asia/Jakarta
 
 COPY --from=builder /app/server /app/server
