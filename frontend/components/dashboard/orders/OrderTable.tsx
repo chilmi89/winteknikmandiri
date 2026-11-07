@@ -26,6 +26,7 @@ type OrderTableProps = {
 };
 
 const STATUS_TONES: Record<string, StatusTone> = {
+  menunggu_chat: "neutral",
   belum_diproses: "neutral",
   negosiasi: "warning",
   deal: "success",
@@ -35,7 +36,8 @@ const STATUS_TONES: Record<string, StatusTone> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  belum_diproses: "Belum Diproses",
+  menunggu_chat: "Menunggu Chat WA",
+  belum_diproses: "Menunggu Chat WA",
   negosiasi: "Negosiasi",
   deal: "Deal",
   dikerjakan: "Dikerjakan",

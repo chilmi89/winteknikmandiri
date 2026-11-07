@@ -47,6 +47,9 @@ export function OrderWorkspace() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Tab View Mode untuk Master List: 'active' (Pesanan Aktif: Nego/Deal/Selesai) vs 'pending' (Menunggu Chat WA)
+  const [masterListMode, setMasterListMode] = useState<"active" | "pending">("active");
+
   // Tab State: activeTab === 'list' atau orderId
   const [activeTab, setActiveTab] = useState<string>("list");
   const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
@@ -161,6 +164,21 @@ export function OrderWorkspace() {
     }
   };
 
+  // Pisahkan pesanan aktif (nego/deal/dikerjakan/selesai) dan pesanan baru klik web (menunggu chat)
+  const pendingOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.status === "menunggu_chat" || o.status === "belum_diproses"
+    );
+  }, [orders]);
+
+  const activeOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.status !== "menunggu_chat" && o.status !== "belum_diproses"
+    );
+  }, [orders]);
+
+  const displayedOrders = masterListMode === "active" ? activeOrders : pendingOrders;
+
   const currentOpenedOrder = activeTab !== "list" ? openedOrderData[activeTab] : null;
 
   return (
@@ -196,18 +214,37 @@ export function OrderWorkspace() {
 
       {/* ================= BARIS TAB MULTI-INVOICE ================= */}
       <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 pb-px no-scrollbar">
-        {/* Tab Daftar Utama */}
+        {/* Tab Pesanan Aktif (Deal & Nego) */}
         <button
           type="button"
-          onClick={() => setActiveTab("list")}
+          onClick={() => {
+            setActiveTab("list");
+            setMasterListMode("active");
+          }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
-            activeTab === "list"
+            activeTab === "list" && masterListMode === "active"
               ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
               : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
           }`}
         >
           <FileText className="size-3.5" />
-          <span>Daftar Pesanan ({orders.length})</span>
+          <span>Pesanan Aktif ({activeOrders.length})</span>
+        </button>
+
+        {/* Tab Tertunda: Menunggu Chat WA (Hasil Baru Klik Web) */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("list");
+            setMasterListMode("pending");
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
+            activeTab === "list" && masterListMode === "pending"
+              ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
+              : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <span>⏳ Menunggu Chat WA ({pendingOrders.length})</span>
         </button>
 
         {/* Tab-Tab Invoice Terbuka */}
@@ -283,7 +320,7 @@ export function OrderWorkspace() {
           </DataTableToolbar>
 
           <OrderTable
-            items={orders}
+            items={displayedOrders}
             loading={loading}
             onOpenTab={handleOpenOrderTab}
             onDelete={handleDeleteOrder}

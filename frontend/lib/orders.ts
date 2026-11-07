@@ -14,6 +14,15 @@ export type OrderItem = {
   updated_at?: string;
 };
 
+export type OrderStatus =
+  | "menunggu_chat"
+  | "belum_diproses"
+  | "negosiasi"
+  | "deal"
+  | "dikerjakan"
+  | "selesai"
+  | "batal";
+
 export type Order = {
   id: string;
   invoice_no: string;
@@ -25,7 +34,7 @@ export type Order = {
   address?: string;
   notes?: string;
   total_amount: string;
-  status: "belum_diproses" | "negosiasi" | "deal" | "dikerjakan" | "selesai" | "batal";
+  status: OrderStatus;
   items: OrderItem[];
   created_at: string;
   updated_at: string;

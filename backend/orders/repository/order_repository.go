@@ -41,7 +41,7 @@ func (r *OrderRepository) GenerateInvoiceNo(ctx context.Context) (string, error)
 	return fmt.Sprintf("INV-%s-%04d", prefix, count+1), nil
 }
 
-// CreateInitiatedOrder membuat order baru status belum_diproses saat tombol Pesan diklik.
+// CreateInitiatedOrder membuat order baru status menunggu_chat saat tombol Pesan diklik.
 func (r *OrderRepository) CreateInitiatedOrder(ctx context.Context, invoiceNo string, req dto.ClickOrderRequest) (*model.Order, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *OrderRepository) CreateInitiatedOrder(ctx context.Context, invoiceNo st
 		INSERT INTO orders (
 			invoice_no, initial_category, initial_service, initial_price,
 			total_amount, status
-		) VALUES ($1, $2, $3, $4, $5, 'belum_diproses')
+		) VALUES ($1, $2, $3, $4, $5, 'menunggu_chat')
 		RETURNING id, invoice_no, initial_category, initial_service, initial_price,
 		          customer_name, customer_phone, address, notes, total_amount, status,
 		          created_at, updated_at
