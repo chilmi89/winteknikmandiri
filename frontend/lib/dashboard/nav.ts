@@ -98,6 +98,11 @@ export const dashboardNav: DashboardNavGroup[] = [
             icon: Compass,
           },
           {
+            label: "Tim Teknisi",
+            href: "/dashboard/publik/tim",
+            icon: Users,
+          },
+          {
             label: "Galeri",
             href: "/dashboard/publik/galeri",
             icon: Images,

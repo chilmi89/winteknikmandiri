@@ -854,6 +854,761 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/sosial-media": {
+            "get": {
+                "description": "Mengambil daftar sosial media aktif untuk publik / admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sosial_media"
+                ],
+                "summary": "Daftar sosial media",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan yang nonaktif (khusus admin)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListSosialMediaEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan data sosial media baru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sosial_media"
+                ],
+                "summary": "Tambah sosial media baru",
+                "parameters": [
+                    {
+                        "description": "Payload sosial media",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSosialMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SosialMediaEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sosial-media/{id}": {
+            "get": {
+                "description": "Mengambil detail sosial media berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sosial_media"
+                ],
+                "summary": "Detail satu sosial media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Sosial Media (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SosialMediaEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui data sosial media berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sosial_media"
+                ],
+                "summary": "Perbarui data sosial media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Sosial Media (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload perbaruan sosial media",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateSosialMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SosialMediaEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus sosial media berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sosial_media"
+                ],
+                "summary": "Hapus sosial media (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Sosial Media (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SosialMediaMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/teams": {
+            "get": {
+                "description": "Mengambil daftar anggota tim aktif untuk halaman Tentang Kami \u0026 dashboard.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Daftar tim teknisi",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan yang nonaktif (khusus dashboard)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListTeamMemberEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan data tim baru (nama, skill, foto WebP).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Tambah anggota tim baru",
+                "parameters": [
+                    {
+                        "description": "Payload anggota tim",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateTeamMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TeamMemberEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/teams/upload-photo": {
+            "post": {
+                "description": "Menerima file gambar (JPG, JPEG, PNG, WEBP), otomatis di-encode ke WebP dengan kompresi berkualitas tinggi, lalu disimpan ke MinIO bucket wtm-media/teams.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Unggah foto tim (Auto-Convert \u0026 Kompresi WebP ke MinIO)",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File foto tim (JPG, PNG, WEBP)",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadTeamPhotoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/teams/{id}": {
+            "get": {
+                "description": "Mengambil satu anggota tim berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Detail satu anggota tim",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Tim (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TeamMemberEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui data tim berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Perbarui data anggota tim",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Tim (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateTeamMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TeamMemberEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus anggota tim berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Hapus anggota tim (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Tim (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TeamMemberMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/visi-misi": {
+            "get": {
+                "description": "Mengambil visi dan daftar kartu misi aktif untuk halaman tentang-kami.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Bundle visi dan misi perusahaan",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan misi nonaktif (admin)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VisiMisiBundleEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/visi-misi/misi": {
+            "post": {
+                "description": "Menambahkan kartu butir misi baru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Tambah butir misi baru",
+                "parameters": [
+                    {
+                        "description": "Payload kartu misi",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateMisiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MisiEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/visi-misi/misi/{id}": {
+            "get": {
+                "description": "Mengambil detail misi berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Detail satu butir misi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Misi (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MisiEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui data butir misi berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Perbarui kartu butir misi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Misi (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update misi",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateMisiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MisiEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus kartu misi berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Hapus butir misi (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Misi (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VisiMisiMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/visi-misi/visi": {
+            "put": {
+                "description": "Memperbarui kutipan visi perusahaan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "visi_misi"
+                ],
+                "summary": "Perbarui teks visi perusahaan",
+                "parameters": [
+                    {
+                        "description": "Payload update visi",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateVisiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VisiEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Menunjukkan status server dan koneksi database PostgreSQL.",
@@ -977,6 +1732,41 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateMisiRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "title"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "01"
+                },
+                "description": {
+                    "type": "string",
+                    "minLength": 5
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "tagline": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "example": "Presisi \u0026 Tepat Waktu"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2,
+                    "example": "Layanan Prima"
+                }
+            }
+        },
         "dto.CreatePilarLayananRequest": {
             "type": "object",
             "required": [
@@ -1014,6 +1804,69 @@ const docTemplate = `{
                     "maxLength": 200,
                     "minLength": 2,
                     "example": "Supply \u0026 pengadaan AC"
+                }
+            }
+        },
+        "dto.CreateSosialMediaRequest": {
+            "type": "object",
+            "required": [
+                "link",
+                "nama"
+            ],
+            "properties": {
+                "icon": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "instagram"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "link": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "https://www.instagram.com/winteknikmandiri"
+                },
+                "nama": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "Instagram"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateTeamMemberRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "skill"
+            ],
+            "properties": {
+                "image_key": {
+                    "type": "string",
+                    "example": "teams/..."
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/teams/..."
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2,
+                    "example": "Team Wahyu"
+                },
+                "skill": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "minLength": 2,
+                    "example": "Spesialis VRF \u0026 Unit Komersial"
                 }
             }
         },
@@ -1265,6 +2118,84 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ListSosialMediaEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SosialMediaResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListTeamMemberEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TeamMemberResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MisiEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.MisiResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MisiResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "01"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Menghadirkan pengerjaan..."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "tagline": {
+                    "type": "string",
+                    "example": "Presisi \u0026 Tepat Waktu"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Layanan Prima"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PilarLayananEnvelope": {
             "type": "object",
             "properties": {
@@ -1325,6 +2256,114 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Supply \u0026 pengadaan AC"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SosialMediaEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.SosialMediaResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SosialMediaMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SosialMediaResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string",
+                    "example": "instagram"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "link": {
+                    "type": "string",
+                    "example": "https://www.instagram.com/winteknikmandiri"
+                },
+                "nama": {
+                    "type": "string",
+                    "example": "Instagram"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TeamMemberEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.TeamMemberResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TeamMemberMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TeamMemberResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "teams/20261107-wahyu.webp"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/teams/20261107-wahyu.webp"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Team Wahyu"
+                },
+                "skill": {
+                    "type": "string",
+                    "example": "Spesialis VRF \u0026 Unit Komersial"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1398,6 +2437,33 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateMisiRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "tagline": {
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2
+                }
+            }
+        },
         "dto.UpdatePilarLayananRequest": {
             "type": "object",
             "properties": {
@@ -1427,6 +2493,155 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateSosialMediaRequest": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "link": {
+                    "type": "string",
+                    "minLength": 2
+                },
+                "nama": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateTeamMemberRequest": {
+            "type": "object",
+            "properties": {
+                "image_key": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2
+                },
+                "skill": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateVisiRequest": {
+            "type": "object",
+            "required": [
+                "visi_text"
+            ],
+            "properties": {
+                "visi_eyebrow": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "visi_text": {
+                    "type": "string",
+                    "minLength": 5
+                }
+            }
+        },
+        "dto.UploadTeamPhotoResponse": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "teams/20261107-abc.webp"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/teams/20261107-abc.webp"
+                },
+                "original_name": {
+                    "type": "string",
+                    "example": "foto-tim.jpg"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 142500
+                }
+            }
+        },
+        "dto.VisiEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.VisiSettingResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VisiMisiBundleEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.VisiMisiBundleResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VisiMisiBundleResponse": {
+            "type": "object",
+            "properties": {
+                "misi": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MisiResponse"
+                    }
+                },
+                "visi": {
+                    "$ref": "#/definitions/dto.VisiSettingResponse"
+                }
+            }
+        },
+        "dto.VisiMisiMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VisiSettingResponse": {
+            "type": "object",
+            "properties": {
+                "updated_at": {
+                    "type": "string"
+                },
+                "visi_eyebrow": {
+                    "type": "string",
+                    "example": "Visi Perusahaan"
+                },
+                "visi_text": {
+                    "type": "string",
+                    "example": "Menghadirkan layanan tata udara..."
                 }
             }
         },

@@ -34,6 +34,7 @@ import (
 	servicerouter "winteknikmandiri-backend/services/router"
 	serviceservice "winteknikmandiri-backend/services/service"
 	sosmedrouter "winteknikmandiri-backend/sosial_media/router"
+	teamrouter "winteknikmandiri-backend/teams/router"
 	visimisirouter "winteknikmandiri-backend/visi_misi/router"
 )
 
@@ -69,6 +70,7 @@ func SetupRouter() *gin.Engine {
 	registerJamOperasionalRoutes(v1)
 	registerSosialMediaRoutes(v1)
 	registerVisiMisiRoutes(v1)
+	registerTeamMemberRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -127,6 +129,11 @@ func registerSosialMediaRoutes(rg *gin.RouterGroup) {
 // registerVisiMisiRoutes merakit layer fitur Visi & Misi Perusahaan.
 func registerVisiMisiRoutes(rg *gin.RouterGroup) {
 	visimisirouter.RegisterVisiMisiRoutes(rg, database.DB)
+}
+
+// registerTeamMemberRoutes merakit layer fitur Tim Teknisi.
+func registerTeamMemberRoutes(rg *gin.RouterGroup) {
+	teamrouter.RegisterTeamMemberRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

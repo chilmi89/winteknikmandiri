@@ -73,6 +73,32 @@ definitions:
     - day_label
     - hours
     type: object
+  dto.CreateMisiRequest:
+    properties:
+      code:
+        example: "01"
+        maxLength: 10
+        type: string
+      description:
+        minLength: 5
+        type: string
+      is_active:
+        type: boolean
+      sort_order:
+        type: integer
+      tagline:
+        example: Presisi & Tepat Waktu
+        maxLength: 150
+        type: string
+      title:
+        example: Layanan Prima
+        maxLength: 150
+        minLength: 2
+        type: string
+    required:
+    - description
+    - title
+    type: object
   dto.CreatePilarLayananRequest:
     properties:
       code:
@@ -101,6 +127,53 @@ definitions:
         type: string
     required:
     - title
+    type: object
+  dto.CreateSosialMediaRequest:
+    properties:
+      icon:
+        example: instagram
+        maxLength: 50
+        type: string
+      is_active:
+        type: boolean
+      link:
+        example: https://www.instagram.com/winteknikmandiri
+        minLength: 2
+        type: string
+      nama:
+        example: Instagram
+        maxLength: 100
+        minLength: 2
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - link
+    - nama
+    type: object
+  dto.CreateTeamMemberRequest:
+    properties:
+      image_key:
+        example: teams/...
+        type: string
+      image_url:
+        example: /media/wtm-media/teams/...
+        type: string
+      is_active:
+        type: boolean
+      name:
+        example: Team Wahyu
+        maxLength: 150
+        minLength: 2
+        type: string
+      skill:
+        example: Spesialis VRF & Unit Komersial
+        maxLength: 250
+        minLength: 2
+        type: string
+    required:
+    - name
+    - skill
     type: object
   dto.FAQEnvelope:
     properties:
@@ -267,6 +340,59 @@ definitions:
       message:
         type: string
     type: object
+  dto.ListSosialMediaEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.SosialMediaResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  dto.ListTeamMemberEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.TeamMemberResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  dto.MisiEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.MisiResponse'
+      message:
+        type: string
+    type: object
+  dto.MisiResponse:
+    properties:
+      code:
+        example: "01"
+        type: string
+      created_at:
+        type: string
+      description:
+        example: Menghadirkan pengerjaan...
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      sort_order:
+        example: 1
+        type: integer
+      tagline:
+        example: Presisi & Tepat Waktu
+        type: string
+      title:
+        example: Layanan Prima
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.PilarLayananEnvelope:
     properties:
       data:
@@ -309,6 +435,80 @@ definitions:
         type: integer
       title:
         example: Supply & pengadaan AC
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.SosialMediaEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.SosialMediaResponse'
+      message:
+        type: string
+    type: object
+  dto.SosialMediaMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.SosialMediaResponse:
+    properties:
+      created_at:
+        type: string
+      icon:
+        example: instagram
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      link:
+        example: https://www.instagram.com/winteknikmandiri
+        type: string
+      nama:
+        example: Instagram
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.TeamMemberEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.TeamMemberResponse'
+      message:
+        type: string
+    type: object
+  dto.TeamMemberMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.TeamMemberResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      image_key:
+        example: teams/20261107-wahyu.webp
+        type: string
+      image_url:
+        example: /media/wtm-media/teams/20261107-wahyu.webp
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Team Wahyu
+        type: string
+      skill:
+        example: Spesialis VRF & Unit Komersial
         type: string
       updated_at:
         type: string
@@ -360,6 +560,25 @@ definitions:
         maxLength: 100
         type: string
     type: object
+  dto.UpdateMisiRequest:
+    properties:
+      code:
+        maxLength: 10
+        type: string
+      description:
+        type: string
+      is_active:
+        type: boolean
+      sort_order:
+        type: integer
+      tagline:
+        maxLength: 150
+        type: string
+      title:
+        maxLength: 150
+        minLength: 2
+        type: string
+    type: object
   dto.UpdatePilarLayananRequest:
     properties:
       code:
@@ -380,6 +599,108 @@ definitions:
       title:
         maxLength: 200
         minLength: 2
+        type: string
+    type: object
+  dto.UpdateSosialMediaRequest:
+    properties:
+      icon:
+        maxLength: 50
+        type: string
+      is_active:
+        type: boolean
+      link:
+        minLength: 2
+        type: string
+      nama:
+        maxLength: 100
+        minLength: 2
+        type: string
+      sort_order:
+        type: integer
+    type: object
+  dto.UpdateTeamMemberRequest:
+    properties:
+      image_key:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      skill:
+        maxLength: 250
+        minLength: 2
+        type: string
+    type: object
+  dto.UpdateVisiRequest:
+    properties:
+      visi_eyebrow:
+        maxLength: 100
+        type: string
+      visi_text:
+        minLength: 5
+        type: string
+    required:
+    - visi_text
+    type: object
+  dto.UploadTeamPhotoResponse:
+    properties:
+      format:
+        example: image/webp
+        type: string
+      image_key:
+        example: teams/20261107-abc.webp
+        type: string
+      image_url:
+        example: /media/wtm-media/teams/20261107-abc.webp
+        type: string
+      original_name:
+        example: foto-tim.jpg
+        type: string
+      size:
+        example: 142500
+        type: integer
+    type: object
+  dto.VisiEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.VisiSettingResponse'
+      message:
+        type: string
+    type: object
+  dto.VisiMisiBundleEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.VisiMisiBundleResponse'
+      message:
+        type: string
+    type: object
+  dto.VisiMisiBundleResponse:
+    properties:
+      misi:
+        items:
+          $ref: '#/definitions/dto.MisiResponse'
+        type: array
+      visi:
+        $ref: '#/definitions/dto.VisiSettingResponse'
+    type: object
+  dto.VisiMisiMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.VisiSettingResponse:
+    properties:
+      updated_at:
+        type: string
+      visi_eyebrow:
+        example: Visi Perusahaan
+        type: string
+      visi_text:
+        example: Menghadirkan layanan tata udara...
         type: string
     type: object
   httpx.ErrorResponse:
@@ -970,6 +1291,507 @@ paths:
       summary: Perbarui data pilar layanan
       tags:
       - pilar_layanan
+  /api/v1/sosial-media:
+    get:
+      description: Mengambil daftar sosial media aktif untuk publik / admin.
+      parameters:
+      - description: Sertakan yang nonaktif (khusus admin)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListSosialMediaEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar sosial media
+      tags:
+      - sosial_media
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan data sosial media baru.
+      parameters:
+      - description: Payload sosial media
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSosialMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SosialMediaEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah sosial media baru
+      tags:
+      - sosial_media
+  /api/v1/sosial-media/{id}:
+    delete:
+      description: Menghapus sosial media berdasarkan ID UUID.
+      parameters:
+      - description: ID Sosial Media (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SosialMediaMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus sosial media (soft delete)
+      tags:
+      - sosial_media
+    get:
+      description: Mengambil detail sosial media berdasarkan ID UUID.
+      parameters:
+      - description: ID Sosial Media (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SosialMediaEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail satu sosial media
+      tags:
+      - sosial_media
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data sosial media berdasarkan ID UUID.
+      parameters:
+      - description: ID Sosial Media (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload perbaruan sosial media
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateSosialMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SosialMediaEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui data sosial media
+      tags:
+      - sosial_media
+  /api/v1/teams:
+    get:
+      description: Mengambil daftar anggota tim aktif untuk halaman Tentang Kami &
+        dashboard.
+      parameters:
+      - description: Sertakan yang nonaktif (khusus dashboard)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListTeamMemberEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar tim teknisi
+      tags:
+      - teams
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan data tim baru (nama, skill, foto WebP).
+      parameters:
+      - description: Payload anggota tim
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTeamMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TeamMemberEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah anggota tim baru
+      tags:
+      - teams
+  /api/v1/teams/{id}:
+    delete:
+      description: Menghapus anggota tim berdasarkan ID UUID.
+      parameters:
+      - description: ID Tim (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TeamMemberMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus anggota tim (soft delete)
+      tags:
+      - teams
+    get:
+      description: Mengambil satu anggota tim berdasarkan ID UUID.
+      parameters:
+      - description: ID Tim (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TeamMemberEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail satu anggota tim
+      tags:
+      - teams
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data tim berdasarkan ID UUID.
+      parameters:
+      - description: ID Tim (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTeamMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TeamMemberEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui data anggota tim
+      tags:
+      - teams
+  /api/v1/teams/upload-photo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Menerima file gambar (JPG, JPEG, PNG, WEBP), otomatis di-encode
+        ke WebP dengan kompresi berkualitas tinggi, lalu disimpan ke MinIO bucket
+        wtm-media/teams.
+      parameters:
+      - description: File foto tim (JPG, PNG, WEBP)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UploadTeamPhotoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Unggah foto tim (Auto-Convert & Kompresi WebP ke MinIO)
+      tags:
+      - teams
+  /api/v1/visi-misi:
+    get:
+      description: Mengambil visi dan daftar kartu misi aktif untuk halaman tentang-kami.
+      parameters:
+      - description: Sertakan misi nonaktif (admin)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VisiMisiBundleEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Bundle visi dan misi perusahaan
+      tags:
+      - visi_misi
+  /api/v1/visi-misi/misi:
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan kartu butir misi baru.
+      parameters:
+      - description: Payload kartu misi
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateMisiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.MisiEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah butir misi baru
+      tags:
+      - visi_misi
+  /api/v1/visi-misi/misi/{id}:
+    delete:
+      description: Menghapus kartu misi berdasarkan ID UUID.
+      parameters:
+      - description: ID Misi (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VisiMisiMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus butir misi (soft delete)
+      tags:
+      - visi_misi
+    get:
+      description: Mengambil detail misi berdasarkan ID UUID.
+      parameters:
+      - description: ID Misi (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MisiEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail satu butir misi
+      tags:
+      - visi_misi
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data butir misi berdasarkan ID UUID.
+      parameters:
+      - description: ID Misi (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload update misi
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMisiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MisiEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui kartu butir misi
+      tags:
+      - visi_misi
+  /api/v1/visi-misi/visi:
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui kutipan visi perusahaan.
+      parameters:
+      - description: Payload update visi
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateVisiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VisiEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui teks visi perusahaan
+      tags:
+      - visi_misi
   /health:
     get:
       description: Menunjukkan status server dan koneksi database PostgreSQL.

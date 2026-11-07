@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
+import TeamSection from "@/components/TeamSection";
 import VisiMisiSection from "@/components/VisiMisiSection";
 import { waLink } from "@/lib/site";
 
@@ -556,107 +557,9 @@ export default function TentangKamiPage() {
               titleId="tim-title"
             />
 
-            {/* Grid 4 Kartu Tim Personil — Format 2x2 Luas, Besar & Ber-Hover Merah */}
-            <div className="mt-10 grid gap-7 sm:grid-cols-2">
-              {teamMembers.map((member, index) => (
-                <ScrollReveal
-                  key={member.name}
-                  delay={index * 120}
-                  direction="up"
-                  className="h-full"
-                >
-                  <div className="group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-2 hover:border-[#A82020] hover:shadow-[0_28px_56px_-24px_rgba(10,37,64,0.4),0_0_0_1px_rgba(168,32,32,0.28)]">
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                    />
-
-                    {/* Foto Personil Tim — Rasio Lapang 16:11 */}
-                    <div className="relative aspect-[16/11] overflow-hidden bg-[#0A2540]">
-                      <Image
-                        src={member.image}
-                        alt={member.alt}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 560px"
-                        className="object-cover transition-[transform,filter] duration-700 group-hover:scale-[1.05] group-hover:brightness-105"
-                      />
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 bg-gradient-to-t from-[#0A2540]/80 via-[#0A2540]/15 to-transparent"
-                      />
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 bg-[#A82020]/0 transition-colors duration-500 group-hover:bg-[#A82020]/15"
-                      />
-
-                      {/* Badge Peran di Sudut Foto */}
-                      <span className="absolute left-3.5 top-3.5 bg-[#0A2540]/85 px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#A82020]">
-                        {member.badge}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                        className="absolute bottom-3.5 right-3.5 font-mono text-[11px] font-bold tracking-[0.16em] text-white/50 transition-colors duration-300 group-hover:text-white"
-                      >
-                        {member.number}
-                      </span>
-                    </div>
-
-                    {/* Konten Keterangan Tim */}
-                    <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="size-2 bg-[#A82020]" />
-                          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#A82020]">
-                            Teknisi Ahli WTM
-                          </p>
-                        </div>
-
-                        <h3 className="mt-2 text-2xl font-bold tracking-tight text-[#0A2540] transition-colors duration-300 group-hover:text-[#A82020]">
-                          {member.name}
-                        </h3>
-
-                        <p className="mt-1 text-sm font-medium text-[#0A2540]/70">
-                          {member.role}
-                        </p>
-
-                        <ul className="mt-5 space-y-2.5 border-t border-[#0A2540]/10 pt-4 text-[13px] leading-6 text-[#0A2540]/75">
-                          {member.points.map((pt) => (
-                            <li key={pt} className="flex items-start gap-2">
-                              <CheckCircle2
-                                className="mt-0.5 size-4 shrink-0 text-[#A82020]"
-                                aria-hidden="true"
-                              />
-                              <span>{pt}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="mt-6 flex items-center justify-between border-t border-[#0A2540]/10 pt-4">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0A2540]/45">
-                          SOP Terverifikasi
-                        </span>
-                        <Link
-                          href={waLink(
-                            `Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai teknisi untuk proyek AC saya.`
-                          )}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#A82020] transition-colors hover:text-[#8e1919]"
-                        >
-                          Hubungi Teknisi
-                          <ArrowUpRight className="size-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
+            {/* Grid 4 Kartu Tim Personil — Format Minimalis & Dinamis dari API */}
+            <div className="mt-10">
+              <TeamSection />
             </div>
 
             {/* Banner Kru Lapangan Berpengalaman dengan Hover Merah */}
