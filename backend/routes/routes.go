@@ -15,6 +15,7 @@ import (
 	faqrepository "winteknikmandiri-backend/faqs/repository"
 	faqrouter "winteknikmandiri-backend/faqs/router"
 	faqservice "winteknikmandiri-backend/faqs/service"
+	galleryrouter "winteknikmandiri-backend/gallery/router"
 	healthcontroller "winteknikmandiri-backend/health/controller"
 	healthrouter "winteknikmandiri-backend/health/router"
 	homeherocontroller "winteknikmandiri-backend/home_hero/controller"
@@ -71,6 +72,7 @@ func SetupRouter() *gin.Engine {
 	registerSosialMediaRoutes(v1)
 	registerVisiMisiRoutes(v1)
 	registerTeamMemberRoutes(v1)
+	registerGalleryRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -134,6 +136,11 @@ func registerVisiMisiRoutes(rg *gin.RouterGroup) {
 // registerTeamMemberRoutes merakit layer fitur Tim Teknisi.
 func registerTeamMemberRoutes(rg *gin.RouterGroup) {
 	teamrouter.RegisterTeamMemberRoutes(rg, database.DB)
+}
+
+// registerGalleryRoutes merakit layer fitur Galeri Proyek.
+func registerGalleryRoutes(rg *gin.RouterGroup) {
+	galleryrouter.RegisterGalleryRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

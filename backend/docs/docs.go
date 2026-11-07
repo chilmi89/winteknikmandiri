@@ -274,6 +274,277 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/gallery": {
+            "get": {
+                "description": "Mengembalikan seluruh daftar proyek, total counter, dan tab kategori unik yang dihitung otomatis.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Ambil bundle proyek galeri \u0026 filter kategori dinamis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter kategori tertentu (mis. Mall \u0026 Retail)",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan yang non-aktif (khusus dashboard)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryBundleEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan data dokumentasi proyek baru (kategori bebas diinput).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Tambah proyek galeri baru",
+                "parameters": [
+                    {
+                        "description": "Payload proyek galeri",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGalleryProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryProjectEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gallery/upload-photo": {
+            "post": {
+                "description": "Menerima file gambar (JPG, JPEG, PNG, WEBP), otomatis di-encode ke WebP dengan kompresi berkualitas tinggi, lalu disimpan ke MinIO bucket wtm-media/gallery.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Unggah foto galeri (Auto-Convert \u0026 Kompresi WebP ke MinIO)",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File foto galeri (JPG, PNG, WEBP)",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadGalleryPhotoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gallery/{id}": {
+            "get": {
+                "description": "Mengambil satu proyek berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Detail satu proyek galeri",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Proyek (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryProjectEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Memperbarui data proyek galeri berdasarkan ID UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Perbarui proyek galeri",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Proyek (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGalleryProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryProjectEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Menghapus satu proyek berdasarkan ID UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gallery"
+                ],
+                "summary": "Hapus proyek galeri (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Proyek (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/inquiries": {
             "get": {
                 "description": "Menampilkan permohonan terbaru beserta total data (untuk dashboard).",
@@ -1631,6 +1902,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.CategoryCountResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "Mall \u0026 Retail"
+                },
+                "count": {
+                    "type": "integer",
+                    "example": 6
+                }
+            }
+        },
         "dto.CreateFAQRequest": {
             "type": "object",
             "required": [
@@ -1655,6 +1939,53 @@ const docTemplate = `{
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CreateGalleryProjectRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "title"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "Mall \u0026 Retail"
+                },
+                "client": {
+                    "type": "string",
+                    "example": "Mall Galeria Bali"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "gallery/..."
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/gallery/..."
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string",
+                    "example": "Kuta, Bali"
+                },
+                "scope": {
+                    "type": "string",
+                    "example": "Air Handling Unit \u0026 Ducting"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2,
+                    "example": "Instalasi AHU Mall Galeria Bali"
                 }
             }
         },
@@ -1915,6 +2246,108 @@ const docTemplate = `{
                 },
                 "sort_order": {
                     "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GalleryBundleEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.GalleryBundleResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GalleryBundleResponse": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CategoryCountResponse"
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GalleryProjectResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 18
+                }
+            }
+        },
+        "dto.GalleryMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GalleryProjectEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.GalleryProjectResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GalleryProjectResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "Mall \u0026 Retail"
+                },
+                "client": {
+                    "type": "string",
+                    "example": "Mall Galeria Bali"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "gallery/20261107-abc.webp"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/gallery/20261107-abc.webp"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "location": {
+                    "type": "string",
+                    "example": "Kuta, Bali"
+                },
+                "scope": {
+                    "type": "string",
+                    "example": "Air Handling Unit \u0026 Ducting"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Instalasi AHU Mall Galeria Bali"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2397,6 +2830,42 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateGalleryProjectRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "client": {
+                    "type": "string"
+                },
+                "image_key": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2
+                }
+            }
+        },
         "dto.UpdateJamOperasionalRequest": {
             "type": "object",
             "properties": {
@@ -2557,6 +3026,31 @@ const docTemplate = `{
                 "visi_text": {
                     "type": "string",
                     "minLength": 5
+                }
+            }
+        },
+        "dto.UploadGalleryPhotoResponse": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "gallery/20261107-abc.webp"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/gallery/20261107-abc.webp"
+                },
+                "original_name": {
+                    "type": "string",
+                    "example": "proyek.jpg"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 142500
                 }
             }
         },

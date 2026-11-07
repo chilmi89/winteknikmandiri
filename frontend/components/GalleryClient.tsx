@@ -11,10 +11,11 @@ import {
   X,
 } from "lucide-react";
 import {
-  GalleryCategory,
-  galleryFilterTabs,
-  galleryProjects,
-} from "@/lib/gallery";
+  fetchGalleryBundle,
+  type GalleryProject,
+  type CategoryCountItem,
+} from "@/lib/galleryService";
+import { galleryProjects as fallbackProjects } from "@/lib/gallery";
 
 const INITIAL_VISIBLE_COUNT = 9;
 
@@ -22,18 +23,55 @@ const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
 
 export default function GalleryClient() {
-  const [activeCategory, setActiveCategory] = useState<GalleryCategory>("all");
+  const [projects, setProjects] = useState<GalleryProject[]>([]);
+  const [categories, setCategories] = useState<CategoryCountItem[]>([]);
+  const [total, setTotal] = useState(0);
+
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showAll, setShowAll] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+  // Load bundle galeri dinamis dari database
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      const data = await fetchGalleryBundle();
+      if (active && data) {
+        setProjects(data.items || []);
+        setCategories(data.categories || []);
+        setTotal(data.total || 0);
+      } else if (active) {
+        // Fallback data lokal awal bila server belum aktif
+        const mappedFallback: GalleryProject[] = fallbackProjects.map((f, i) => ({
+          id: f.id,
+          title: f.title,
+          category: f.categoryLabel,
+          client: f.client,
+          scope: f.scope,
+          location: f.location,
+          image_url: f.image,
+          sort_order: i + 1,
+          is_active: true,
+        }));
+        setProjects(mappedFallback);
+        setTotal(mappedFallback.length);
+      }
+    }
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Filter items based on activeCategory
   const filteredProjects =
     activeCategory === "all"
-      ? galleryProjects
-      : galleryProjects.filter((item) => item.category === activeCategory);
+      ? projects
+      : projects.filter((item) => item.category === activeCategory);
 
-  // Reset pagination when category changes
-  const handleCategoryChange = (cat: GalleryCategory) => {
+  const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
     setShowAll(false);
   };
@@ -82,33 +120,51 @@ export default function GalleryClient() {
 
   return (
     <>
-      {/* STICKY CATEGORY FILTER BAR */}
+      {/* STICKY CATEGORY FILTER BAR (Gambar 3) */}
       <div className="sticky top-20 z-30 transform-gpu border-b border-[#0A2540]/10 bg-white/98 shadow-[0_1px_3px_rgba(10,37,64,0.03)]">
         <nav
           aria-label="Filter kategori proyek"
           className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8"
         >
           <div className="flex gap-2.5 overflow-x-auto py-3.5 no-scrollbar">
-            {galleryFilterTabs.map((tab) => {
-              const count =
-                tab.id === "all"
-                  ? galleryProjects.length
-                  : galleryProjects.filter((p) => p.category === tab.id).length;
+            {/* Tombol SEMUA PROYEK */}
+            <button
+              type="button"
+              onClick={() => handleCategoryChange("all")}
+              className={`group inline-flex shrink-0 items-center gap-2 border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-300 ${focusRing} ${
+                activeCategory === "all"
+                  ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
+                  : "border-[#0A2540]/15 bg-white text-[#0A2540]/70 hover:border-[#A82020] hover:text-[#A82020]"
+              }`}
+            >
+              <span>Semua Proyek</span>
+              <span
+                className={`inline-block px-1.5 py-0.5 text-[9.5px] tabular-nums transition-colors ${
+                  activeCategory === "all"
+                    ? "bg-white/20 text-white"
+                    : "bg-[#0A2540]/5 text-[#0A2540]/60 group-hover:bg-[#A82020]/10 group-hover:text-[#A82020]"
+                }`}
+              >
+                {total || projects.length}
+              </span>
+            </button>
 
-              const isSelected = activeCategory === tab.id;
+            {/* Tombol Per Kategori Dinamis */}
+            {categories.map((cat) => {
+              const isSelected = activeCategory === cat.category;
 
               return (
                 <button
-                  key={tab.id}
+                  key={cat.category}
                   type="button"
-                  onClick={() => handleCategoryChange(tab.id)}
+                  onClick={() => handleCategoryChange(cat.category)}
                   className={`group inline-flex shrink-0 items-center gap-2 border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-300 ${focusRing} ${
                     isSelected
                       ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
                       : "border-[#0A2540]/15 bg-white text-[#0A2540]/70 hover:border-[#A82020] hover:text-[#A82020]"
                   }`}
                 >
-                  <span>{tab.label}</span>
+                  <span>{cat.category}</span>
                   <span
                     className={`inline-block px-1.5 py-0.5 text-[9.5px] tabular-nums transition-colors ${
                       isSelected
@@ -116,7 +172,7 @@ export default function GalleryClient() {
                         : "bg-[#0A2540]/5 text-[#0A2540]/60 group-hover:bg-[#A82020]/10 group-hover:text-[#A82020]"
                     }`}
                   >
-                    {count}
+                    {cat.count}
                   </span>
                 </button>
               );
@@ -125,7 +181,7 @@ export default function GalleryClient() {
         </nav>
       </div>
 
-      {/* GALERI GRID & CARDS */}
+      {/* GALERI GRID & CARDS (Gambar 1) */}
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="flex items-center justify-between border-b border-[#0A2540]/10 pb-4">
           <div>
@@ -140,9 +196,7 @@ export default function GalleryClient() {
 
           <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#A82020]">
             Kategori:{" "}
-            {
-              galleryFilterTabs.find((t) => t.id === activeCategory)?.label
-            }
+            {activeCategory === "all" ? "Semua Proyek" : activeCategory}
           </span>
         </div>
 
@@ -171,8 +225,8 @@ export default function GalleryClient() {
               {/* Photo Box */}
               <div className="relative aspect-[16/11] w-full overflow-hidden bg-[#0A2540]">
                 <Image
-                  src={item.image}
-                  alt={item.alt}
+                  src={item.image_url}
+                  alt={item.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                   className="object-cover transition-[transform,filter] duration-700 group-hover:scale-[1.06] group-hover:brightness-105"
@@ -184,7 +238,7 @@ export default function GalleryClient() {
 
                 {/* Badge Kategori */}
                 <span className="absolute left-3 top-3 bg-[#0A2540]/85 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#A82020]">
-                  {item.categoryLabel}
+                  {item.category}
                 </span>
 
                 {/* Zoom Hint */}
@@ -194,23 +248,27 @@ export default function GalleryClient() {
                 </span>
               </div>
 
-              {/* Keterangan Proyek */}
+              {/* Keterangan Proyek (Persis Gambar 1) */}
               <div className="flex flex-1 flex-col justify-between p-5">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#A82020]">
-                    {item.client}
-                  </p>
+                  {item.client && (
+                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#A82020] font-semibold">
+                      {item.client}
+                    </p>
+                  )}
                   <h3 className="mt-1.5 text-base font-semibold leading-snug text-[#0A2540] transition-colors duration-300 group-hover:text-[#A82020]">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-xs text-[#0A2540]/65">
-                    Lingkup: {item.scope}
-                  </p>
+                  {item.scope && (
+                    <p className="mt-2 text-xs text-[#0A2540]/65">
+                      Lingkup: {item.scope}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-[#0A2540]/10 pt-3 text-[11px] text-[#0A2540]/60">
                   <span className="font-mono uppercase tracking-[0.12em]">
-                    {item.location}
+                    {item.location || "Kediri"}
                   </span>
                   <span className="font-mono text-[10.5px] text-[#A82020] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     Buka foto →
@@ -247,7 +305,7 @@ export default function GalleryClient() {
         )}
       </div>
 
-      {/* LIGHTBOX MODAL ZOOM PREVIEW */}
+      {/* LIGHTBOX MODAL ZOOM PREVIEW (Gambar 2) */}
       {previewIndex !== null && activeProject && (
         <div
           role="dialog"
@@ -310,8 +368,8 @@ export default function GalleryClient() {
             {/* Image Box */}
             <div className="relative aspect-[16/10] w-full max-h-[72vh] min-h-[260px] bg-black/60 sm:min-h-[420px]">
               <Image
-                src={activeProject.image}
-                alt={activeProject.alt}
+                src={activeProject.image_url}
+                alt={activeProject.title}
                 fill
                 sizes="(max-width: 1024px) 100vw, 920px"
                 className="object-contain"
@@ -319,12 +377,12 @@ export default function GalleryClient() {
               />
             </div>
 
-            {/* Caption & Info Bar */}
+            {/* Caption & Info Bar (Persis Gambar 2) */}
             <div className="flex flex-col gap-2 border-t border-white/10 bg-[#0A2540] p-4 text-white sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div>
                 <div className="flex items-center gap-2.5">
                   <span className="bg-[#A82020] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-white">
-                    {activeProject.categoryLabel}
+                    {activeProject.category}
                   </span>
                   <span className="font-mono text-xs text-white/60">
                     {activeProject.client} · {activeProject.location}
@@ -333,9 +391,11 @@ export default function GalleryClient() {
                 <h3 className="mt-1 text-base font-semibold text-white sm:text-lg">
                   {activeProject.title}
                 </h3>
-                <p className="mt-0.5 text-xs text-white/60">
-                  Lingkup: {activeProject.scope}
-                </p>
+                {activeProject.scope && (
+                  <p className="mt-0.5 text-xs text-white/60">
+                    Lingkup: {activeProject.scope}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-3 font-mono text-[11px] text-white/50">

@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  dto.CategoryCountResponse:
+    properties:
+      category:
+        example: Mall & Retail
+        type: string
+      count:
+        example: 6
+        type: integer
+    type: object
   dto.CreateFAQRequest:
     properties:
       answer:
@@ -18,6 +27,41 @@ definitions:
     required:
     - answer
     - question
+    type: object
+  dto.CreateGalleryProjectRequest:
+    properties:
+      category:
+        example: Mall & Retail
+        maxLength: 100
+        minLength: 2
+        type: string
+      client:
+        example: Mall Galeria Bali
+        type: string
+      image_key:
+        example: gallery/...
+        type: string
+      image_url:
+        example: /media/wtm-media/gallery/...
+        type: string
+      is_active:
+        type: boolean
+      location:
+        example: Kuta, Bali
+        type: string
+      scope:
+        example: Air Handling Unit & Ducting
+        type: string
+      sort_order:
+        type: integer
+      title:
+        example: Instalasi AHU Mall Galeria Bali
+        maxLength: 200
+        minLength: 2
+        type: string
+    required:
+    - category
+    - title
     type: object
   dto.CreateInquiryRequest:
     properties:
@@ -206,6 +250,76 @@ definitions:
         type: string
       sort_order:
         type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.GalleryBundleEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.GalleryBundleResponse'
+      message:
+        type: string
+    type: object
+  dto.GalleryBundleResponse:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/dto.CategoryCountResponse'
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/dto.GalleryProjectResponse'
+        type: array
+      total:
+        example: 18
+        type: integer
+    type: object
+  dto.GalleryMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.GalleryProjectEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.GalleryProjectResponse'
+      message:
+        type: string
+    type: object
+  dto.GalleryProjectResponse:
+    properties:
+      category:
+        example: Mall & Retail
+        type: string
+      client:
+        example: Mall Galeria Bali
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      image_key:
+        example: gallery/20261107-abc.webp
+        type: string
+      image_url:
+        example: /media/wtm-media/gallery/20261107-abc.webp
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      location:
+        example: Kuta, Bali
+        type: string
+      scope:
+        example: Air Handling Unit & Ducting
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      title:
+        example: Instalasi AHU Mall Galeria Bali
+        type: string
       updated_at:
         type: string
     type: object
@@ -532,6 +646,31 @@ definitions:
     - answer
     - question
     type: object
+  dto.UpdateGalleryProjectRequest:
+    properties:
+      category:
+        maxLength: 100
+        minLength: 2
+        type: string
+      client:
+        type: string
+      image_key:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      location:
+        type: string
+      scope:
+        type: string
+      sort_order:
+        type: integer
+      title:
+        maxLength: 200
+        minLength: 2
+        type: string
+    type: object
   dto.UpdateJamOperasionalRequest:
     properties:
       day_label:
@@ -645,6 +784,24 @@ definitions:
         type: string
     required:
     - visi_text
+    type: object
+  dto.UploadGalleryPhotoResponse:
+    properties:
+      format:
+        example: image/webp
+        type: string
+      image_key:
+        example: gallery/20261107-abc.webp
+        type: string
+      image_url:
+        example: /media/wtm-media/gallery/20261107-abc.webp
+        type: string
+      original_name:
+        example: proyek.jpg
+        type: string
+      size:
+        example: 142500
+        type: integer
     type: object
   dto.UploadTeamPhotoResponse:
     properties:
@@ -907,6 +1064,188 @@ paths:
       summary: Perbarui FAQ
       tags:
       - faqs
+  /api/v1/gallery:
+    get:
+      description: Mengembalikan seluruh daftar proyek, total counter, dan tab kategori
+        unik yang dihitung otomatis.
+      parameters:
+      - description: Filter kategori tertentu (mis. Mall & Retail)
+        in: query
+        name: category
+        type: string
+      - description: Sertakan yang non-aktif (khusus dashboard)
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalleryBundleEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Ambil bundle proyek galeri & filter kategori dinamis
+      tags:
+      - gallery
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan data dokumentasi proyek baru (kategori bebas diinput).
+      parameters:
+      - description: Payload proyek galeri
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateGalleryProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.GalleryProjectEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah proyek galeri baru
+      tags:
+      - gallery
+  /api/v1/gallery/{id}:
+    delete:
+      description: Menghapus satu proyek berdasarkan ID UUID.
+      parameters:
+      - description: ID Proyek (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalleryMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Hapus proyek galeri (soft delete)
+      tags:
+      - gallery
+    get:
+      description: Mengambil satu proyek berdasarkan ID UUID.
+      parameters:
+      - description: ID Proyek (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalleryProjectEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Detail satu proyek galeri
+      tags:
+      - gallery
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data proyek galeri berdasarkan ID UUID.
+      parameters:
+      - description: ID Proyek (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGalleryProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalleryProjectEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui proyek galeri
+      tags:
+      - gallery
+  /api/v1/gallery/upload-photo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Menerima file gambar (JPG, JPEG, PNG, WEBP), otomatis di-encode
+        ke WebP dengan kompresi berkualitas tinggi, lalu disimpan ke MinIO bucket
+        wtm-media/gallery.
+      parameters:
+      - description: File foto galeri (JPG, PNG, WEBP)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UploadGalleryPhotoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Unggah foto galeri (Auto-Convert & Kompresi WebP ke MinIO)
+      tags:
+      - gallery
   /api/v1/inquiries:
     get:
       description: Menampilkan permohonan terbaru beserta total data (untuk dashboard).

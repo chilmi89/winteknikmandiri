@@ -220,12 +220,58 @@ func (c *Client) UploadTeamPhoto(
 	return objectKey, publicURL, nil
 }
 
+// UploadGalleryPhoto mengunggah foto portofolio galeri ke folder "gallery/" pada bucket wtm-media.
+func (c *Client) UploadGalleryPhoto(
+	ctx context.Context,
+	originalFilename string,
+	reader io.Reader,
+	size int64,
+	isWebP bool,
+) (objectKey string, publicURL string, err error) {
+	if c == nil || c.s3 == nil {
+		return "", "", fmt.Errorf("storage client belum terinisialisasi")
+	}
+
+	datePrefix := time.Now().Format("20060102")
+	ext := ".webp"
+	contentType := "image/webp"
+
+	if !isWebP {
+		ext = strings.ToLower(path.Ext(originalFilename))
+		if ext == "" {
+			ext = ".jpg"
+		}
+		if ext == ".png" {
+			contentType = "image/png"
+		} else {
+			contentType = "image/jpeg"
+		}
+	}
+
+	uniqueName := fmt.Sprintf("%s-%s%s", datePrefix, uuid.New().String()[:8], ext)
+	objectKey = path.Join("gallery", uniqueName)
+
+	_, err = c.s3.PutObject(ctx, c.bucket, objectKey, reader, size, minio.PutObjectOptions{
+		ContentType: contentType,
+		UserMetadata: map[string]string{
+			"original-name": url.QueryEscape(originalFilename),
+			"category":      "gallery",
+		},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("gagal upload foto galeri ke MinIO: %w", err)
+	}
+
+	publicURL = c.GetPublicURL(objectKey)
+	return objectKey, publicURL, nil
+}
+
 // ExtractObjectKey mengekstrak path objectKey (misal "hero/20261105-abc.mp4") dari URL publik.
 func (c *Client) ExtractObjectKey(rawURL string) string {
 	if rawURL == "" {
 		return ""
 	}
-	for _, folder := range []string{"hero/", "services/", "teams/"} {
+	for _, folder := range []string{"hero/", "services/", "teams/", "gallery/"} {
 		if idx := strings.Index(rawURL, folder); idx != -1 {
 			return strings.TrimPrefix(rawURL[idx:], "/")
 		}
