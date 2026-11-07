@@ -108,7 +108,7 @@ export default function ServiceCard({
             </p>
           ) : null}
 
-          {/* Tombol Pesan Layanan (WhatsApp Order Trigger) & Lihat Tarif */}
+          {/* Tombol Pesan Layanan (WhatsApp Order Trigger) & Tanya Dulu */}
           <div className="mt-5 flex flex-wrap items-center gap-3.5">
             <WhatsAppOrderButton
               category={category}
@@ -119,12 +119,17 @@ export default function ServiceCard({
               className={`bg-[#A82020] px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#8e1919] sm:px-5 sm:py-3 sm:text-[11px] ${focusRing}`}
             />
 
-            <Link
-              href="/#biaya"
-              className={`text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#0A2540]/55 transition-colors hover:text-[#A82020] sm:text-[11px] ${focusRing}`}
+            <a
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WA_PHONE || "6283136830913"}?text=${encodeURIComponent(
+                "Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai kebutuhan proyek AC dan ducting. Apakah saya bisa mendapatkan informasi lebih lanjut terkait layanan dan penawaran yang tersedia? Terima kasih."
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#0A2540]/65 transition-colors hover:text-[#A82020] sm:text-[11px] inline-flex items-center gap-1.5 ${focusRing}`}
             >
-              Lihat tarif
-            </Link>
+              <span>Tanya Dulu</span>
+              <ArrowUpRight className="size-3 text-[#0A2540]/40" />
+            </a>
           </div>
         </div>
       </div>

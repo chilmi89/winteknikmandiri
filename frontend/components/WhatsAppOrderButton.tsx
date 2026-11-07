@@ -44,8 +44,8 @@ export default function WhatsAppOrderButton({
         }
       } catch {
         // Fallback jika API offline: buka WA langsung
-        const fallbackText = `Halo CV Win Teknik Mandiri,\nSaya ingin memesan layanan ${service} (${price}).`;
-        const waPhone = "6281216622840";
+        const fallbackText = `Halo CV Win Teknik Mandiri,\nsaya ingin memesan layanan *${service} (${price})* . Apakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.`;
+        const waPhone = process.env.NEXT_PUBLIC_WA_PHONE || "6283136830913";
         window.open(
           `https://wa.me/${waPhone}?text=${encodeURIComponent(fallbackText)}`,
           "_blank",

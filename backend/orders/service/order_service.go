@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/google/uuid"
@@ -37,10 +38,14 @@ func (s *OrderService) InitiateClickOrder(ctx context.Context, req dto.ClickOrde
 	}
 
 	// Format pesan WhatsApp yang ramah, profesional & memuat nomor invoice
-	waPhone := "6281216622840"
+	waPhone := os.Getenv("WA_PHONE")
+	if waPhone == "" {
+		waPhone = "6283136830913" // Nomor pengujian testing
+	}
+
+	// Format pesan: Halo CV Win Teknik Mandiri, saya ingin memesan layanan *Nama (Harga)* . Apakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.
 	msgText := fmt.Sprintf(
-		"Halo CV Win Teknik Mandiri,\nSaya tertarik memesan layanan:\n• Kategori: %s\n• Layanan: %s\n• Estimasi: %s\n\nNo. Invoice Pesanan: %s\nMohon info jadwal pengerjaan dan negosiasinya. Terima kasih.",
-		req.Category,
+		"Halo CV Win Teknik Mandiri,\nsaya ingin memesan layanan *%s (%s)*. Apakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.\n\nNo. Invoice: %s",
 		req.Service,
 		req.Price,
 		invoiceNo,
