@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, MessageCircle } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { ServiceItem } from "@/lib/katalogLayanan";
-import { waLink } from "@/lib/site";
+import WhatsAppOrderButton from "@/components/WhatsAppOrderButton";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A82020]";
@@ -108,20 +108,16 @@ export default function ServiceCard({
             </p>
           ) : null}
 
-          {/* Tombol Pesan Layanan (WhatsApp) & Lihat Tarif */}
+          {/* Tombol Pesan Layanan (WhatsApp Order Trigger) & Lihat Tarif */}
           <div className="mt-5 flex flex-wrap items-center gap-3.5">
-            <Link
-              href={waLink(
-                `Halo CV Win Teknik Mandiri, saya ingin memesan layanan: ${item.title} (${item.price || "Penawaran"}).`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2 bg-[#A82020] px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#8e1919] sm:px-5 sm:py-3 sm:text-[11px] ${focusRing}`}
-            >
-              <MessageCircle className="size-3.5" aria-hidden="true" />
-              Pesan layanan
-              <ArrowUpRight className="size-3.5" aria-hidden="true" />
-            </Link>
+            <WhatsAppOrderButton
+              category={category}
+              service={item.title}
+              price={item.price ? `${item.price} ${item.unit}` : "Penawaran"}
+              serviceId={item.id}
+              categoryId={item.category_id}
+              className={`bg-[#A82020] px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#8e1919] sm:px-5 sm:py-3 sm:text-[11px] ${focusRing}`}
+            />
 
             <Link
               href="/#biaya"

@@ -904,6 +904,277 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Daftar pesanan \u0026 invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter status (belum_diproses, negosiasi, deal, selesai)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cari no invoice / nama / telepon",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListOrderEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/click": {
+            "post": {
+                "description": "Membuat invoice sementara (status: belum_diproses) dan mengembalikan URL WhatsApp resmi terformat.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Inisiasi order saat pelanggan klik tombol Pesan di web",
+                "parameters": [
+                    {
+                        "description": "Data klik layanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClickOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClickOrderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/items/{item_id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Ubah harga nego / qty baris layanan pada invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order Item (UUID)",
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data update item",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SaveOrderItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderItemResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Hapus baris layanan dari invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order Item (UUID)",
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Detail satu invoice \u0026 rincian layanannya",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order atau No Invoice (mis. INV-2611-0001)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Perbarui header pesanan (Data Klien, Status, Total)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Hapus invoice pesanan (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}/items": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Tambah layanan ke invoice (Katalog / Custom)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Order (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data baris layanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SaveOrderItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderItemResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pilar-layanan": {
             "get": {
                 "description": "Mengambil daftar pilar layanan aktif untuk homepage.",
@@ -2281,6 +2552,44 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ClickOrderRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "service"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "service_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ClickOrderResponse": {
+            "type": "object",
+            "properties": {
+                "invoice_no": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "wa_url": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateCategoryRequest": {
             "type": "object",
             "required": [
@@ -3029,6 +3338,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ListOrderEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ListPilarLayananEnvelope": {
             "type": "object",
             "properties": {
@@ -3121,6 +3444,113 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.OrderEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.OrderResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.OrderItemResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "subtotal": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.OrderMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.OrderResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "customer_phone": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "initial_category": {
+                    "type": "string"
+                },
+                "initial_price": {
+                    "type": "string"
+                },
+                "initial_service": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderItemResponse"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PilarLayananEnvelope": {
             "type": "object",
             "properties": {
@@ -3183,6 +3613,35 @@ const docTemplate = `{
                     "example": "Supply \u0026 pengadaan AC"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SaveOrderItemRequest": {
+            "type": "object",
+            "required": [
+                "item_name"
+            ],
+            "properties": {
+                "item_name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "subtotal": {
+                    "type": "string"
+                },
+                "unit": {
                     "type": "string"
                 }
             }
@@ -3589,6 +4048,29 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 150,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateOrderRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "customer_phone": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "string"
                 }
             }
         },

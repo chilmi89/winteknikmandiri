@@ -113,6 +113,12 @@ export default function LoginForm() {
 
           <button
             type="submit"
+
+
+            onClick = {() => {
+
+              window.location.href = "/dashboard";
+            }}
             className={`mt-2 flex w-full items-center justify-center gap-2 bg-[#A82020] px-4 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-[#8e1919] ${focusRing}`}
           >
             Masuk ke Akun

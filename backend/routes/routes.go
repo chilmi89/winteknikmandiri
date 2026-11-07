@@ -30,6 +30,7 @@ import (
 	"winteknikmandiri-backend/internal/httpx"
 	jamrouter "winteknikmandiri-backend/jam_operasional/router"
 	katalogrouter "winteknikmandiri-backend/katalog_layanan/router"
+	orderrouter "winteknikmandiri-backend/orders/router"
 	pilarrouter "winteknikmandiri-backend/pilar_layanan/router"
 	servicecontroller "winteknikmandiri-backend/services/controller"
 	servicerepository "winteknikmandiri-backend/services/repository"
@@ -75,6 +76,7 @@ func SetupRouter() *gin.Engine {
 	registerTeamMemberRoutes(v1)
 	registerGalleryRoutes(v1)
 	registerKatalogRoutes(v1)
+	registerOrderRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -148,6 +150,11 @@ func registerGalleryRoutes(rg *gin.RouterGroup) {
 // registerKatalogRoutes merakit layer fitur Katalog Kategori & Item Layanan.
 func registerKatalogRoutes(rg *gin.RouterGroup) {
 	katalogrouter.RegisterKatalogRoutes(rg, database.DB)
+}
+
+// registerOrderRoutes merakit layer fitur Pesanan & Invoice Nego.
+func registerOrderRoutes(rg *gin.RouterGroup) {
+	orderrouter.RegisterOrderRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

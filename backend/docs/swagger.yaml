@@ -16,6 +16,31 @@ definitions:
       message:
         type: string
     type: object
+  dto.ClickOrderRequest:
+    properties:
+      category:
+        type: string
+      category_id:
+        type: string
+      price:
+        type: string
+      service:
+        type: string
+      service_id:
+        type: string
+    required:
+    - category
+    - service
+    type: object
+  dto.ClickOrderResponse:
+    properties:
+      invoice_no:
+        type: string
+      order_id:
+        type: string
+      wa_url:
+        type: string
+    type: object
   dto.CreateCategoryRequest:
     properties:
       code:
@@ -539,6 +564,15 @@ definitions:
       message:
         type: string
     type: object
+  dto.ListOrderEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.OrderResponse'
+        type: array
+      message:
+        type: string
+    type: object
   dto.ListPilarLayananEnvelope:
     properties:
       data:
@@ -601,6 +635,76 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.OrderEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.OrderResponse'
+      message:
+        type: string
+    type: object
+  dto.OrderItemResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      item_name:
+        type: string
+      notes:
+        type: string
+      order_id:
+        type: string
+      price:
+        type: string
+      qty:
+        type: integer
+      service_id:
+        type: string
+      subtotal:
+        type: string
+      unit:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.OrderMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.OrderResponse:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+      id:
+        type: string
+      initial_category:
+        type: string
+      initial_price:
+        type: string
+      initial_service:
+        type: string
+      invoice_no:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderItemResponse'
+        type: array
+      notes:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.PilarLayananEnvelope:
     properties:
       data:
@@ -646,6 +750,25 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  dto.SaveOrderItemRequest:
+    properties:
+      item_name:
+        type: string
+      notes:
+        type: string
+      price:
+        type: string
+      qty:
+        type: integer
+      service_id:
+        type: string
+      subtotal:
+        type: string
+      unit:
+        type: string
+    required:
+    - item_name
     type: object
   dto.ServiceCategoryResponse:
     properties:
@@ -928,6 +1051,21 @@ definitions:
       title:
         maxLength: 150
         minLength: 2
+        type: string
+    type: object
+  dto.UpdateOrderRequest:
+    properties:
+      address:
+        type: string
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+      notes:
+        type: string
+      status:
+        type: string
+      total_amount:
         type: string
     type: object
   dto.UpdatePilarLayananRequest:
@@ -1714,6 +1852,183 @@ paths:
       summary: Perbarui pengaturan kartu jam operasional
       tags:
       - jam_operasional
+  /api/v1/orders:
+    get:
+      parameters:
+      - description: Filter status (belum_diproses, negosiasi, deal, selesai)
+        in: query
+        name: status
+        type: string
+      - description: Cari no invoice / nama / telepon
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListOrderEnvelope'
+      summary: Daftar pesanan & invoice
+      tags:
+      - orders
+  /api/v1/orders/{id}:
+    delete:
+      parameters:
+      - description: ID Order (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderMessageResponse'
+      summary: Hapus invoice pesanan (soft delete)
+      tags:
+      - orders
+    get:
+      parameters:
+      - description: ID Order atau No Invoice (mis. INV-2611-0001)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderEnvelope'
+      summary: Detail satu invoice & rincian layanannya
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Order (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderEnvelope'
+      summary: Perbarui header pesanan (Data Klien, Status, Total)
+      tags:
+      - orders
+  /api/v1/orders/{id}/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Order (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data baris layanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveOrderItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.OrderItemResponse'
+      summary: Tambah layanan ke invoice (Katalog / Custom)
+      tags:
+      - orders
+  /api/v1/orders/click:
+    post:
+      consumes:
+      - application/json
+      description: 'Membuat invoice sementara (status: belum_diproses) dan mengembalikan
+        URL WhatsApp resmi terformat.'
+      parameters:
+      - description: Data klik layanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ClickOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClickOrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Inisiasi order saat pelanggan klik tombol Pesan di web
+      tags:
+      - orders
+  /api/v1/orders/items/{item_id}:
+    delete:
+      parameters:
+      - description: ID Order Item (UUID)
+        in: path
+        name: item_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderMessageResponse'
+      summary: Hapus baris layanan dari invoice
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Order Item (UUID)
+        in: path
+        name: item_id
+        required: true
+        type: string
+      - description: Data update item
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveOrderItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderItemResponse'
+      summary: Ubah harga nego / qty baris layanan pada invoice
+      tags:
+      - orders
   /api/v1/pilar-layanan:
     get:
       description: Mengambil daftar pilar layanan aktif untuk homepage.
