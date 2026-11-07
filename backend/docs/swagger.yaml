@@ -16,6 +16,31 @@ definitions:
       message:
         type: string
     type: object
+  dto.ClickOrderRequest:
+    properties:
+      category:
+        type: string
+      category_id:
+        type: string
+      price:
+        type: string
+      service:
+        type: string
+      service_id:
+        type: string
+    required:
+    - category
+    - service
+    type: object
+  dto.ClickOrderResponse:
+    properties:
+      invoice_no:
+        type: string
+      order_id:
+        type: string
+      wa_url:
+        type: string
+    type: object
   dto.CreateCategoryRequest:
     properties:
       code:
@@ -1853,13 +1878,17 @@ paths:
   /api/v1/orders:
     get:
       parameters:
-      - description: Filter status (negosiasi, deal, selesai)
+      - description: Filter status (menunggu_chat, negosiasi, deal, selesai)
         in: query
         name: status
         type: string
-      - description: Cari no invoice / nama / telepon
+      - description: Cari no invoice / digit belakang / nama / telepon
         in: query
         name: search
+        type: string
+      - description: Filter tanggal spesifik YYYY-MM-DD
+        in: query
+        name: date
         type: string
       produces:
       - application/json
@@ -1980,6 +2009,33 @@ paths:
           schema:
             $ref: '#/definitions/dto.OrderItemResponse'
       summary: Tambah layanan ke invoice (Katalog / Custom)
+      tags:
+      - orders
+  /api/v1/orders/click:
+    post:
+      consumes:
+      - application/json
+      description: Membuat invoice status menunggu_chat dan mengembalikan URL WhatsApp
+        resmi.
+      parameters:
+      - description: Data klik layanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ClickOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClickOrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Inisiasi order otomatis saat pelanggan klik tombol Pesan di web
       tags:
       - orders
   /api/v1/orders/items/{item_id}:

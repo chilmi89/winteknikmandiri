@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/google/uuid"
@@ -21,6 +23,45 @@ type OrderService struct {
 // NewOrderService membuat instance service baru.
 func NewOrderService(repo *repository.OrderRepository) *OrderService {
 	return &OrderService{repo: repo}
+}
+
+// InitiateClickOrder dipanggil saat tombol PESAN di web diklik pelanggan.
+// Membuat draft order (status: menunggu_chat) dan menerbitkan invoice otomatis.
+func (s *OrderService) InitiateClickOrder(ctx context.Context, req dto.ClickOrderRequest) (*dto.ClickOrderResponse, error) {
+	invoiceNo, err := s.repo.GenerateInvoiceNo(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("generate invoice: %w", err)
+	}
+
+	ord, err := s.repo.CreateInitiatedOrder(ctx, invoiceNo, req)
+	if err != nil {
+		return nil, err
+	}
+
+	waPhone := os.Getenv("WA_PHONE")
+	if waPhone == "" {
+		waPhone = "6283136830913"
+	}
+
+	cleanPrice := ""
+	if req.Price != "" {
+		cleanPrice = fmt.Sprintf(" (%s)", req.Price)
+	}
+
+	msgText := fmt.Sprintf(
+		"Halo CV Win Teknik Mandiri,\nsaya ingin memesan layanan *%s%s*.\nApakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.\n\nNo. Invoice: %s",
+		req.Service,
+		cleanPrice,
+		invoiceNo,
+	)
+
+	waURL := fmt.Sprintf("https://wa.me/%s?text=%s", waPhone, url.QueryEscape(msgText))
+
+	return &dto.ClickOrderResponse{
+		InvoiceNo: invoiceNo,
+		OrderID:   ord.ID.String(),
+		WaURL:     waURL,
+	}, nil
 }
 
 // CreateManualOrder dibuat admin dari dashboard saat chat WA sudah masuk & dinegosiasikan.
@@ -44,9 +85,9 @@ func (s *OrderService) CreateManualOrder(ctx context.Context, req dto.CreateManu
 	return &res, nil
 }
 
-// ListOrders mengambil daftar order untuk dashboard.
-func (s *OrderService) ListOrders(ctx context.Context, status string, search string) ([]dto.OrderResponse, error) {
-	items, err := s.repo.ListOrders(ctx, status, search)
+// ListOrders mengambil daftar order untuk dashboard dengan filter status / search / date.
+func (s *OrderService) ListOrders(ctx context.Context, status string, search string, dateFilter string) ([]dto.OrderResponse, error) {
+	items, err := s.repo.ListOrders(ctx, status, search, dateFilter)
 	if err != nil {
 		return nil, err
 	}

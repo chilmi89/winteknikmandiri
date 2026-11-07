@@ -909,14 +909,20 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter status (negosiasi, deal, selesai)",
+                        "description": "Filter status (menunggu_chat, negosiasi, deal, selesai)",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Cari no invoice / nama / telepon",
+                        "description": "Cari no invoice / digit belakang / nama / telepon",
                         "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter tanggal spesifik YYYY-MM-DD",
+                        "name": "date",
                         "in": "query"
                     }
                 ],
@@ -957,6 +963,46 @@
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dto.OrderEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/click": {
+            "post": {
+                "description": "Membuat invoice status menunggu_chat dan mengembalikan URL WhatsApp resmi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Inisiasi order otomatis saat pelanggan klik tombol Pesan di web",
+                "parameters": [
+                    {
+                        "description": "Data klik layanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClickOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClickOrderResponse"
                         }
                     },
                     "400": {
@@ -2539,6 +2585,44 @@
                     "$ref": "#/definitions/dto.ServiceCategoryResponse"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ClickOrderRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "service"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "service_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ClickOrderResponse": {
+            "type": "object",
+            "properties": {
+                "invoice_no": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "wa_url": {
                     "type": "string"
                 }
             }

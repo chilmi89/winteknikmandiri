@@ -48,6 +48,22 @@ type CreateManualOrderRequest struct {
 	Items           []SaveOrderItemRequest `json:"items"`
 }
 
+// ClickOrderRequest dipanggil saat klien klik tombol "PESAN" di web.
+type ClickOrderRequest struct {
+	CategoryID string `json:"category_id"`
+	ServiceID  string `json:"service_id"`
+	Category   string `json:"category" binding:"required"`
+	Service    string `json:"service" binding:"required"`
+	Price      string `json:"price"`
+}
+
+// ClickOrderResponse respon balik berisi invoice dan URL WhatsApp terformat rapi.
+type ClickOrderResponse struct {
+	InvoiceNo string `json:"invoice_no"`
+	OrderID   string `json:"order_id"`
+	WaURL     string `json:"wa_url"`
+}
+
 // UpdateOrderRequest admin mengupdate data header order (nama, WA, alamat, status, total).
 type UpdateOrderRequest struct {
 	CustomerName  *string `json:"customer_name"`

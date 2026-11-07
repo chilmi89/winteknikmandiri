@@ -41,6 +41,60 @@ func (r *OrderRepository) GenerateInvoiceNo(ctx context.Context) (string, error)
 	return fmt.Sprintf("INV-%s-%04d", prefix, count+1), nil
 }
 
+// CreateInitiatedOrder membuat draft pesanan baru (status: menunggu_chat) saat tombol Pesan di web diklik.
+func (r *OrderRepository) CreateInitiatedOrder(ctx context.Context, invoiceNo string, req dto.ClickOrderRequest) (*model.Order, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	orderQuery := `
+		INSERT INTO orders (
+			invoice_no, initial_category, initial_service, initial_price,
+			total_amount, status
+		) VALUES ($1, $2, $3, $4, $5, 'menunggu_chat')
+		RETURNING id, invoice_no, initial_category, initial_service, initial_price,
+		          customer_name, customer_phone, address, notes, total_amount, status,
+		          created_at, updated_at
+	`
+	var ord model.Order
+	err = tx.QueryRowContext(ctx, orderQuery,
+		invoiceNo, req.Category, req.Service, req.Price, req.Price,
+	).Scan(
+		&ord.ID, &ord.InvoiceNo, &ord.InitialCategory, &ord.InitialService, &ord.InitialPrice,
+		&ord.CustomerName, &ord.CustomerPhone, &ord.Address, &ord.Notes, &ord.TotalAmount, &ord.Status,
+		&ord.CreatedAt, &ord.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insert initiated order: %w", err)
+	}
+
+	// Baris item awal
+	itemQuery := `
+		INSERT INTO order_items (
+			order_id, service_id, item_name, price, qty, unit, subtotal
+		) VALUES ($1, $2, $3, $4, 1, '/ unit', $4)
+	`
+	var svcUUID *uuid.UUID
+	if req.ServiceID != "" {
+		if parsed, err := uuid.Parse(req.ServiceID); err == nil {
+			svcUUID = &parsed
+		}
+	}
+
+	_, err = tx.ExecContext(ctx, itemQuery, ord.ID, svcUUID, req.Service, req.Price)
+	if err != nil {
+		return nil, fmt.Errorf("insert initial order_item: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &ord, nil
+}
+
 // CreateManualOrder dibuat admin dari dashboard setelah chat WA disepakati.
 func (r *OrderRepository) CreateManualOrder(ctx context.Context, invoiceNo string, req dto.CreateManualOrderRequest) (*model.Order, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -113,8 +167,8 @@ func (r *OrderRepository) CreateManualOrder(ctx context.Context, invoiceNo strin
 	return &ord, nil
 }
 
-// ListOrders mengambil daftar order dengan filter status / pencarian opsional.
-func (r *OrderRepository) ListOrders(ctx context.Context, status string, search string) ([]model.Order, error) {
+// ListOrders mengambil daftar order dengan filter status / pencarian opsional / tanggal.
+func (r *OrderRepository) ListOrders(ctx context.Context, status string, search string, dateFilter string) ([]model.Order, error) {
 	query := `
 		SELECT
 			id, invoice_no, initial_category, initial_service, initial_price,
@@ -129,6 +183,12 @@ func (r *OrderRepository) ListOrders(ctx context.Context, status string, search 
 	if status != "" && status != "all" {
 		query += fmt.Sprintf(" AND status = $%d", argIdx)
 		args = append(args, status)
+		argIdx++
+	}
+
+	if dateFilter != "" {
+		query += fmt.Sprintf(" AND DATE(created_at) = $%d::date", argIdx)
+		args = append(args, dateFilter)
 		argIdx++
 	}
 

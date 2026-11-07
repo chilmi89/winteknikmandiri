@@ -15,6 +15,8 @@ export type OrderItem = {
 };
 
 export type OrderStatus =
+  | "menunggu_chat"
+  | "belum_diproses"
   | "negosiasi"
   | "deal"
   | "dikerjakan"
@@ -69,7 +71,40 @@ export type UpdateOrderHeaderPayload = {
   status?: string;
 };
 
+export type ClickOrderPayload = {
+  category_id?: string;
+  service_id?: string;
+  category: string;
+  service: string;
+  price: string;
+};
+
+export type ClickOrderResult = {
+  invoice_no: string;
+  order_id: string;
+  wa_url: string;
+};
+
 // ---------- API CALLS ----------
+
+/**
+ * Dipanggil otomatis saat tombol Pesan di web diklik pelanggan.
+ * Menerbitkan nomor invoice otomatis & menghasilkan URL WhatsApp.
+ */
+export async function triggerClickOrder(payload: ClickOrderPayload): Promise<ClickOrderResult> {
+  const res = await fetch(`${resolveApiBase()}/api/v1/orders/click`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await res.json();
+  if (!res.ok || !json.wa_url) {
+    throw new Error(json.error || "Gagal membuat invoice order");
+  }
+
+  return json;
+}
 
 /**
  * Buat invoice pesanan baru secara manual oleh admin saat chat WhatsApp masuk.
@@ -90,12 +125,13 @@ export async function createManualOrder(payload: CreateManualOrderPayload): Prom
 }
 
 /**
- * Mengambil daftar order untuk dashboard admin.
+ * Mengambil daftar order untuk dashboard admin dengan filter status, search, dan tanggal.
  */
-export async function listOrdersAdmin(status = "", search = ""): Promise<Order[]> {
+export async function listOrdersAdmin(status = "", search = "", date = ""): Promise<Order[]> {
   const params = new URLSearchParams();
   if (status && status !== "all") params.set("status", status);
   if (search) params.set("search", search);
+  if (date) params.set("date", date);
 
   const res = await fetch(`${resolveApiBase()}/api/v1/orders?${params.toString()}`, {
     cache: "no-store",

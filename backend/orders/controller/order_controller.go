@@ -21,6 +21,30 @@ func NewOrderController(svc *service.OrderService) *OrderController {
 	return &OrderController{svc: svc}
 }
 
+// ClickOrder godoc
+// @Summary     Inisiasi order otomatis saat pelanggan klik tombol Pesan di web
+// @Description Membuat invoice status menunggu_chat dan mengembalikan URL WhatsApp resmi.
+// @Tags        orders
+// @Accept      json
+// @Produce     json
+// @Param       body body dto.ClickOrderRequest true "Data klik layanan"
+// @Success     200 {object} dto.ClickOrderResponse
+// @Failure     400 {object} httpx.ErrorResponse
+// @Router      /api/v1/orders/click [post]
+func (ctrl *OrderController) ClickOrder(c *gin.Context) {
+	var req dto.ClickOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
+		return
+	}
+	res, err := ctrl.svc.InitiateClickOrder(c.Request.Context(), req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 // CreateManualOrder godoc
 // @Summary     Buat invoice pesanan baru secara manual oleh admin
 // @Description Dibuat admin saat chat WhatsApp masuk & kesepakatan nego dicatat.
@@ -52,14 +76,16 @@ func (ctrl *OrderController) CreateManualOrder(c *gin.Context) {
 // @Summary     Daftar pesanan & invoice
 // @Tags        orders
 // @Produce     json
-// @Param       status query string false "Filter status (negosiasi, deal, selesai)"
-// @Param       search query string false "Cari no invoice / nama / telepon"
+// @Param       status query string false "Filter status (menunggu_chat, negosiasi, deal, selesai)"
+// @Param       search query string false "Cari no invoice / digit belakang / nama / telepon"
+// @Param       date query string false "Filter tanggal spesifik YYYY-MM-DD"
 // @Success     200 {object} dto.ListOrderEnvelope
 // @Router      /api/v1/orders [get]
 func (ctrl *OrderController) ListOrders(c *gin.Context) {
 	status := c.Query("status")
 	search := c.Query("search")
-	items, err := ctrl.svc.ListOrders(c.Request.Context(), status, search)
+	dateFilter := c.Query("date")
+	items, err := ctrl.svc.ListOrders(c.Request.Context(), status, search, dateFilter)
 	if err != nil {
 		httpx.Fail(c, err)
 		return

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, Search, X, FileText } from "lucide-react";
+import { Plus, RefreshCw, Search, X, FileText, Calendar, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,9 +49,13 @@ export function OrderWorkspace() {
   // Dialog Buat Order Baru Manual
   const [showNewDialog, setShowNewDialog] = useState(false);
 
-  // Filter List Master
+  // Filter List Master: Pencarian Digit Belakang & Tanggal
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Tab View Mode: 'active' (Pesanan Aktif) vs 'pending' (Menunggu Chat WA)
+  const [masterListMode, setMasterListMode] = useState<"active" | "pending">("active");
 
   // Tab State: activeTab === 'list' atau orderId
   const [activeTab, setActiveTab] = useState<string>("list");
@@ -64,7 +68,7 @@ export function OrderWorkspace() {
     if (!silent) setLoading(true);
     try {
       const [orderList, catalog] = await Promise.all([
-        listOrdersAdmin(statusFilter, search),
+        listOrdersAdmin(statusFilter, search, dateFilter),
         fetchServiceItems(),
       ]);
       setOrders(orderList);
@@ -80,17 +84,17 @@ export function OrderWorkspace() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [statusFilter, search]);
+  }, [statusFilter, search, dateFilter]);
 
   useEffect(() => {
     void loadMasterOrders(false);
   }, [loadMasterOrders]);
 
-  // Polling hening setiap 5 detik agar jika admin lain menambah order, list otomatis terupdate
+  // Polling hening setiap 4 detik agar order otomatis masuk
   useEffect(() => {
     const timer = setInterval(() => {
       void loadMasterOrders(true);
-    }, 5000);
+    }, 4000);
 
     return () => clearInterval(timer);
   }, [loadMasterOrders]);
@@ -131,7 +135,6 @@ export function OrderWorkspace() {
       description: `Nomor Invoice ${newOrd.invoice_no} siap dikelola.`,
       type: "success",
     });
-    // Buka otomatis sebagai tab baru
     handleOpenOrderTab(newOrd);
   };
 
@@ -176,6 +179,20 @@ export function OrderWorkspace() {
     }
   };
 
+  // Pisahkan Pesanan Aktif vs Menunggu Chat WA
+  const pendingOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.status === "menunggu_chat" || o.status === "belum_diproses"
+    );
+  }, [orders]);
+
+  const activeOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.status !== "menunggu_chat" && o.status !== "belum_diproses"
+    );
+  }, [orders]);
+
+  const displayedOrders = masterListMode === "active" ? activeOrders : pendingOrders;
   const currentOpenedOrder = activeTab !== "list" ? openedOrderData[activeTab] : null;
 
   return (
@@ -187,10 +204,10 @@ export function OrderWorkspace() {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
               Pesanan &amp; Invoice Nego
             </h1>
-            <span className="text-xs text-slate-400">{orders.length} pesanan aktif</span>
+            <span className="text-xs text-slate-400">{orders.length} total</span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Kelola pesanan nyata hasil chat WhatsApp: atur nego harga, tambah layanan custom, dan salin rincian invoice ke WA klien.
+            Terhubung otomatis dengan tombol Pesan di web. Filter per tanggal &amp; digit nomor invoice untuk pencarian kilat.
           </p>
         </div>
 
@@ -220,18 +237,37 @@ export function OrderWorkspace() {
 
       {/* ================= BARIS TAB MULTI-INVOICE ================= */}
       <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 pb-px no-scrollbar">
-        {/* Tab Daftar Utama */}
+        {/* Tab Pesanan Aktif */}
         <button
           type="button"
-          onClick={() => setActiveTab("list")}
+          onClick={() => {
+            setActiveTab("list");
+            setMasterListMode("active");
+          }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
-            activeTab === "list"
+            activeTab === "list" && masterListMode === "active"
               ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
               : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
           }`}
         >
           <FileText className="size-3.5" />
-          <span>Daftar Pesanan ({orders.length})</span>
+          <span>Pesanan Aktif ({activeOrders.length})</span>
+        </button>
+
+        {/* Tab Menunggu Chat WA (Hasil Baru Klik Web) */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("list");
+            setMasterListMode("pending");
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
+            activeTab === "list" && masterListMode === "pending"
+              ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
+              : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <span>⏳ Menunggu Chat WA ({pendingOrders.length})</span>
         </button>
 
         {/* Tab-Tab Invoice Terbuka */}
@@ -267,13 +303,14 @@ export function OrderWorkspace() {
         <DataTableShell>
           <DataTableToolbar>
             <DataTableToolbarGroup className="flex-1 flex-wrap gap-2.5">
-              <div className="relative flex-1 sm:max-w-sm">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-slate-400" />
+              {/* Input Cepat Cari Digit Nomor Belakang (Mis. 0001, 1, 2) */}
+              <div className="relative flex-1 sm:max-w-xs">
+                <Hash className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-slate-400" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari No. Invoice / Klien / Layanan…"
-                  className="h-9 rounded-md border-slate-200 bg-white pr-8 pl-9 text-xs text-slate-700"
+                  placeholder="Ketik no. invoice (mis. 0001, 1, atau nama)…"
+                  className="h-9 rounded-md border-slate-200 bg-white pr-8 pl-9 text-xs text-slate-700 font-mono"
                 />
                 {search && (
                   <button
@@ -286,27 +323,51 @@ export function OrderWorkspace() {
                 )}
               </div>
 
-              {/* Filter Status */}
-              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "all")}>
-                <SelectTrigger className="h-9 w-full sm:w-[180px] bg-white text-xs border-slate-200">
-                  <SelectValue placeholder="Semua status" />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectGroup>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="negosiasi">Sedang Negosiasi</SelectItem>
-                    <SelectItem value="deal">Deal / Sepakat</SelectItem>
-                    <SelectItem value="dikerjakan">Sedang Dikerjakan</SelectItem>
-                    <SelectItem value="selesai">Selesai</SelectItem>
-                    <SelectItem value="batal">Dibatalkan</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              {/* Filter Tanggal Spesifik (YYYY-MM-DD) */}
+              <div className="flex items-center gap-1.5">
+                <Calendar className="size-3.5 text-slate-400" />
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="h-9 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700"
+                  title="Filter per tanggal invoice"
+                />
+                {dateFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setDateFilter("")}
+                    className="text-xs text-slate-400 hover:text-rose-600 p-1"
+                    title="Hapus filter tanggal"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Status (khusus tab aktif) */}
+              {masterListMode === "active" && (
+                <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "all")}>
+                  <SelectTrigger className="h-9 w-full sm:w-[160px] bg-white text-xs border-slate-200">
+                    <SelectValue placeholder="Semua status" />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectGroup>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="negosiasi">Sedang Negosiasi</SelectItem>
+                      <SelectItem value="deal">Deal / Sepakat</SelectItem>
+                      <SelectItem value="dikerjakan">Sedang Dikerjakan</SelectItem>
+                      <SelectItem value="selesai">Selesai</SelectItem>
+                      <SelectItem value="batal">Dibatalkan</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              )}
             </DataTableToolbarGroup>
           </DataTableToolbar>
 
           <OrderTable
-            items={orders}
+            items={displayedOrders}
             loading={loading}
             onOpenTab={handleOpenOrderTab}
             onDelete={handleDeleteOrder}

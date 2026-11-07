@@ -18,6 +18,7 @@ func RegisterOrderRoutes(rg *gin.RouterGroup, db *sql.DB) {
 
 	orderGroup := rg.Group("/orders")
 	{
+		orderGroup.POST("/click", ctrl.ClickOrder)
 		orderGroup.POST("", ctrl.CreateManualOrder)
 		orderGroup.GET("", ctrl.ListOrders)
 		orderGroup.GET("/:id", ctrl.GetOrderDetail)
