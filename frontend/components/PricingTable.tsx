@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -8,8 +8,13 @@ import {
   ChevronRight,
   MessageCircle,
 } from "lucide-react";
-import { pricingGroups } from "@/lib/pricing";
 import { waLink } from "@/lib/site";
+import {
+  fetchServiceCategories,
+  fetchServiceItems,
+  type ServiceCategory,
+  type ServiceItem,
+} from "@/lib/katalogLayanan";
 
 const PAGE_SIZE = 6;
 
@@ -22,45 +27,35 @@ const guarantees = [
   "Survei & konsultasi gratis",
 ];
 
-type FlatRow = {
-  key: string;
-  number: number;
-  category: string;
-  name: string;
-  detail: string;
-  unit: string;
-  price: string | null;
-};
-
-const allRows: FlatRow[] = [];
-pricingGroups.forEach((group) => {
-  group.rows.forEach((row, index) => {
-    allRows.push({
-      ...row,
-      key: `${group.title}-${index}-${row.name}`,
-      number: allRows.length + 1,
-      category: group.title,
-    });
-  });
-});
-
-const tabs = [
-  { label: "Semua", value: "all", count: allRows.length },
-  ...pricingGroups.map((group) => ({
-    label: group.title,
-    value: group.title,
-    count: group.rows.length,
-  })),
-];
-
 export default function PricingTable() {
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [items, setItems] = useState<ServiceItem[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      const [cats, itms] = await Promise.all([
+        fetchServiceCategories(),
+        fetchServiceItems(),
+      ]);
+      if (active) {
+        setCategories(cats);
+        setItems(itms);
+      }
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Filter items berdasarkan activeTab (kategori ID)
   const rows =
     activeTab === "all"
-      ? allRows
-      : allRows.filter((row) => row.category === activeTab);
+      ? items
+      : items.filter((row) => row.category_id === activeTab);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -75,6 +70,7 @@ export default function PricingTable() {
 
   return (
     <div>
+      {/* Guarantees Header */}
       <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-2 border-y border-[#0A2540]/10 py-3.5">
         {guarantees.map((item) => (
           <span
@@ -87,39 +83,64 @@ export default function PricingTable() {
         ))}
       </div>
 
+      {/* Tabs Kategori Dinamis */}
       <div
         role="group"
         aria-label="Filter kategori tarif"
-        className="mt-5 flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible"
+        className="mt-5 flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible no-scrollbar"
       >
-        {tabs.map((tab) => {
-          const active = tab.value === activeTab;
+        {/* Tab Semua */}
+        <button
+          type="button"
+          aria-pressed={activeTab === "all"}
+          onClick={() => goToTab("all")}
+          className={`inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors sm:px-3 ${
+            activeTab === "all"
+              ? "border-[#A82020] bg-[#A82020] text-white"
+              : "border-[#0A2540]/15 bg-white text-[#0A2540]/65 hover:border-[#A82020]/40 hover:text-[#A82020]"
+          } ${focusRing}`}
+        >
+          Semua
+          <span
+            className={`font-mono text-[9px] ${
+              activeTab === "all" ? "text-white/70" : "text-[#0A2540]/35"
+            }`}
+          >
+            {items.length}
+          </span>
+        </button>
+
+        {/* Tab Per Kategori */}
+        {categories.map((cat) => {
+          const active = cat.id === activeTab;
+          const count = items.filter((it) => it.category_id === cat.id).length;
 
           return (
             <button
-              key={tab.value}
+              key={cat.id}
               type="button"
               aria-pressed={active}
-              onClick={() => goToTab(tab.value)}
+              onClick={() => goToTab(cat.id)}
               className={`inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors sm:px-3 ${
                 active
                   ? "border-[#A82020] bg-[#A82020] text-white"
                   : "border-[#0A2540]/15 bg-white text-[#0A2540]/65 hover:border-[#A82020]/40 hover:text-[#A82020]"
               } ${focusRing}`}
             >
-              {tab.label}
+              {cat.name}
               <span
                 className={`font-mono text-[9px] ${
                   active ? "text-white/70" : "text-[#0A2540]/35"
                 }`}
               >
-                {tab.count}
+                {count}
               </span>
             </button>
           );
         })}
       </div>
 
+      {/* Tabel Data Tarif */}
       <div className="mt-4 overflow-hidden border border-[#0A2540]/15 bg-white">
         <span
           aria-hidden="true"
@@ -128,9 +149,7 @@ export default function PricingTable() {
 
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">
-            Tabel estimasi harga layanan CV Win Teknik Mandiri, {rows.length}{" "}
-            item pada kategori{" "}
-            {activeTab === "all" ? "semua layanan" : activeTab}.
+            Tabel estimasi harga layanan CV Win Teknik Mandiri
           </caption>
 
           <thead>
@@ -168,28 +187,28 @@ export default function PricingTable() {
           >
             {pageRows.map((row, index) => (
               <tr
-                key={row.key}
+                key={row.id}
                 className={`group transition-colors duration-200 hover:bg-[#F4FAFE] hover:shadow-[inset_2px_0_0_0_#A82020] [&:last-child>td]:border-b-0 ${
                   index % 2 === 1 ? "bg-[#FBFDFF]" : "bg-white"
                 }`}
               >
                 <td className="hidden border-b border-[#0A2540]/10 px-3 py-3 align-middle font-mono text-[10px] tabular-nums text-[#0A2540]/35 sm:table-cell">
-                  {String(row.number).padStart(2, "0")}
+                  {String(start + index + 1).padStart(2, "0")}
                 </td>
 
                 <td className="border-b border-[#0A2540]/10 px-3 py-3 align-middle sm:px-4">
                   <Link
                     href={waLink(
-                      `Halo CV Win Teknik Mandiri, saya ingin menanyakan tarif layanan: ${row.name}.`
+                      `Halo CV Win Teknik Mandiri, saya ingin menanyakan tarif layanan: ${row.title} (${row.price || "Penawaran"}).`
                     )}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Tanyakan tarif ${row.name} via WhatsApp`}
+                    aria-label={`Tanyakan tarif ${row.title} via WhatsApp`}
                     className={`group/link block ${focusRing}`}
                   >
                     <span className="flex items-baseline gap-1.5">
                       <span className="line-clamp-1 text-[13px] font-semibold leading-5 text-[#0A2540] transition-colors duration-200 group-hover:text-[#A82020] sm:text-[13.5px]">
-                        {row.name}
+                        {row.title}
                       </span>
                       <ArrowUpRight
                         className="size-3 shrink-0 -translate-x-1 text-[#A82020] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
@@ -197,16 +216,16 @@ export default function PricingTable() {
                       />
                     </span>
                     <span
-                      title={row.detail}
+                      title={row.description}
                       className="mt-0.5 line-clamp-1 block text-[11px] leading-5 text-[#0A2540]/50"
                     >
-                      {row.detail}
+                      {row.description}
                     </span>
                   </Link>
                 </td>
 
                 <td className="hidden border-b border-l border-[#0A2540]/10 px-3 py-3 align-middle text-[11px] leading-5 text-[#0A2540]/50 md:table-cell">
-                  {row.unit}
+                  {row.unit || "/ unit"}
                 </td>
 
                 <td className="border-b border-l border-[#0A2540]/10 px-3 py-3 text-right align-middle">
@@ -235,6 +254,7 @@ export default function PricingTable() {
           </tbody>
         </table>
 
+        {/* Pagination & Footer */}
         <div className="flex flex-col gap-3 border-t border-[#0A2540]/15 bg-[#FBFDFF] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <p
             aria-live="polite"
@@ -245,39 +265,35 @@ export default function PricingTable() {
           </p>
 
           <div className="flex items-center gap-1.5">
-            {pageCount > 1 ? (
+            {pageCount > 1 && (
               <>
                 <button
                   type="button"
                   onClick={() => setPage(currentPage - 1)}
                   disabled={currentPage === 1}
                   aria-label="Halaman sebelumnya"
-                  className={`inline-flex size-8 items-center justify-center border border-[#0A2540]/15 bg-white text-[#0A2540] transition-colors hover:border-[#A82020] hover:text-[#A82020] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-[#0A2540]/15 disabled:hover:text-[#0A2540] ${focusRing}`}
+                  className={`inline-flex size-8 items-center justify-center border border-[#0A2540]/15 bg-white text-[#0A2540] transition-colors hover:border-[#A82020] hover:text-[#A82020] disabled:cursor-not-allowed disabled:opacity-30 ${focusRing}`}
                 >
                   <ChevronLeft className="size-3.5" aria-hidden="true" />
                 </button>
 
                 {Array.from({ length: pageCount }, (_, i) => i + 1).map(
-                  (pageNumber) => {
-                    const active = pageNumber === currentPage;
-
-                    return (
-                      <button
-                        key={pageNumber}
-                        type="button"
-                        onClick={() => setPage(pageNumber)}
-                        aria-label={`Halaman ${pageNumber}`}
-                        aria-current={active ? "page" : undefined}
-                        className={`inline-flex size-8 items-center justify-center border font-mono text-[10px] transition-colors ${
-                          active
-                            ? "border-[#A82020] bg-[#A82020] text-white"
-                            : "border-[#0A2540]/15 bg-white text-[#0A2540]/70 hover:border-[#A82020] hover:text-[#A82020]"
-                        } ${focusRing}`}
-                      >
-                        {pageNumber}
-                      </button>
-                    );
-                  }
+                  (pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      aria-label={`Halaman ${pageNumber}`}
+                      aria-current={pageNumber === currentPage ? "page" : undefined}
+                      className={`inline-flex size-8 items-center justify-center border font-mono text-[10px] transition-colors ${
+                        pageNumber === currentPage
+                          ? "border-[#A82020] bg-[#A82020] text-white"
+                          : "border-[#0A2540]/15 bg-white text-[#0A2540]/70 hover:border-[#A82020] hover:text-[#A82020]"
+                      } ${focusRing}`}
+                    >
+                      {pageNumber}
+                    </button>
+                  )
                 )}
 
                 <button
@@ -285,20 +301,17 @@ export default function PricingTable() {
                   onClick={() => setPage(currentPage + 1)}
                   disabled={currentPage === pageCount}
                   aria-label="Halaman berikutnya"
-                  className={`inline-flex size-8 items-center justify-center border border-[#0A2540]/15 bg-white text-[#0A2540] transition-colors hover:border-[#A82020] hover:text-[#A82020] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-[#0A2540]/15 disabled:hover:text-[#0A2540] ${focusRing}`}
+                  className={`inline-flex size-8 items-center justify-center border border-[#0A2540]/15 bg-white text-[#0A2540] transition-colors hover:border-[#A82020] hover:text-[#A82020] disabled:cursor-not-allowed disabled:opacity-30 ${focusRing}`}
                 >
                   <ChevronRight className="size-3.5" aria-hidden="true" />
                 </button>
               </>
-            ) : (
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#0A2540]/30">
-                Halaman tunggal
-              </span>
             )}
           </div>
         </div>
       </div>
 
+      {/* Catatan Bawah */}
       <div className="mt-8 flex flex-col gap-4 border-t border-[#0A2540]/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-2xl text-[11px] leading-5 text-[#0A2540]/50">
           Harga estimasi untuk wilayah Kediri Raya, belum termasuk pekerjaan

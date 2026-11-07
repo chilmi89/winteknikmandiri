@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import ServicesManager from "@/components/dashboard/services/ServicesManager";
+import KatalogManager from "@/components/dashboard/katalog/KatalogManager";
 
 export const metadata: Metadata = {
-  title: "Katalog Layanan",
+  title: "Katalog Layanan Publik — Dashboard",
 };
 
 export default function ServicesPage() {
-  return <ServicesManager />;
+  return <KatalogManager />;
 }

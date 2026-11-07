@@ -1125,6 +1125,361 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/service-categories": {
+            "get": {
+                "description": "Mengambil daftar seluruh kategori layanan aktif.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kategori_layanan"
+                ],
+                "summary": "Daftar kategori layanan",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan nonaktif",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCategoryEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kategori_layanan"
+                ],
+                "summary": "Tambah kategori layanan baru",
+                "parameters": [
+                    {
+                        "description": "Payload kategori",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CategoryEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/service-categories/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kategori_layanan"
+                ],
+                "summary": "Perbarui kategori layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kategori (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload edit",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CategoryEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kategori_layanan"
+                ],
+                "summary": "Hapus kategori layanan (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kategori (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KatalogMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/service-items": {
+            "get": {
+                "description": "Mengambil daftar item layanan lengkap dengan nama \u0026 kode kategori.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Daftar kartu layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter berdasarkan ID Kategori (UUID)",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Sertakan nonaktif",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListItemEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Tambah kartu layanan baru",
+                "parameters": [
+                    {
+                        "description": "Payload item layanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ItemEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/service-items/upload-photo": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Unggah foto layanan (Auto-Convert WebP ke MinIO)",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File foto layanan (JPG, PNG, WEBP)",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadServicePhotoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/service-items/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Detail satu kartu layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Item (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ItemEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Perbarui kartu layanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Item (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload edit",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ItemEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service_items"
+                ],
+                "summary": "Hapus kartu layanan (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Item (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KatalogMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/sosial-media": {
             "get": {
                 "description": "Mengambil daftar sosial media aktif untuk publik / admin.",
@@ -1915,6 +2270,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CategoryEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.ServiceCategoryResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateCategoryRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "name"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "01"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "Perawatan \u0026 Cuci AC"
+                }
+            }
+        },
         "dto.CreateFAQRequest": {
             "type": "object",
             "required": [
@@ -2030,6 +2419,62 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Permohonan konsultasi berhasil disimpan"
+                }
+            }
+        },
+        "dto.CreateItemRequest": {
+            "type": "object",
+            "required": [
+                "category_id",
+                "title"
+            ],
+            "properties": {
+                "category_id": {
+                    "type": "string",
+                    "example": "c1111111-1111-1111-1111-111111111111"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Keterangan..."
+                },
+                "highlights": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "image_key": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "Rp 65.000"
+                },
+                "price_note": {
+                    "type": "string"
+                },
+                "price_prefix": {
+                    "type": "string",
+                    "example": "Mulai dari"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2,
+                    "example": "Cuci AC \u0026 Deep Cleaning Higienis"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "/ unit"
                 }
             }
         },
@@ -2387,6 +2832,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ItemEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.ServiceItemResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.JamOperasionalBundleEnvelope": {
             "type": "object",
             "properties": {
@@ -2497,6 +2953,28 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.KatalogMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListCategoryEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ServiceCategoryResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ListFAQResponse": {
             "type": "object",
             "properties": {
@@ -2534,6 +3012,20 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.ListItemEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ServiceItemResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -2695,6 +3187,110 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ServiceCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "01"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Perawatan \u0026 Cuci AC"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ServiceItemResponse": {
+            "type": "object",
+            "properties": {
+                "category_code": {
+                    "type": "string",
+                    "example": "01"
+                },
+                "category_id": {
+                    "type": "string",
+                    "example": "c1111111-1111-1111-1111-111111111111"
+                },
+                "category_name": {
+                    "type": "string",
+                    "example": "Perawatan \u0026 Cuci AC"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Bersih menyeluruh, bebas becek, garansi 7 hari."
+                },
+                "highlights": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "['Tanpa becek'",
+                        "'Cek freon gratis']"
+                    ]
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0f8fad5b-d9cb-469f-a165-70867728950e"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "services/..."
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/images/ac-split-clean.jpg"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "price": {
+                    "type": "string",
+                    "example": "Rp 65.000"
+                },
+                "price_note": {
+                    "type": "string",
+                    "example": "1,5–2 PK Rp 85.000..."
+                },
+                "price_prefix": {
+                    "type": "string",
+                    "example": "Mulai dari"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Cuci AC \u0026 Deep Cleaning Higienis"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "/ unit"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.SosialMediaEnvelope": {
             "type": "object",
             "properties": {
@@ -2803,6 +3399,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                }
+            }
+        },
         "dto.UpdateFAQRequest": {
             "type": "object",
             "required": [
@@ -2863,6 +3476,52 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateItemRequest": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "highlights": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "image_key": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "price_note": {
+                    "type": "string"
+                },
+                "price_prefix": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 2
+                },
+                "unit": {
+                    "type": "string"
                 }
             }
         },
@@ -3051,6 +3710,31 @@ const docTemplate = `{
                 "size": {
                     "type": "integer",
                     "example": 142500
+                }
+            }
+        },
+        "dto.UploadServicePhotoResponse": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "image_key": {
+                    "type": "string",
+                    "example": "services/20261107-abc.webp"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "/media/wtm-media/services/20261107-abc.webp"
+                },
+                "original_name": {
+                    "type": "string",
+                    "example": "foto.jpg"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 125000
                 }
             }
         },

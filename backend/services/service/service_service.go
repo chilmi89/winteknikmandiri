@@ -259,7 +259,8 @@ func (s *ServiceService) UploadImage(
 		return nil, apperr.Unavailable("MinIO Object Storage tidak tersedia")
 	}
 
-	objectKey, publicURL, err := storageClient.UploadServicePhoto(ctx, filename, reader, size, contentType)
+	isWebP := strings.EqualFold(contentType, "image/webp")
+	objectKey, publicURL, err := storageClient.UploadServicePhoto(ctx, filename, reader, size, isWebP)
 	if err != nil {
 		return nil, fmt.Errorf("gagal upload foto layanan ke storage: %w", err)
 	}

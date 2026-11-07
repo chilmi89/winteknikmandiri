@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, MessageCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import ServiceDetail from "@/components/ServiceDetail";
+import ServicesClientList from "@/components/ServicesClientList";
 import ContactCta from "@/components/ContactCta";
 import SiteFooter from "@/components/SiteFooter";
 import FloatingTechnicianBadge from "@/components/FloatingTechnicianBadge";
@@ -127,44 +127,8 @@ export default function LayananPage() {
           </div>
         </section>
 
-        <div className="sticky top-20 z-30 transform-gpu border-b border-[#0A2540]/10 bg-white/98 shadow-[0_1px_3px_rgba(10,37,64,0.03)]">
-          <nav
-            aria-label="Daftar layanan"
-            className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8"
-          >
-            <ul className="flex gap-6 overflow-x-auto py-3.5">
-              {serviceDetails.map((service) => (
-                <li key={service.id} className="shrink-0">
-                  <Link
-                    href={`#${service.id}`}
-                    className={`group inline-flex items-center gap-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-[#0A2540]/55 transition-colors hover:text-[#A82020] sm:text-[11px] ${focusRing}`}
-                  >
-                    <span className="text-[#A82020]">{service.number}</span>
-                    {service.shortName}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-
-        <section aria-label="Detail layanan">
-          {serviceDetails.map((service, index) => (
-            <div
-              key={service.id}
-              className={`border-t border-[#0A2540]/10 ${
-                index % 2 === 1 ? "bg-[#8ACFF8]/20" : "bg-white"
-              }`}
-            >
-              <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                <ServiceDetail
-                  service={service}
-                  reversed={index % 2 === 1}
-                />
-              </div>
-            </div>
-          ))}
-        </section>
+        {/* Komponen Daftar Kategori & Kartu Layanan Dinamis dari API */}
+        <ServicesClientList />
 
         <ContactCta />
       </main>

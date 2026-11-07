@@ -9,6 +9,30 @@ definitions:
         example: 6
         type: integer
     type: object
+  dto.CategoryEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.ServiceCategoryResponse'
+      message:
+        type: string
+    type: object
+  dto.CreateCategoryRequest:
+    properties:
+      code:
+        example: "01"
+        maxLength: 10
+        type: string
+      is_active:
+        type: boolean
+      name:
+        example: Perawatan & Cuci AC
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - code
+    - name
+    type: object
   dto.CreateFAQRequest:
     properties:
       answer:
@@ -94,6 +118,46 @@ definitions:
       message:
         example: Permohonan konsultasi berhasil disimpan
         type: string
+    type: object
+  dto.CreateItemRequest:
+    properties:
+      category_id:
+        example: c1111111-1111-1111-1111-111111111111
+        type: string
+      description:
+        example: Keterangan...
+        type: string
+      highlights:
+        items:
+          type: string
+        type: array
+      image_key:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      price:
+        example: Rp 65.000
+        type: string
+      price_note:
+        type: string
+      price_prefix:
+        example: Mulai dari
+        type: string
+      sort_order:
+        type: integer
+      title:
+        example: Cuci AC & Deep Cleaning Higienis
+        maxLength: 200
+        minLength: 2
+        type: string
+      unit:
+        example: / unit
+        type: string
+    required:
+    - category_id
+    - title
     type: object
   dto.CreateJamOperasionalRequest:
     properties:
@@ -345,6 +409,13 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.ItemEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.ServiceItemResponse'
+      message:
+        type: string
+    type: object
   dto.JamOperasionalBundleEnvelope:
     properties:
       data:
@@ -419,6 +490,20 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.KatalogMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.ListCategoryEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.ServiceCategoryResponse'
+        type: array
+      message:
+        type: string
+    type: object
   dto.ListFAQResponse:
     properties:
       data:
@@ -444,6 +529,15 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  dto.ListItemEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.ServiceItemResponse'
+        type: array
+      message:
+        type: string
     type: object
   dto.ListPilarLayananEnvelope:
     properties:
@@ -553,6 +647,81 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.ServiceCategoryResponse:
+    properties:
+      code:
+        example: "01"
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Perawatan & Cuci AC
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ServiceItemResponse:
+    properties:
+      category_code:
+        example: "01"
+        type: string
+      category_id:
+        example: c1111111-1111-1111-1111-111111111111
+        type: string
+      category_name:
+        example: Perawatan & Cuci AC
+        type: string
+      created_at:
+        type: string
+      description:
+        example: Bersih menyeluruh, bebas becek, garansi 7 hari.
+        type: string
+      highlights:
+        example:
+        - '[''Tanpa becek'''
+        - '''Cek freon gratis'']'
+        items:
+          type: string
+        type: array
+      id:
+        example: 0f8fad5b-d9cb-469f-a165-70867728950e
+        type: string
+      image_key:
+        example: services/...
+        type: string
+      image_url:
+        example: /images/ac-split-clean.jpg
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      price:
+        example: Rp 65.000
+        type: string
+      price_note:
+        example: 1,5–2 PK Rp 85.000...
+        type: string
+      price_prefix:
+        example: Mulai dari
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      title:
+        example: Cuci AC & Deep Cleaning Higienis
+        type: string
+      unit:
+        example: / unit
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.SosialMediaEnvelope:
     properties:
       data:
@@ -627,6 +796,18 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.UpdateCategoryRequest:
+    properties:
+      code:
+        maxLength: 10
+        type: string
+      is_active:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
   dto.UpdateFAQRequest:
     properties:
       answer:
@@ -669,6 +850,37 @@ definitions:
       title:
         maxLength: 200
         minLength: 2
+        type: string
+    type: object
+  dto.UpdateItemRequest:
+    properties:
+      category_id:
+        type: string
+      description:
+        type: string
+      highlights:
+        items:
+          type: string
+        type: array
+      image_key:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      price:
+        type: string
+      price_note:
+        type: string
+      price_prefix:
+        type: string
+      sort_order:
+        type: integer
+      title:
+        maxLength: 200
+        minLength: 2
+        type: string
+      unit:
         type: string
     type: object
   dto.UpdateJamOperasionalRequest:
@@ -801,6 +1013,24 @@ definitions:
         type: string
       size:
         example: 142500
+        type: integer
+    type: object
+  dto.UploadServicePhotoResponse:
+    properties:
+      format:
+        example: image/webp
+        type: string
+      image_key:
+        example: services/20261107-abc.webp
+        type: string
+      image_url:
+        example: /media/wtm-media/services/20261107-abc.webp
+        type: string
+      original_name:
+        example: foto.jpg
+        type: string
+      size:
+        example: 125000
         type: integer
     type: object
   dto.UploadTeamPhotoResponse:
@@ -1630,6 +1860,237 @@ paths:
       summary: Perbarui data pilar layanan
       tags:
       - pilar_layanan
+  /api/v1/service-categories:
+    get:
+      description: Mengambil daftar seluruh kategori layanan aktif.
+      parameters:
+      - description: Sertakan nonaktif
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCategoryEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar kategori layanan
+      tags:
+      - kategori_layanan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload kategori
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CategoryEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah kategori layanan baru
+      tags:
+      - kategori_layanan
+  /api/v1/service-categories/{id}:
+    delete:
+      parameters:
+      - description: ID Kategori (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KatalogMessageResponse'
+      summary: Hapus kategori layanan (soft delete)
+      tags:
+      - kategori_layanan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Kategori (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload edit
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CategoryEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui kategori layanan
+      tags:
+      - kategori_layanan
+  /api/v1/service-items:
+    get:
+      description: Mengambil daftar item layanan lengkap dengan nama & kode kategori.
+      parameters:
+      - description: Filter berdasarkan ID Kategori (UUID)
+        in: query
+        name: category_id
+        type: string
+      - description: Sertakan nonaktif
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListItemEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Daftar kartu layanan
+      tags:
+      - service_items
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload item layanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ItemEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Tambah kartu layanan baru
+      tags:
+      - service_items
+  /api/v1/service-items/{id}:
+    delete:
+      parameters:
+      - description: ID Item (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KatalogMessageResponse'
+      summary: Hapus kartu layanan (soft delete)
+      tags:
+      - service_items
+    get:
+      parameters:
+      - description: ID Item (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ItemEnvelope'
+      summary: Detail satu kartu layanan
+      tags:
+      - service_items
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Item (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload edit
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ItemEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Perbarui kartu layanan
+      tags:
+      - service_items
+  /api/v1/service-items/upload-photo:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: File foto layanan (JPG, PNG, WEBP)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UploadServicePhotoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Unggah foto layanan (Auto-Convert WebP ke MinIO)
+      tags:
+      - service_items
   /api/v1/sosial-media:
     get:
       description: Mengambil daftar sosial media aktif untuk publik / admin.

@@ -86,25 +86,30 @@ func (c *Client) UploadServicePhoto(
 	originalFilename string,
 	reader io.Reader,
 	size int64,
-	contentType string,
+	isWebP bool,
 ) (objectKey string, publicURL string, err error) {
 	if c == nil || c.s3 == nil {
 		return "", "", fmt.Errorf("storage client belum terinisialisasi")
 	}
 
-	ext := strings.ToLower(path.Ext(originalFilename))
-	if ext == "" {
-		ext = ".jpg"
+	datePrefix := time.Now().Format("20060102")
+	ext := ".webp"
+	contentType := "image/webp"
+
+	if !isWebP {
+		ext = strings.ToLower(path.Ext(originalFilename))
+		if ext == "" {
+			ext = ".jpg"
+		}
+		if ext == ".png" {
+			contentType = "image/png"
+		} else {
+			contentType = "image/jpeg"
+		}
 	}
 
-	// Format objectKey: services/YYYYMMDD-uuid.ext
-	datePrefix := time.Now().Format("20060102")
 	uniqueName := fmt.Sprintf("%s-%s%s", datePrefix, uuid.New().String()[:8], ext)
 	objectKey = path.Join("services", uniqueName)
-
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
 
 	_, err = c.s3.PutObject(ctx, c.bucket, objectKey, reader, size, minio.PutObjectOptions{
 		ContentType: contentType,
