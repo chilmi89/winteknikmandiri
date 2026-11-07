@@ -21,35 +21,38 @@ func NewOrderController(svc *service.OrderService) *OrderController {
 	return &OrderController{svc: svc}
 }
 
-// ClickOrder godoc
-// @Summary     Inisiasi order saat pelanggan klik tombol Pesan di web
-// @Description Membuat invoice sementara (status: belum_diproses) dan mengembalikan URL WhatsApp resmi terformat.
+// CreateManualOrder godoc
+// @Summary     Buat invoice pesanan baru secara manual oleh admin
+// @Description Dibuat admin saat chat WhatsApp masuk & kesepakatan nego dicatat.
 // @Tags        orders
 // @Accept      json
 // @Produce     json
-// @Param       body body dto.ClickOrderRequest true "Data klik layanan"
-// @Success     200 {object} dto.ClickOrderResponse
+// @Param       body body dto.CreateManualOrderRequest true "Payload order manual"
+// @Success     201 {object} dto.OrderEnvelope
 // @Failure     400 {object} httpx.ErrorResponse
-// @Router      /api/v1/orders/click [post]
-func (ctrl *OrderController) ClickOrder(c *gin.Context) {
-	var req dto.ClickOrderRequest
+// @Router      /api/v1/orders [post]
+func (ctrl *OrderController) CreateManualOrder(c *gin.Context) {
+	var req dto.CreateManualOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
 		return
 	}
-	res, err := ctrl.svc.InitiateClickOrder(c.Request.Context(), req)
+	res, err := ctrl.svc.CreateManualOrder(c.Request.Context(), req)
 	if err != nil {
 		httpx.Fail(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusCreated, dto.OrderEnvelope{
+		Message: "Pesanan & invoice berhasil dibuat",
+		Data:    *res,
+	})
 }
 
 // ListOrders godoc
 // @Summary     Daftar pesanan & invoice
 // @Tags        orders
 // @Produce     json
-// @Param       status query string false "Filter status (belum_diproses, negosiasi, deal, selesai)"
+// @Param       status query string false "Filter status (negosiasi, deal, selesai)"
 // @Param       search query string false "Cari no invoice / nama / telepon"
 // @Success     200 {object} dto.ListOrderEnvelope
 // @Router      /api/v1/orders [get]

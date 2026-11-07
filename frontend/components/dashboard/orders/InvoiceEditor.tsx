@@ -413,58 +413,16 @@ export function InvoiceEditor({
         </h3>
 
         <div className="space-y-3">
-          {/* Tombol Cepat: Terima Chat & Mulai Nego jika masih status Menunggu Chat */}
-          {(status === "menunggu_chat" || status === "belum_diproses") && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
-              <p className="text-xs font-semibold text-amber-900">
-                ⏳ Status: Pelanggan Baru Klik di Web
-              </p>
-              <p className="text-[11px] text-amber-700 leading-relaxed">
-                Jika pelanggan sudah mengirim chat WA dengan No. Invoice ini, klik tombol di bawah untuk langsung memproses negosiasi.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                onClick={async () => {
-                  setStatus("negosiasi");
-                  setSavingHeader(true);
-                  try {
-                    await onUpdateHeader({
-                      customer_name: customerName.trim(),
-                      customer_phone: customerPhone.trim(),
-                      address: address.trim(),
-                      notes: notes.trim(),
-                      status: "negosiasi",
-                      total_amount: calculatedTotal,
-                    });
-                    toast.add({
-                      title: "Chat Diterima!",
-                      description: `Pesanan ${order.invoice_no} masuk ke proses Negosiasi aktif.`,
-                      type: "success",
-                    });
-                  } finally {
-                    setSavingHeader(false);
-                  }
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 font-semibold gap-1.5"
-              >
-                <Check className="size-3.5" />
-                Terima Chat &amp; Mulai Negosiasi
-              </Button>
-            </div>
-          )}
-
           <div>
             <label className="block text-[11px] font-medium text-slate-600 mb-1">
               Status Pesanan
             </label>
-            <Select value={status} onValueChange={(val) => setStatus(val || "menunggu_chat")}>
+            <Select value={status} onValueChange={(val) => setStatus(val || "negosiasi")}>
               <SelectTrigger className="h-8 w-full bg-white text-xs font-semibold">
                 <SelectValue placeholder="Pilih status..." />
               </SelectTrigger>
               <SelectContent align="start">
                 <SelectGroup>
-                  <SelectItem value="menunggu_chat">⏳ Menunggu Chat WA (Baru Klik Web)</SelectItem>
                   <SelectItem value="negosiasi">🟡 Sedang Negosiasi / Konsultasi WA</SelectItem>
                   <SelectItem value="deal">🟢 Deal / Sepakat</SelectItem>
                   <SelectItem value="dikerjakan">🔵 Sedang Dikerjakan</SelectItem>

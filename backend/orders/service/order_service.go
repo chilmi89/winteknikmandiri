@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"os"
 	"strings"
 
 	"github.com/google/uuid"
@@ -25,43 +23,25 @@ func NewOrderService(repo *repository.OrderRepository) *OrderService {
 	return &OrderService{repo: repo}
 }
 
-// InitiateClickOrder dipanggil saat tombol PESAN di web diklik pelanggan.
-func (s *OrderService) InitiateClickOrder(ctx context.Context, req dto.ClickOrderRequest) (*dto.ClickOrderResponse, error) {
+// CreateManualOrder dibuat admin dari dashboard saat chat WA sudah masuk & dinegosiasikan.
+func (s *OrderService) CreateManualOrder(ctx context.Context, req dto.CreateManualOrderRequest) (*dto.OrderResponse, error) {
 	invoiceNo, err := s.repo.GenerateInvoiceNo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("generate invoice: %w", err)
 	}
 
-	ord, err := rCreateInitiated(ctx, s.repo, invoiceNo, req)
+	ord, err := s.repo.CreateManualOrder(ctx, invoiceNo, req)
 	if err != nil {
 		return nil, err
 	}
 
-	// Format pesan WhatsApp yang ramah, profesional & memuat nomor invoice
-	waPhone := os.Getenv("WA_PHONE")
-	if waPhone == "" {
-		waPhone = "6283136830913" // Nomor pengujian testing
+	full, err := s.repo.GetOrderByIDOrInvoice(ctx, ord.ID.String())
+	if err != nil || full == nil {
+		res := toOrderDTO(ord)
+		return &res, nil
 	}
-
-	// Format pesan: Halo CV Win Teknik Mandiri, saya ingin memesan layanan *Nama (Harga)* . Apakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.
-	msgText := fmt.Sprintf(
-		"Halo CV Win Teknik Mandiri,\nsaya ingin memesan layanan *%s (%s)*. Apakah bisa dibantu untuk jadwal pengerjaannya? Terima kasih.\n\nNo. Invoice: %s",
-		req.Service,
-		req.Price,
-		invoiceNo,
-	)
-
-	waURL := fmt.Sprintf("https://wa.me/%s?text=%s", waPhone, url.QueryEscape(msgText))
-
-	return &dto.ClickOrderResponse{
-		InvoiceNo: invoiceNo,
-		OrderID:   ord.ID.String(),
-		WaURL:     waURL,
-	}, nil
-}
-
-func rCreateInitiated(ctx context.Context, repo *repository.OrderRepository, inv string, req dto.ClickOrderRequest) (*model.Order, error) {
-	return repo.CreateInitiatedOrder(ctx, inv, req)
+	res := toOrderDTO(full)
+	return &res, nil
 }
 
 // ListOrders mengambil daftar order untuk dashboard.
@@ -104,7 +84,6 @@ func (s *OrderService) UpdateOrder(ctx context.Context, idStr string, req dto.Up
 	if err != nil {
 		return nil, err
 	}
-	// Fetch rincian item kembali
 	full, err := s.repo.GetOrderByIDOrInvoice(ctx, updated.ID.String())
 	if err != nil || full == nil {
 		res := toOrderDTO(updated)

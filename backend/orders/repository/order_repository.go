@@ -41,51 +41,69 @@ func (r *OrderRepository) GenerateInvoiceNo(ctx context.Context) (string, error)
 	return fmt.Sprintf("INV-%s-%04d", prefix, count+1), nil
 }
 
-// CreateInitiatedOrder membuat order baru status menunggu_chat saat tombol Pesan diklik.
-func (r *OrderRepository) CreateInitiatedOrder(ctx context.Context, invoiceNo string, req dto.ClickOrderRequest) (*model.Order, error) {
+// CreateManualOrder dibuat admin dari dashboard setelah chat WA disepakati.
+func (r *OrderRepository) CreateManualOrder(ctx context.Context, invoiceNo string, req dto.CreateManualOrderRequest) (*model.Order, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
+	status := req.Status
+	if status == "" {
+		status = "negosiasi"
+	}
+
 	orderQuery := `
 		INSERT INTO orders (
 			invoice_no, initial_category, initial_service, initial_price,
-			total_amount, status
-		) VALUES ($1, $2, $3, $4, $5, 'menunggu_chat')
+			customer_name, customer_phone, address, notes, total_amount, status
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, invoice_no, initial_category, initial_service, initial_price,
 		          customer_name, customer_phone, address, notes, total_amount, status,
 		          created_at, updated_at
 	`
 	var ord model.Order
 	err = tx.QueryRowContext(ctx, orderQuery,
-		invoiceNo, req.Category, req.Service, req.Price, req.Price,
+		invoiceNo, req.InitialCategory, req.InitialService, req.InitialPrice,
+		req.CustomerName, req.CustomerPhone, req.Address, req.Notes, "", status,
 	).Scan(
 		&ord.ID, &ord.InvoiceNo, &ord.InitialCategory, &ord.InitialService, &ord.InitialPrice,
 		&ord.CustomerName, &ord.CustomerPhone, &ord.Address, &ord.Notes, &ord.TotalAmount, &ord.Status,
 		&ord.CreatedAt, &ord.UpdatedAt,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("insert order: %w", err)
+		return nil, fmt.Errorf("insert manual order: %w", err)
 	}
 
-	// Buat 1 baris awal di order_items
-	itemQuery := `
-		INSERT INTO order_items (
-			order_id, service_id, item_name, price, qty, unit, subtotal
-		) VALUES ($1, $2, $3, $4, 1, '/ unit', $4)
-	`
-	var svcUUID *uuid.UUID
-	if req.ServiceID != "" {
-		if parsed, err := uuid.Parse(req.ServiceID); err == nil {
-			svcUUID = &parsed
+	// Masukkan item rincian jika ada
+	for _, itReq := range req.Items {
+		var svcUUID *uuid.UUID
+		if itReq.ServiceID != nil && *itReq.ServiceID != "" {
+			if parsed, err := uuid.Parse(*itReq.ServiceID); err == nil {
+				svcUUID = &parsed
+			}
 		}
-	}
+		qty := itReq.Qty
+		if qty <= 0 {
+			qty = 1
+		}
+		unit := itReq.Unit
+		if unit == "" {
+			unit = "/ unit"
+		}
 
-	_, err = tx.ExecContext(ctx, itemQuery, ord.ID, svcUUID, req.Service, req.Price)
-	if err != nil {
-		return nil, fmt.Errorf("insert initial order_item: %w", err)
+		itemQuery := `
+			INSERT INTO order_items (
+				order_id, service_id, item_name, price, qty, unit, subtotal, notes
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		`
+		_, err = tx.ExecContext(ctx, itemQuery,
+			ord.ID, svcUUID, itReq.ItemName, itReq.Price, qty, unit, itReq.Subtotal, itReq.Notes,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("insert manual order_item: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

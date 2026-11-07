@@ -15,8 +15,6 @@ export type OrderItem = {
 };
 
 export type OrderStatus =
-  | "menunggu_chat"
-  | "belum_diproses"
   | "negosiasi"
   | "deal"
   | "dikerjakan"
@@ -40,18 +38,26 @@ export type Order = {
   updated_at: string;
 };
 
-export type ClickOrderPayload = {
-  category_id?: string;
+export type SaveOrderItemPayload = {
   service_id?: string;
-  category: string;
-  service: string;
+  item_name: string;
   price: string;
+  qty: number;
+  unit?: string;
+  subtotal: string;
+  notes?: string;
 };
 
-export type ClickOrderResult = {
-  invoice_no: string;
-  order_id: string;
-  wa_url: string;
+export type CreateManualOrderPayload = {
+  customer_name?: string;
+  customer_phone?: string;
+  address?: string;
+  notes?: string;
+  initial_category?: string;
+  initial_service?: string;
+  initial_price?: string;
+  status?: string;
+  items: SaveOrderItemPayload[];
 };
 
 export type UpdateOrderHeaderPayload = {
@@ -63,35 +69,24 @@ export type UpdateOrderHeaderPayload = {
   status?: string;
 };
 
-export type SaveOrderItemPayload = {
-  service_id?: string;
-  item_name: string;
-  price: string;
-  qty: number;
-  unit?: string;
-  subtotal: string;
-  notes?: string;
-};
-
 // ---------- API CALLS ----------
 
 /**
- * Dipanggil saat tombol PESAN di kartu web diklik pelanggan.
- * Otomatis membuat order status belum_diproses dan menghasilkan URL WA + No Invoice.
+ * Buat invoice pesanan baru secara manual oleh admin saat chat WhatsApp masuk.
  */
-export async function triggerClickOrder(payload: ClickOrderPayload): Promise<ClickOrderResult> {
-  const res = await fetch(`${resolveApiBase()}/api/v1/orders/click`, {
+export async function createManualOrder(payload: CreateManualOrderPayload): Promise<Order> {
+  const res = await fetch(`${resolveApiBase()}/api/v1/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
   const json = await res.json();
-  if (!res.ok || !json.wa_url) {
+  if (!res.ok || !json.data) {
     throw new Error(json.error || "Gagal membuat invoice order");
   }
 
-  return json;
+  return json.data;
 }
 
 /**
@@ -125,7 +120,7 @@ export async function getOrderDetail(idOrInvoice: string): Promise<Order> {
 }
 
 /**
- * Update data header order (nama klien, WA, status, catatan).
+ * Update data header order (nama klien, WA, status, catatan, total).
  */
 export async function updateOrderHeader(id: string, payload: UpdateOrderHeaderPayload): Promise<Order> {
   const res = await fetch(`${resolveApiBase()}/api/v1/orders/${id}`, {

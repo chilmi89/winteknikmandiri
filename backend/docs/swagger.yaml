@@ -16,31 +16,6 @@ definitions:
       message:
         type: string
     type: object
-  dto.ClickOrderRequest:
-    properties:
-      category:
-        type: string
-      category_id:
-        type: string
-      price:
-        type: string
-      service:
-        type: string
-      service_id:
-        type: string
-    required:
-    - category
-    - service
-    type: object
-  dto.ClickOrderResponse:
-    properties:
-      invoice_no:
-        type: string
-      order_id:
-        type: string
-      wa_url:
-        type: string
-    type: object
   dto.CreateCategoryRequest:
     properties:
       code:
@@ -205,6 +180,29 @@ definitions:
     required:
     - day_label
     - hours
+    type: object
+  dto.CreateManualOrderRequest:
+    properties:
+      address:
+        type: string
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+      initial_category:
+        type: string
+      initial_price:
+        type: string
+      initial_service:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.SaveOrderItemRequest'
+        type: array
+      notes:
+        type: string
+      status:
+        type: string
     type: object
   dto.CreateMisiRequest:
     properties:
@@ -1855,7 +1853,7 @@ paths:
   /api/v1/orders:
     get:
       parameters:
-      - description: Filter status (belum_diproses, negosiasi, deal, selesai)
+      - description: Filter status (negosiasi, deal, selesai)
         in: query
         name: status
         type: string
@@ -1871,6 +1869,31 @@ paths:
           schema:
             $ref: '#/definitions/dto.ListOrderEnvelope'
       summary: Daftar pesanan & invoice
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Dibuat admin saat chat WhatsApp masuk & kesepakatan nego dicatat.
+      parameters:
+      - description: Payload order manual
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateManualOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.OrderEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorResponse'
+      summary: Buat invoice pesanan baru secara manual oleh admin
       tags:
       - orders
   /api/v1/orders/{id}:
@@ -1957,33 +1980,6 @@ paths:
           schema:
             $ref: '#/definitions/dto.OrderItemResponse'
       summary: Tambah layanan ke invoice (Katalog / Custom)
-      tags:
-      - orders
-  /api/v1/orders/click:
-    post:
-      consumes:
-      - application/json
-      description: 'Membuat invoice sementara (status: belum_diproses) dan mengembalikan
-        URL WhatsApp resmi terformat.'
-      parameters:
-      - description: Data klik layanan
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.ClickOrderRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.ClickOrderResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httpx.ErrorResponse'
-      summary: Inisiasi order saat pelanggan klik tombol Pesan di web
       tags:
       - orders
   /api/v1/orders/items/{item_id}:

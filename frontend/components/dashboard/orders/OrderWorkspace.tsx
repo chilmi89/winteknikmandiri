@@ -16,6 +16,7 @@ import { toast } from "@/components/ui/toast";
 import {
   listOrdersAdmin,
   getOrderDetail,
+  createManualOrder,
   updateOrderHeader,
   addOrderItem,
   updateOrderItem,
@@ -24,6 +25,7 @@ import {
   type Order,
   type SaveOrderItemPayload,
   type UpdateOrderHeaderPayload,
+  type CreateManualOrderPayload,
 } from "@/lib/orders";
 import { fetchServiceItems, type ServiceItem } from "@/lib/katalogLayanan";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
@@ -32,6 +34,7 @@ import DataTableToolbar, {
 } from "@/components/dashboard/data-table/DataTableToolbar";
 import OrderTable from "./OrderTable";
 import InvoiceEditor from "./InvoiceEditor";
+import NewOrderDialog from "./NewOrderDialog";
 
 type OpenTab = {
   orderId: string;
@@ -43,12 +46,12 @@ export function OrderWorkspace() {
   const [serviceCatalog, setServiceCatalog] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Dialog Buat Order Baru Manual
+  const [showNewDialog, setShowNewDialog] = useState(false);
+
   // Filter List Master
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  // Tab View Mode untuk Master List: 'active' (Pesanan Aktif: Nego/Deal/Selesai) vs 'pending' (Menunggu Chat WA)
-  const [masterListMode, setMasterListMode] = useState<"active" | "pending">("active");
 
   // Tab State: activeTab === 'list' atau orderId
   const [activeTab, setActiveTab] = useState<string>("list");
@@ -83,27 +86,23 @@ export function OrderWorkspace() {
     void loadMasterOrders(false);
   }, [loadMasterOrders]);
 
-  // Realtime Polling / Auto-Hit: Memeriksa order baru setiap 4 detik secara hening
-  // Begitu pelanggan klik tombol Pesan di web dan masuk ke WhatsApp,
-  // data invoice baru langsung muncul seketika di dashboard admin tanpa reload browser!
+  // Polling hening setiap 5 detik agar jika admin lain menambah order, list otomatis terupdate
   useEffect(() => {
     const timer = setInterval(() => {
       void loadMasterOrders(true);
-    }, 4000);
+    }, 5000);
 
     return () => clearInterval(timer);
   }, [loadMasterOrders]);
 
   // Buka Invoice sebagai Tab Baru
   const handleOpenOrderTab = async (order: Order) => {
-    // Cek apakah tab sudah ada
     const exists = openTabs.some((t) => t.orderId === order.id);
     if (!exists) {
       setOpenTabs((prev) => [...prev, { orderId: order.id, invoiceNo: order.invoice_no }]);
     }
     setActiveTab(order.id);
 
-    // Fetch data order lengkap dengan items jika belum ada
     if (!openedOrderData[order.id]) {
       try {
         const full = await getOrderDetail(order.id);
@@ -121,6 +120,19 @@ export function OrderWorkspace() {
     if (activeTab === tabId) {
       setActiveTab("list");
     }
+  };
+
+  // Buat Order Baru dari Dialog -> Langsung Buka Tab Barunya
+  const handleCreateNewOrder = async (payload: CreateManualOrderPayload) => {
+    const newOrd = await createManualOrder(payload);
+    setOrders((prev) => [newOrd, ...prev]);
+    toast.add({
+      title: "Invoice Dibuat!",
+      description: `Nomor Invoice ${newOrd.invoice_no} siap dikelola.`,
+      type: "success",
+    });
+    // Buka otomatis sebagai tab baru
+    handleOpenOrderTab(newOrd);
   };
 
   // Handler Update Header dari InvoiceEditor
@@ -164,21 +176,6 @@ export function OrderWorkspace() {
     }
   };
 
-  // Pisahkan pesanan aktif (nego/deal/dikerjakan/selesai) dan pesanan baru klik web (menunggu chat)
-  const pendingOrders = useMemo(() => {
-    return orders.filter(
-      (o) => o.status === "menunggu_chat" || o.status === "belum_diproses"
-    );
-  }, [orders]);
-
-  const activeOrders = useMemo(() => {
-    return orders.filter(
-      (o) => o.status !== "menunggu_chat" && o.status !== "belum_diproses"
-    );
-  }, [orders]);
-
-  const displayedOrders = masterListMode === "active" ? activeOrders : pendingOrders;
-
   const currentOpenedOrder = activeTab !== "list" ? openedOrderData[activeTab] : null;
 
   return (
@@ -190,10 +187,10 @@ export function OrderWorkspace() {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
               Pesanan &amp; Invoice Nego
             </h1>
-            <span className="text-xs text-slate-400">{orders.length} pesanan masuk</span>
+            <span className="text-xs text-slate-400">{orders.length} pesanan aktif</span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Terhubung langsung dengan klik tombol Pesan di web. Atur nego harga, tambah layanan custom, dan kirim rincian via WA.
+            Kelola pesanan nyata hasil chat WhatsApp: atur nego harga, tambah layanan custom, dan salin rincian invoice ke WA klien.
           </p>
         </div>
 
@@ -209,42 +206,32 @@ export function OrderWorkspace() {
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+
+          <Button
+            type="button"
+            onClick={() => setShowNewDialog(true)}
+            className="h-9 gap-1.5 bg-[#A82020] hover:bg-[#8e1919] text-white text-xs font-semibold shadow-xs"
+          >
+            <Plus className="size-4" />
+            + Buat Invoice Baru
+          </Button>
         </div>
       </div>
 
       {/* ================= BARIS TAB MULTI-INVOICE ================= */}
       <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 pb-px no-scrollbar">
-        {/* Tab Pesanan Aktif (Deal & Nego) */}
+        {/* Tab Daftar Utama */}
         <button
           type="button"
-          onClick={() => {
-            setActiveTab("list");
-            setMasterListMode("active");
-          }}
+          onClick={() => setActiveTab("list")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
-            activeTab === "list" && masterListMode === "active"
+            activeTab === "list"
               ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
               : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
           }`}
         >
           <FileText className="size-3.5" />
-          <span>Pesanan Aktif ({activeOrders.length})</span>
-        </button>
-
-        {/* Tab Tertunda: Menunggu Chat WA (Hasil Baru Klik Web) */}
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("list");
-            setMasterListMode("pending");
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg border-t border-x transition-colors ${
-            activeTab === "list" && masterListMode === "pending"
-              ? "border-slate-300 bg-white text-[#A82020] shadow-xs"
-              : "border-transparent bg-slate-100/70 text-slate-600 hover:bg-slate-100"
-          }`}
-        >
-          <span>⏳ Menunggu Chat WA ({pendingOrders.length})</span>
+          <span>Daftar Pesanan ({orders.length})</span>
         </button>
 
         {/* Tab-Tab Invoice Terbuka */}
@@ -307,10 +294,9 @@ export function OrderWorkspace() {
                 <SelectContent align="start">
                   <SelectGroup>
                     <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="belum_diproses">Belum Diproses</SelectItem>
-                    <SelectItem value="negosiasi">Sedang Nego</SelectItem>
-                    <SelectItem value="deal">Deal</SelectItem>
-                    <SelectItem value="dikerjakan">Dikerjakan</SelectItem>
+                    <SelectItem value="negosiasi">Sedang Negosiasi</SelectItem>
+                    <SelectItem value="deal">Deal / Sepakat</SelectItem>
+                    <SelectItem value="dikerjakan">Sedang Dikerjakan</SelectItem>
                     <SelectItem value="selesai">Selesai</SelectItem>
                     <SelectItem value="batal">Dibatalkan</SelectItem>
                   </SelectGroup>
@@ -320,7 +306,7 @@ export function OrderWorkspace() {
           </DataTableToolbar>
 
           <OrderTable
-            items={displayedOrders}
+            items={orders}
             loading={loading}
             onOpenTab={handleOpenOrderTab}
             onDelete={handleDeleteOrder}
@@ -338,6 +324,16 @@ export function OrderWorkspace() {
           onAddItem={(payload) => handleAddItem(currentOpenedOrder.id, payload)}
           onUpdateItem={(itemId, payload) => handleUpdateItem(currentOpenedOrder.id, itemId, payload)}
           onDeleteItem={(itemId) => handleDeleteItem(currentOpenedOrder.id, itemId)}
+        />
+      )}
+
+      {/* Dialog Buat Invoice Baru Manual */}
+      {showNewDialog && (
+        <NewOrderDialog
+          open={showNewDialog}
+          serviceCatalog={serviceCatalog}
+          onClose={() => setShowNewDialog(false)}
+          onSubmit={handleCreateNewOrder}
         />
       )}
     </div>

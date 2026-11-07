@@ -2,7 +2,7 @@ package dto
 
 import "time"
 
-// OrderResponse representasi satu invoice/pesanan lengkap dengan item-itemnya.
+// OrderResponse representasi satu invoice pesanan lengkap dengan rincian layanannya.
 type OrderResponse struct {
 	ID              string              `json:"id"`
 	InvoiceNo       string              `json:"invoice_no"`
@@ -35,20 +35,17 @@ type OrderItemResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// ClickOrderRequest dipanggil saat klien klik tombol "PESAN" di web.
-type ClickOrderRequest struct {
-	CategoryID string `json:"category_id"`
-	ServiceID  string `json:"service_id"`
-	Category   string `json:"category" binding:"required"`
-	Service    string `json:"service" binding:"required"`
-	Price      string `json:"price"`
-}
-
-// ClickOrderResponse respon balik berisi invoice dan URL WhatsApp terformat rapi.
-type ClickOrderResponse struct {
-	InvoiceNo string `json:"invoice_no"`
-	OrderID   string `json:"order_id"`
-	WaURL     string `json:"wa_url"`
+// CreateManualOrderRequest dibuat admin langsung dari dashboard setelah chat WA masuk.
+type CreateManualOrderRequest struct {
+	CustomerName    string                 `json:"customer_name"`
+	CustomerPhone   string                 `json:"customer_phone"`
+	Address         string                 `json:"address"`
+	Notes           string                 `json:"notes"`
+	InitialCategory string                 `json:"initial_category"`
+	InitialService  string                 `json:"initial_service"`
+	InitialPrice    string                 `json:"initial_price"`
+	Status          string                 `json:"status"`
+	Items           []SaveOrderItemRequest `json:"items"`
 }
 
 // UpdateOrderRequest admin mengupdate data header order (nama, WA, alamat, status, total).

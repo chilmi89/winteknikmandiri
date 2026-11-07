@@ -916,7 +916,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter status (belum_diproses, negosiasi, deal, selesai)",
+                        "description": "Filter status (negosiasi, deal, selesai)",
                         "name": "status",
                         "in": "query"
                     },
@@ -935,11 +935,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/v1/orders/click": {
+            },
             "post": {
-                "description": "Membuat invoice sementara (status: belum_diproses) dan mengembalikan URL WhatsApp resmi terformat.",
+                "description": "Dibuat admin saat chat WhatsApp masuk \u0026 kesepakatan nego dicatat.",
                 "consumes": [
                     "application/json"
                 ],
@@ -949,23 +947,23 @@ const docTemplate = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Inisiasi order saat pelanggan klik tombol Pesan di web",
+                "summary": "Buat invoice pesanan baru secara manual oleh admin",
                 "parameters": [
                     {
-                        "description": "Data klik layanan",
+                        "description": "Payload order manual",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ClickOrderRequest"
+                            "$ref": "#/definitions/dto.CreateManualOrderRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.ClickOrderResponse"
+                            "$ref": "#/definitions/dto.OrderEnvelope"
                         }
                     },
                     "400": {
@@ -2552,44 +2550,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ClickOrderRequest": {
-            "type": "object",
-            "required": [
-                "category",
-                "service"
-            ],
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "category_id": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "string"
-                },
-                "service": {
-                    "type": "string"
-                },
-                "service_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ClickOrderResponse": {
-            "type": "object",
-            "properties": {
-                "invoice_no": {
-                    "type": "string"
-                },
-                "order_id": {
-                    "type": "string"
-                },
-                "wa_url": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.CreateCategoryRequest": {
             "type": "object",
             "required": [
@@ -2814,6 +2774,41 @@ const docTemplate = `{
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CreateManualOrderRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "customer_phone": {
+                    "type": "string"
+                },
+                "initial_category": {
+                    "type": "string"
+                },
+                "initial_price": {
+                    "type": "string"
+                },
+                "initial_service": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SaveOrderItemRequest"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
