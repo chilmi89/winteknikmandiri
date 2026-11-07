@@ -54,8 +54,8 @@ export function OrderWorkspace() {
   // Cache data order yang sedang dibuka di tab
   const [openedOrderData, setOpenedOrderData] = useState<Record<string, Order>>({});
 
-  const loadMasterOrders = useCallback(async () => {
-    setLoading(true);
+  const loadMasterOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [orderList, catalog] = await Promise.all([
         listOrdersAdmin(statusFilter, search),
@@ -64,18 +64,31 @@ export function OrderWorkspace() {
       setOrders(orderList);
       setServiceCatalog(catalog);
     } catch {
-      toast.add({
-        title: "Gagal memuat pesanan",
-        description: "Periksa koneksi Anda.",
-        type: "error",
-      });
+      if (!silent) {
+        toast.add({
+          title: "Gagal memuat pesanan",
+          description: "Periksa koneksi Anda.",
+          type: "error",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [statusFilter, search]);
 
   useEffect(() => {
-    void loadMasterOrders();
+    void loadMasterOrders(false);
+  }, [loadMasterOrders]);
+
+  // Realtime Polling / Auto-Hit: Memeriksa order baru setiap 4 detik secara hening
+  // Begitu pelanggan klik tombol Pesan di web dan masuk ke WhatsApp,
+  // data invoice baru langsung muncul seketika di dashboard admin tanpa reload browser!
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void loadMasterOrders(true);
+    }, 4000);
+
+    return () => clearInterval(timer);
   }, [loadMasterOrders]);
 
   // Buka Invoice sebagai Tab Baru
@@ -171,7 +184,7 @@ export function OrderWorkspace() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={loadMasterOrders}
+            onClick={() => void loadMasterOrders(false)}
             disabled={loading}
             className="h-9 gap-1.5 text-xs bg-white border-slate-200 text-slate-600"
           >

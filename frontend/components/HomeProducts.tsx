@@ -8,6 +8,7 @@ import SectionHeading from "@/components/SectionHeading";
 import ScrollReveal from "@/components/ScrollReveal";
 import { waLink } from "@/lib/site";
 import { fetchServiceItems, type ServiceItem } from "@/lib/katalogLayanan";
+import WhatsAppOrderButton from "@/components/WhatsAppOrderButton";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A82020]";
@@ -135,13 +136,8 @@ export default function HomeProducts() {
               delay={index * 70}
               className="h-full"
             >
-              <Link
-                href={waLink(
-                  `Halo CV Win Teknik Mandiri, saya ingin pesan layanan ${item.title} (${item.price || "Penawaran"}).`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white transition-[transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.45),0_0_0_1px_rgba(168,32,32,0.28)] ${focusRing}`}
+              <div
+                className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white transition-[transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.45),0_0_0_1px_rgba(168,32,32,0.28)]`}
               >
                 <span
                   aria-hidden="true"
@@ -205,7 +201,7 @@ export default function HomeProducts() {
                     </ul>
                   )}
 
-                  {/* Harga */}
+                  {/* Harga & Tombol WhatsApp Order Trigger */}
                   <div className="mt-auto flex flex-wrap items-end justify-between gap-x-3 gap-y-3 border-t border-[#0A2540]/10 pt-4 transition-colors duration-500 group-hover:border-[#A82020]/35">
                     <div>
                       <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-[#0A2540]/40">
@@ -229,16 +225,19 @@ export default function HomeProducts() {
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1.5 bg-[#A82020] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-white transition-colors duration-300 group-hover:bg-[#8e1919]">
-                      Pesan
-                      <ArrowUpRight
-                        className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                        aria-hidden="true"
-                      />
-                    </span>
+                    {/* Tombol Pintar Masuk Sistem & Terbit Invoice */}
+                    <WhatsAppOrderButton
+                      category={item.category_name || "Layanan"}
+                      service={item.title}
+                      price={item.price ? `${item.price} ${item.unit}` : "Penawaran"}
+                      serviceId={item.id}
+                      categoryId={item.category_id}
+                      label="Pesan"
+                      className="bg-[#A82020] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-white transition-colors duration-300 hover:bg-[#8e1919] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]"
+                    />
                   </div>
                 </div>
-              </Link>
+              </div>
             </ScrollReveal>
           ))}
         </div>
