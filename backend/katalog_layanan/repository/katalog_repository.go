@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"winteknikmandiri-backend/katalog_layanan/dto"
 	"winteknikmandiri-backend/katalog_layanan/model"
@@ -168,7 +167,7 @@ func (r *KatalogRepository) ListItems(ctx context.Context, categoryIDStr string,
 	items := make([]model.ServiceItem, 0)
 	for rows.Next() {
 		var it model.ServiceItem
-		var hl pgtype.FlatArray[string]
+		var hl StringArray
 		if err := rows.Scan(
 			&it.ID, &it.CategoryID, &it.CategoryName, &it.CategoryCode,
 			&it.Title, &it.Description, &hl, &it.PricePrefix, &it.Price, &it.Unit, &it.PriceNote,
@@ -196,7 +195,7 @@ func (r *KatalogRepository) GetItemByID(ctx context.Context, id uuid.UUID) (*mod
 		WHERE i.id = $1::uuid AND i.deleted_at IS NULL
 	`
 	var it model.ServiceItem
-	var hl pgtype.FlatArray[string]
+	var hl StringArray
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&it.ID, &it.CategoryID, &it.CategoryName, &it.CategoryCode,
 		&it.Title, &it.Description, &hl, &it.PricePrefix, &it.Price, &it.Unit, &it.PriceNote,
@@ -246,9 +245,9 @@ func (r *KatalogRepository) CreateItem(ctx context.Context, catUUID uuid.UUID, r
 	}
 
 	var it model.ServiceItem
-	var hlScan pgtype.FlatArray[string]
+	var hlScan StringArray
 	err := r.db.QueryRowContext(ctx, query,
-		catUUID, req.Title, req.Description, pgtype.FlatArray[string](hl),
+		catUUID, req.Title, req.Description, StringArray(hl),
 		pricePrefix, req.Price, unit, req.PriceNote,
 		req.ImageURL, req.ImageKey, sortOrder, isActive,
 	).Scan(
@@ -319,9 +318,9 @@ func (r *KatalogRepository) UpdateItem(ctx context.Context, current *model.Servi
 		          image_url, image_key, sort_order, is_active, created_at, updated_at
 	`
 	var it model.ServiceItem
-	var hlScan pgtype.FlatArray[string]
+	var hlScan StringArray
 	err := r.db.QueryRowContext(ctx, query,
-		catUUID, title, desc, pgtype.FlatArray[string](hl), pricePrefix,
+		catUUID, title, desc, StringArray(hl), pricePrefix,
 		price, unit, priceNote, imageURL, imageKey,
 		sortOrder, isActive, current.ID,
 	).Scan(
