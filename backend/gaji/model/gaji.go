@@ -36,3 +36,15 @@ type GajiProyek struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+// GajiOrderOption representasi opsi proyek closing yang tersedia untuk digajikan.
+type GajiOrderOption struct {
+	ID              uuid.UUID `json:"id"`
+	InvoiceNo       string    `json:"invoice_no"`
+	InitialCategory string    `json:"initial_category"`
+	InitialService  string    `json:"initial_service"`
+	CustomerName    string    `json:"customer_name"`
+	TotalAmount     string    `json:"total_amount"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+}

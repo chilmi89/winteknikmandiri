@@ -19,6 +19,7 @@ func RegisterGajiRoutes(rg *gin.RouterGroup, db *sql.DB) {
 	gajiGroup := rg.Group("/gaji")
 	{
 		gajiGroup.GET("", ctrl.ListGaji)
+		gajiGroup.GET("/available-orders", ctrl.ListAvailableOrders)
 		gajiGroup.GET("/:id", ctrl.GetGajiDetail)
 		gajiGroup.POST("", ctrl.CreateGaji)
 		gajiGroup.PUT("/:id", ctrl.UpdateGaji)

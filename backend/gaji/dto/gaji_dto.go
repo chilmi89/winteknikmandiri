@@ -79,3 +79,21 @@ type ListGajiEnvelope struct {
 type GajiMessageResponse struct {
 	Message string `json:"message"`
 }
+
+// GajiOrderOptionResponse data proyek yang tersedia untuk penggajian.
+type GajiOrderOptionResponse struct {
+	ID              string    `json:"id"`
+	InvoiceNo       string    `json:"invoice_no"`
+	InitialCategory string    `json:"initial_category"`
+	InitialService  string    `json:"initial_service"`
+	CustomerName    string    `json:"customer_name"`
+	TotalAmount     string    `json:"total_amount"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+// ListAvailableOrdersEnvelope membungkus respon proyek yang tersedia untuk gaji.
+type ListAvailableOrdersEnvelope struct {
+	Message string                    `json:"message,omitempty"`
+	Data    []GajiOrderOptionResponse `json:"data"`
+}

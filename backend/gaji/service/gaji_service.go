@@ -92,7 +92,7 @@ func (s *GajiService) CreateGaji(ctx context.Context, req dto.CreateGajiRequest)
 		return nil, apperr.Validation("Format TeamID tidak valid", err.Error())
 	}
 
-	// Validasi anti-duplikasi order dalam satu slip
+	// Validasi anti-duplikasi order dalam satu slip dan antar-slip aktif
 	seenOrders := make(map[string]bool)
 	for _, p := range req.Proyek {
 		if p.OrderID == "" {
@@ -102,6 +102,17 @@ func (s *GajiService) CreateGaji(ctx context.Context, req dto.CreateGajiRequest)
 			return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu slip gaji")
 		}
 		seenOrders[p.OrderID] = true
+
+		orderUUID, err := uuid.Parse(p.OrderID)
+		if err == nil {
+			existingKode, err := s.repo.CheckOrderAlreadyGajied(ctx, orderUUID, nil)
+			if err != nil {
+				return nil, err
+			}
+			if existingKode != "" {
+				return nil, apperr.Validation("Proyek sudah digajikan", fmt.Sprintf("Proyek ini sudah pernah dimasukkan ke slip gaji %s", existingKode))
+			}
+		}
 	}
 
 	kodeGaji, err := s.repo.GenerateKodeGaji(ctx)
@@ -154,6 +165,17 @@ func (s *GajiService) UpdateGaji(ctx context.Context, idStr string, req dto.Upda
 				return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu slip gaji")
 			}
 			seenOrders[p.OrderID] = true
+
+			orderUUID, err := uuid.Parse(p.OrderID)
+			if err == nil {
+				existingKode, err := s.repo.CheckOrderAlreadyGajied(ctx, orderUUID, &current.ID)
+				if err != nil {
+					return nil, err
+				}
+				if existingKode != "" {
+					return nil, apperr.Validation("Proyek sudah digajikan", fmt.Sprintf("Proyek ini sudah pernah dimasukkan ke slip gaji %s", existingKode))
+				}
+			}
 		}
 	}
 
@@ -270,6 +292,36 @@ func (s *GajiService) DeleteProyekGaji(ctx context.Context, proyekIDStr string) 
 
 	res := toGajiDTO(full)
 	return &res, nil
+}
+
+// ListAvailableOrdersForGaji mengambil daftar invoice proyek closing yang belum digajikan di slip aktif lain.
+func (s *GajiService) ListAvailableOrdersForGaji(ctx context.Context, excludeGajiIDStr string) ([]dto.GajiOrderOptionResponse, error) {
+	var excl *uuid.UUID
+	if excludeGajiIDStr != "" {
+		if parsed, err := uuid.Parse(excludeGajiIDStr); err == nil {
+			excl = &parsed
+		}
+	}
+
+	items, err := s.repo.ListAvailableOrdersForGaji(ctx, excl)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.GajiOrderOptionResponse, len(items))
+	for i, it := range items {
+		res[i] = dto.GajiOrderOptionResponse{
+			ID:              it.ID.String(),
+			InvoiceNo:       it.InvoiceNo,
+			InitialCategory: it.InitialCategory,
+			InitialService:  it.InitialService,
+			CustomerName:    it.CustomerName,
+			TotalAmount:     it.TotalAmount,
+			Status:          it.Status,
+			CreatedAt:       it.CreatedAt,
+		}
+	}
+	return res, nil
 }
 
 // DeleteGaji menghapus slip gaji (soft delete).

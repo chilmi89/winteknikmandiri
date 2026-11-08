@@ -370,6 +370,33 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/gaji/available-orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Daftar proyek closing yang belum pernah digajikan di slip lain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Slip Gaji yang sedang diedit (UUID)",
+                        "name": "exclude_gaji_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListAvailableOrdersEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/gaji/proyek/{proyek_id}": {
             "put": {
                 "consumes": [
@@ -3873,6 +3900,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GajiOrderOptionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "initial_category": {
+                    "type": "string"
+                },
+                "initial_service": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.GajiProyekResponse": {
             "type": "object",
             "properties": {
@@ -4408,6 +4464,20 @@ const docTemplate = `{
                 },
                 "total_transaksi": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.ListAvailableOrdersEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GajiOrderOptionResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },

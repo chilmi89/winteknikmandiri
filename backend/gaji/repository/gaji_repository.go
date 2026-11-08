@@ -417,3 +417,60 @@ func (r *GajiRepository) DeleteGaji(ctx context.Context, id uuid.UUID) (bool, er
 	affected, err := res.RowsAffected()
 	return affected > 0, err
 }
+
+// ListAvailableOrdersForGaji mengambil order yang berstatus selesai dan BELUM pernah dimasukkan ke slip gaji aktif lainnya.
+func (r *GajiRepository) ListAvailableOrdersForGaji(ctx context.Context, excludeGajiID *uuid.UUID) ([]model.GajiOrderOption, error) {
+	query := `
+		SELECT
+			o.id, o.invoice_no, o.initial_category, o.initial_service,
+			COALESCE(o.customer_name, ''), o.total_amount, o.status, o.created_at
+		FROM orders o
+		WHERE o.deleted_at IS NULL
+		  AND o.status = 'selesai'
+		  AND NOT EXISTS (
+		      SELECT 1 FROM gaji_proyek gp
+		      JOIN gaji g ON gp.gaji_id = g.id
+		      WHERE gp.order_id = o.id
+		        AND g.deleted_at IS NULL
+		        AND ($1::uuid IS NULL OR g.id != $1::uuid)
+		  )
+		ORDER BY o.created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, excludeGajiID)
+	if err != nil {
+		return nil, fmt.Errorf("query available orders for gaji: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]model.GajiOrderOption, 0)
+	for rows.Next() {
+		var it model.GajiOrderOption
+		if err := rows.Scan(
+			&it.ID, &it.InvoiceNo, &it.InitialCategory, &it.InitialService,
+			&it.CustomerName, &it.TotalAmount, &it.Status, &it.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, it)
+	}
+	return items, rows.Err()
+}
+
+// CheckOrderAlreadyGajied mengecek apakah suatu order sudah pernah digajikan di slip lain.
+func (r *GajiRepository) CheckOrderAlreadyGajied(ctx context.Context, orderID uuid.UUID, excludeGajiID *uuid.UUID) (string, error) {
+	query := `
+		SELECT g.kode_gaji
+		FROM gaji_proyek gp
+		JOIN gaji g ON gp.gaji_id = g.id
+		WHERE gp.order_id = $1::uuid
+		  AND g.deleted_at IS NULL
+		  AND ($2::uuid IS NULL OR g.id != $2::uuid)
+		LIMIT 1
+	`
+	var kodeGaji string
+	err := r.db.QueryRowContext(ctx, query, orderID, excludeGajiID).Scan(&kodeGaji)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return kodeGaji, err
+}

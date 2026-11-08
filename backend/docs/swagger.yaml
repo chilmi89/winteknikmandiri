@@ -463,6 +463,25 @@ definitions:
       message:
         type: string
     type: object
+  dto.GajiOrderOptionResponse:
+    properties:
+      created_at:
+        type: string
+      customer_name:
+        type: string
+      id:
+        type: string
+      initial_category:
+        type: string
+      initial_service:
+        type: string
+      invoice_no:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: string
+    type: object
   dto.GajiProyekResponse:
     properties:
       created_at:
@@ -821,6 +840,15 @@ definitions:
         type: string
       total_transaksi:
         type: integer
+    type: object
+  dto.ListAvailableOrdersEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.GajiOrderOptionResponse'
+        type: array
+      message:
+        type: string
     type: object
   dto.ListCategoryEnvelope:
     properties:
@@ -1981,6 +2009,23 @@ paths:
           schema:
             $ref: '#/definitions/dto.GajiEnvelope'
       summary: Tempelkan proyek ke slip gaji
+      tags:
+      - gaji
+  /api/v1/gaji/available-orders:
+    get:
+      parameters:
+      - description: ID Slip Gaji yang sedang diedit (UUID)
+        in: query
+        name: exclude_gaji_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListAvailableOrdersEnvelope'
+      summary: Daftar proyek closing yang belum pernah digajikan di slip lain
       tags:
       - gaji
   /api/v1/gaji/proyek/{proyek_id}:

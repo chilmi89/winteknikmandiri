@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/select";
 import { FormDialog } from "@/components/dashboard/dialogs/FormDialog";
 import { toast } from "@/components/ui/toast";
-import type {
-  Gaji,
-  CreateGajiPayload,
-  UpdateGajiPayload,
+import {
+  listAvailableOrdersForGaji,
+  type Gaji,
+  type CreateGajiPayload,
+  type UpdateGajiPayload,
 } from "@/lib/gaji";
 import type { TeamMemberItem } from "@/lib/teamMembers";
 import type { Order } from "@/lib/orders";
@@ -244,10 +245,26 @@ export function GajiDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Gabungkan orderList dengan proyek yang sudah terpasang di slip gaji (saat mode edit)
+  // Proyek yang siap digajikan (hanya yang belum digajikan di slip lain)
+  const [availableOrdersFromBackend, setAvailableOrdersFromBackend] = useState<Order[]>([]);
+
+  // Ambil daftar proyek yang belum pernah digajikan setiap kali modal dibuka
+  useEffect(() => {
+    if (open) {
+      listAvailableOrdersForGaji(gaji ? gaji.id : undefined)
+        .then((data) => {
+          setAvailableOrdersFromBackend(data);
+        })
+        .catch((err) => {
+          console.error("Gagal memuat proyek yang tersedia", err);
+        });
+    }
+  }, [open, gaji]);
+
+  // Gabungkan proyek un-gajied dengan proyek yang sudah terpasang di slip gaji ini (saat mode edit)
   const allAvailableOrders = useMemo(() => {
     const map = new Map<string, Order>();
-    for (const ord of orderList) {
+    for (const ord of availableOrdersFromBackend) {
       map.set(ord.id, ord);
     }
     if (gaji && gaji.proyek) {
@@ -270,7 +287,7 @@ export function GajiDialog({
       }
     }
     return Array.from(map.values());
-  }, [orderList, gaji]);
+  }, [availableOrdersFromBackend, gaji]);
 
   // Inisialisasi state saat dialog dibuka
   useEffect(() => {
@@ -300,16 +317,17 @@ export function GajiDialog({
       setTeamId(teamList.length > 0 ? teamList[0].id : "");
       setStatus("draft");
       setCatatan("");
+      // Mulai dengan 1 baris kosong (pengguna memilih sendiri invoice yang tersedia)
       setProyekRows([
         {
-          order_id: allAvailableOrders.length > 0 ? allAvailableOrders[0].id : "",
+          order_id: "",
           nominal: "",
           keterangan: "",
         },
       ]);
     }
     setError(null);
-  }, [gaji, open, teamList, allAvailableOrders]);
+  }, [gaji, open, teamList]);
 
   // Tambah baris proyek baru: pilih otomatis proyek berikutnya yang belum diambil
   const handleAddRow = () => {

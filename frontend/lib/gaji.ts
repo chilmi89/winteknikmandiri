@@ -87,6 +87,20 @@ export async function listGajiAdmin(params?: {
 }
 
 /**
+ * Mengambil daftar invoice proyek closing yang belum pernah digajikan di slip lain.
+ */
+export async function listAvailableOrdersForGaji(excludeGajiId?: string): Promise<any[]> {
+  const q = new URLSearchParams();
+  if (excludeGajiId) q.set("exclude_gaji_id", excludeGajiId);
+  const res = await fetch(`${resolveApiBase()}/api/v1/gaji/available-orders?${q.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Gagal memuat proyek yang tersedia");
+  const json = await res.json();
+  return json.data || [];
+}
+
+/**
  * Mengambil detail 1 slip gaji lengkap beserta proyek-proyeknya.
  */
 export async function getGajiDetail(id: string): Promise<Gaji> {

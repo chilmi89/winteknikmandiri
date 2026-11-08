@@ -55,6 +55,26 @@ func (ctrl *GajiController) ListGaji(c *gin.Context) {
 	})
 }
 
+// ListAvailableOrders godoc
+// @Summary     Daftar proyek closing yang belum pernah digajikan di slip lain
+// @Tags        gaji
+// @Produce     json
+// @Param       exclude_gaji_id query string false "ID Slip Gaji yang sedang diedit (UUID)"
+// @Success     200 {object} dto.ListAvailableOrdersEnvelope
+// @Router      /api/v1/gaji/available-orders [get]
+func (ctrl *GajiController) ListAvailableOrders(c *gin.Context) {
+	excludeGajiID := c.Query("exclude_gaji_id")
+	items, err := ctrl.svc.ListAvailableOrdersForGaji(c.Request.Context(), excludeGajiID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.ListAvailableOrdersEnvelope{
+		Message: "Daftar proyek siap digajikan berhasil dimuat",
+		Data:    items,
+	})
+}
+
 // GetGajiDetail godoc
 // @Summary     Detail slip gaji tim beserta seluruh proyek yang ditempelkan
 // @Tags        gaji
