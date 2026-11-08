@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -554,4 +556,444 @@ func (r *KeuanganRepository) DeleteJurnal(ctx context.Context, id uuid.UUID) (bo
 	}
 	affected, err := res.RowsAffected()
 	return affected > 0, err
+}
+
+// GetLaporanData mengakumulasikan data analitik keuangan untuk 4 periode (harian, mingguan, bulanan, tahunan).
+func (r *KeuanganRepository) GetLaporanData(
+	ctx context.Context,
+	periode string,
+	tanggal string,
+	startDate string,
+	endDate string,
+	month int,
+	year int,
+	orderID string,
+	kategoriID string,
+	sortDir string,
+	page int,
+	limit int,
+) (*dto.LaporanResponse, error) {
+	now := time.Now()
+	if year <= 0 {
+		year = now.Year()
+	}
+	if month <= 0 {
+		month = int(now.Month())
+	}
+	if tanggal == "" {
+		tanggal = now.Format("2006-01-02")
+	}
+
+	whereClause := "WHERE j.deleted_at IS NULL"
+	var args []any
+	argIdx := 1
+	var periodeLabel string
+
+	switch periode {
+	case "harian":
+		whereClause += fmt.Sprintf(" AND DATE(j.waktu_transaksi) = $%d::date", argIdx)
+		args = append(args, tanggal)
+		argIdx++
+		parsedDate, _ := time.Parse("2006-01-02", tanggal)
+		periodeLabel = fmt.Sprintf("Laporan Harian: %s", parsedDate.Format("02 January 2006"))
+
+	case "mingguan":
+		if startDate == "" || endDate == "" {
+			weekday := int(now.Weekday())
+			if weekday == 0 {
+				weekday = 7
+			}
+			monday := now.AddDate(0, 0, -weekday+1)
+			sunday := monday.AddDate(0, 0, 6)
+			startDate = monday.Format("2006-01-02")
+			endDate = sunday.Format("2006-01-02")
+		}
+		whereClause += fmt.Sprintf(" AND j.waktu_transaksi >= $%d::date AND j.waktu_transaksi < ($%d::date + INTERVAL '1 day')", argIdx, argIdx+1)
+		args = append(args, startDate, endDate)
+		argIdx += 2
+		periodeLabel = fmt.Sprintf("Laporan Mingguan: %s s/d %s", startDate, endDate)
+
+	case "tahunan":
+		whereClause += fmt.Sprintf(" AND EXTRACT(YEAR FROM j.waktu_transaksi) = $%d", argIdx)
+		args = append(args, year)
+		argIdx++
+		periodeLabel = fmt.Sprintf("Laporan Tahunan: Tahun %d", year)
+
+	default: // bulanan
+		periode = "bulanan"
+		whereClause += fmt.Sprintf(" AND EXTRACT(MONTH FROM j.waktu_transaksi) = $%d AND EXTRACT(YEAR FROM j.waktu_transaksi) = $%d", argIdx, argIdx+1)
+		args = append(args, month, year)
+		argIdx += 2
+		monthNames := []string{"", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"}
+		mName := "Bulan Ini"
+		if month >= 1 && month <= 12 {
+			mName = monthNames[month]
+		}
+		periodeLabel = fmt.Sprintf("Laporan Bulanan: %s %d", mName, year)
+	}
+
+	if orderID != "" && orderID != "all" {
+		if parsed, err := uuid.Parse(orderID); err == nil {
+			whereClause += fmt.Sprintf(" AND ji.order_id = $%d::uuid", argIdx)
+			args = append(args, parsed)
+			argIdx++
+		}
+	}
+
+	if kategoriID != "" && kategoriID != "all" {
+		if parsed, err := uuid.Parse(kategoriID); err == nil {
+			whereClause += fmt.Sprintf(" AND ji.kategori_id = $%d::uuid", argIdx)
+			args = append(args, parsed)
+			argIdx++
+		}
+	}
+
+	// 1. Hitung Ringkasan (Summary)
+	summaryQuery := fmt.Sprintf(`
+		SELECT
+			COALESCE(SUM(CASE WHEN ji.tipe = 'pemasukan' THEN ji.amount_numeric ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN ji.tipe = 'pengeluaran' THEN ji.amount_numeric ELSE 0 END), 0),
+			COUNT(DISTINCT ji.id)
+		FROM jurnal_items ji
+		JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+		%s
+	`, whereClause)
+
+	var sumIn, sumOut, totalTrx int64
+	if err := r.db.QueryRowContext(ctx, summaryQuery, args...).Scan(&sumIn, &sumOut, &totalTrx); err != nil {
+		return nil, fmt.Errorf("summary laporan: %w", err)
+	}
+
+	netSaldo := sumIn - sumOut
+	var marginPct float64
+	if sumIn > 0 {
+		marginPct = math.Round((float64(netSaldo)/float64(sumIn))*1000) / 10
+	}
+
+	// 2. Query Data Grafik Batang Berdasarkan Periode
+	var chartPoints []dto.ChartBarPoint
+
+	switch periode {
+	case "harian":
+		// Jam 08:00 sampai 20:00
+		hourLabels := []string{"08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"}
+		chartMapIn := make(map[int]int64)
+		chartMapOut := make(map[int]int64)
+
+		cQuery := fmt.Sprintf(`
+			SELECT
+				EXTRACT(HOUR FROM j.waktu_transaksi)::int as hr,
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pemasukan' THEN ji.amount_numeric ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pengeluaran' THEN ji.amount_numeric ELSE 0 END), 0)
+			FROM jurnal_items ji
+			JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+			%s
+			GROUP BY hr
+		`, whereClause)
+
+		cRows, _ := r.db.QueryContext(ctx, cQuery, args...)
+		if cRows != nil {
+			defer cRows.Close()
+			for cRows.Next() {
+				var hr int
+				var inVal, outVal int64
+				if err := cRows.Scan(&hr, &inVal, &outVal); err == nil {
+					chartMapIn[hr] = inVal
+					chartMapOut[hr] = outVal
+				}
+			}
+		}
+
+		chartPoints = make([]dto.ChartBarPoint, len(hourLabels))
+		hours := []int{8, 10, 12, 14, 16, 18, 20}
+		for i, h := range hours {
+			inV := chartMapIn[h] + chartMapIn[h+1]
+			outV := chartMapOut[h] + chartMapOut[h+1]
+			salV := inV - outV
+			chartPoints[i] = dto.ChartBarPoint{
+				Label:          hourLabels[i],
+				Pemasukan:      inV,
+				Pengeluaran:    outV,
+				Saldo:          salV,
+				PemasukanStr:   fmt.Sprintf("Rp %s", formatRupiah(inV)),
+				PengeluaranStr: fmt.Sprintf("Rp %s", formatRupiah(outV)),
+				SaldoStr:       formatSaldo(salV),
+			}
+		}
+
+	case "mingguan":
+		dayLabels := []string{"Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"}
+		chartMapIn := make(map[int]int64)
+		chartMapOut := make(map[int]int64)
+
+		cQuery := fmt.Sprintf(`
+			SELECT
+				EXTRACT(ISODOW FROM j.waktu_transaksi)::int as dow,
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pemasukan' THEN ji.amount_numeric ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pengeluaran' THEN ji.amount_numeric ELSE 0 END), 0)
+			FROM jurnal_items ji
+			JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+			%s
+			GROUP BY dow
+		`, whereClause)
+
+		cRows, _ := r.db.QueryContext(ctx, cQuery, args...)
+		if cRows != nil {
+			defer cRows.Close()
+			for cRows.Next() {
+				var dow int
+				var inVal, outVal int64
+				if err := cRows.Scan(&dow, &inVal, &outVal); err == nil {
+					chartMapIn[dow] = inVal
+					chartMapOut[dow] = outVal
+				}
+			}
+		}
+
+		chartPoints = make([]dto.ChartBarPoint, 7)
+		for i := 1; i <= 7; i++ {
+			inV := chartMapIn[i]
+			outV := chartMapOut[i]
+			salV := inV - outV
+			chartPoints[i-1] = dto.ChartBarPoint{
+				Label:          dayLabels[i-1],
+				Pemasukan:      inV,
+				Pengeluaran:    outV,
+				Saldo:          salV,
+				PemasukanStr:   fmt.Sprintf("Rp %s", formatRupiah(inV)),
+				PengeluaranStr: fmt.Sprintf("Rp %s", formatRupiah(outV)),
+				SaldoStr:       formatSaldo(salV),
+			}
+		}
+
+	case "tahunan":
+		monthNames := []string{"Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"}
+		chartMapIn := make(map[int]int64)
+		chartMapOut := make(map[int]int64)
+
+		cQuery := fmt.Sprintf(`
+			SELECT
+				EXTRACT(MONTH FROM j.waktu_transaksi)::int as m,
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pemasukan' THEN ji.amount_numeric ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pengeluaran' THEN ji.amount_numeric ELSE 0 END), 0)
+			FROM jurnal_items ji
+			JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+			%s
+			GROUP BY m
+		`, whereClause)
+
+		cRows, _ := r.db.QueryContext(ctx, cQuery, args...)
+		if cRows != nil {
+			defer cRows.Close()
+			for cRows.Next() {
+				var m int
+				var inVal, outVal int64
+				if err := cRows.Scan(&m, &inVal, &outVal); err == nil {
+					chartMapIn[m] = inVal
+					chartMapOut[m] = outVal
+				}
+			}
+		}
+
+		chartPoints = make([]dto.ChartBarPoint, 12)
+		for i := 1; i <= 12; i++ {
+			inV := chartMapIn[i]
+			outV := chartMapOut[i]
+			salV := inV - outV
+			chartPoints[i-1] = dto.ChartBarPoint{
+				Label:          monthNames[i-1],
+				Pemasukan:      inV,
+				Pengeluaran:    outV,
+				Saldo:          salV,
+				PemasukanStr:   fmt.Sprintf("Rp %s", formatRupiah(inV)),
+				PengeluaranStr: fmt.Sprintf("Rp %s", formatRupiah(outV)),
+				SaldoStr:       formatSaldo(salV),
+			}
+		}
+
+	default: // bulanan
+		weekLabels := []string{"Minggu I", "Minggu II", "Minggu III", "Minggu IV", "Minggu V"}
+		chartMapIn := make(map[int]int64)
+		chartMapOut := make(map[int]int64)
+
+		cQuery := fmt.Sprintf(`
+			SELECT
+				(FLOOR((EXTRACT(DAY FROM j.waktu_transaksi) - 1) / 7) + 1)::int as wk,
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pemasukan' THEN ji.amount_numeric ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN ji.tipe = 'pengeluaran' THEN ji.amount_numeric ELSE 0 END), 0)
+			FROM jurnal_items ji
+			JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+			%s
+			GROUP BY wk
+		`, whereClause)
+
+		cRows, _ := r.db.QueryContext(ctx, cQuery, args...)
+		if cRows != nil {
+			defer cRows.Close()
+			for cRows.Next() {
+				var wk int
+				var inVal, outVal int64
+				if err := cRows.Scan(&wk, &inVal, &outVal); err == nil {
+					chartMapIn[wk] = inVal
+					chartMapOut[wk] = outVal
+				}
+			}
+		}
+
+		chartPoints = make([]dto.ChartBarPoint, 5)
+		for i := 1; i <= 5; i++ {
+			inV := chartMapIn[i]
+			outV := chartMapOut[i]
+			salV := inV - outV
+			chartPoints[i-1] = dto.ChartBarPoint{
+				Label:          weekLabels[i-1],
+				Pemasukan:      inV,
+				Pengeluaran:    outV,
+				Saldo:          salV,
+				PemasukanStr:   fmt.Sprintf("Rp %s", formatRupiah(inV)),
+				PengeluaranStr: fmt.Sprintf("Rp %s", formatRupiah(outV)),
+				SaldoStr:       formatSaldo(salV),
+			}
+		}
+	}
+
+	// 3. Kategori Breakdown
+	kategoriBreakdown := make([]dto.KategoriBreakdown, 0)
+	kbQuery := fmt.Sprintf(`
+		SELECT
+			COALESCE(k.nama_kategori, 'Umum') as kat,
+			ji.tipe,
+			COALESCE(SUM(ji.amount_numeric), 0) as tot
+		FROM jurnal_items ji
+		JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+		LEFT JOIN kategori_keuangan k ON ji.kategori_id = k.id
+		%s
+		GROUP BY kat, ji.tipe
+		ORDER BY tot DESC
+		LIMIT 6
+	`, whereClause)
+
+	kbRows, _ := r.db.QueryContext(ctx, kbQuery, args...)
+	if kbRows != nil {
+		defer kbRows.Close()
+		for kbRows.Next() {
+			var kat, tip string
+			var tot int64
+			if err := kbRows.Scan(&kat, &tip, &tot); err == nil {
+				var pct float64
+				if tip == "pemasukan" && sumIn > 0 {
+					pct = math.Round((float64(tot)/float64(sumIn))*1000) / 10
+				} else if tip == "pengeluaran" && sumOut > 0 {
+					pct = math.Round((float64(tot)/float64(sumOut))*1000) / 10
+				}
+				kategoriBreakdown = append(kategoriBreakdown, dto.KategoriBreakdown{
+					Kategori:      kat,
+					Tipe:          tip,
+					Total:         fmt.Sprintf("Rp %s", formatRupiah(tot)),
+					AmountNumeric: tot,
+					Percentage:    pct,
+				})
+			}
+		}
+	}
+
+	// 4. Query Items List dengan Pagination
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	orderDir := "DESC"
+	if strings.ToUpper(sortDir) == "ASC" {
+		orderDir = "ASC"
+	}
+
+	tableQuery := fmt.Sprintf(`
+		SELECT
+			ji.id, ji.jurnal_id, j.kode_jurnal, j.waktu_transaksi,
+			ji.tipe, ji.deskripsi, COALESCE(k.nama_kategori, 'Umum') as nama_kategori,
+			ji.metode_pembayaran, ji.nominal, ji.amount_numeric,
+			ji.sumber, COALESCE(o.invoice_no, '') as invoice_no, COALESCE(g.kode_gaji, '') as kode_gaji
+		FROM jurnal_items ji
+		JOIN jurnal_keuangan j ON ji.jurnal_id = j.id
+		LEFT JOIN kategori_keuangan k ON ji.kategori_id = k.id
+		LEFT JOIN orders o ON ji.order_id = o.id
+		LEFT JOIN gaji g ON ji.gaji_id = g.id
+		%s
+		ORDER BY j.waktu_transaksi %s, ji.created_at %s
+		LIMIT $%d OFFSET $%d
+	`, whereClause, orderDir, orderDir, argIdx, argIdx+1)
+
+	pagedArgs := append(args, limit, offset)
+	tRows, err := r.db.QueryContext(ctx, tableQuery, pagedArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("query table laporan: %w", err)
+	}
+	defer tRows.Close()
+
+	items := make([]dto.LaporanItemRow, 0)
+	for tRows.Next() {
+		var row dto.LaporanItemRow
+		if err := tRows.Scan(
+			&row.ID, &row.JurnalID, &row.KodeJurnal, &row.WaktuTransaksi,
+			&row.Tipe, &row.Deskripsi, &row.NamaKategori,
+			&row.MetodePembayaran, &row.Nominal, &row.AmountNumeric,
+			&row.Sumber, &row.InvoiceNo, &row.KodeGaji,
+		); err == nil {
+			items = append(items, row)
+		}
+	}
+
+	totalPages := int(math.Ceil(float64(totalTrx) / float64(limit)))
+
+	return &dto.LaporanResponse{
+		Periode:      periode,
+		PeriodeLabel: periodeLabel,
+		Summary: dto.LaporanSummary{
+			TotalPemasukan:     fmt.Sprintf("Rp %s", formatRupiah(sumIn)),
+			TotalPengeluaran:   fmt.Sprintf("Rp %s", formatRupiah(sumOut)),
+			SaldoBersih:        formatSaldo(netSaldo),
+			NumericPemasukan:   sumIn,
+			NumericPengeluaran: sumOut,
+			NumericSaldo:       netSaldo,
+			ProfitMarginPct:    marginPct,
+			TotalTransaksi:     totalTrx,
+		},
+		Chart:             chartPoints,
+		KategoriBreakdown: kategoriBreakdown,
+		Total:             totalTrx,
+		Page:              page,
+		Limit:             limit,
+		TotalPages:        totalPages,
+		Items:             items,
+	}, nil
+}
+
+func formatRupiah(n int64) string {
+	if n < 0 {
+		n = -n
+	}
+	in := strconv.FormatInt(n, 10)
+	var out []byte
+	l := len(in)
+	for i, c := range in {
+		out = append(out, byte(c))
+		if (l-i-1)%3 == 0 && i != l-1 {
+			out = append(out, '.')
+		}
+	}
+	if len(out) == 0 {
+		return "0"
+	}
+	return string(out)
+}
+
+func formatSaldo(n int64) string {
+	if n < 0 {
+		return fmt.Sprintf("-Rp %s", formatRupiah(-n))
+	}
+	return fmt.Sprintf("Rp %s", formatRupiah(n))
 }

@@ -140,6 +140,27 @@ func (s *KeuanganService) GetNextKodeJurnal(ctx context.Context) (string, error)
 	return s.repo.GenerateKodeJurnal(ctx)
 }
 
+// GetLaporanData mengakumulasikan data laporan dan analitik finansial untuk 4 periode.
+func (s *KeuanganService) GetLaporanData(
+	ctx context.Context,
+	periode string,
+	tanggal string,
+	startDate string,
+	endDate string,
+	month int,
+	year int,
+	orderID string,
+	kategoriID string,
+	sortDir string,
+	page int,
+	limit int,
+) (*dto.LaporanResponse, error) {
+	return s.repo.GetLaporanData(
+		ctx, periode, tanggal, startDate, endDate, month, year,
+		orderID, kategoriID, sortDir, page, limit,
+	)
+}
+
 func (s *KeuanganService) ListJurnal(
 	ctx context.Context,
 	search string,

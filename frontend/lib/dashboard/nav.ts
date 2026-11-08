@@ -1,6 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Banknote,
+  Calendar,
+  CalendarDays,
+  CalendarRange,
   Clock,
   Columns3,
   Compass,
@@ -13,6 +16,7 @@ import {
   MessageCircleQuestion,
   Settings,
   Share2,
+  TrendingUp,
   Users,
   Wallet,
   Wrench,
@@ -54,6 +58,17 @@ export const dashboardNav: DashboardNavGroup[] = [
     items: [
       { label: "Pesanan & Invoice", href: "/dashboard/orders", icon: FileText },
       { label: "Manajemen Keuangan", href: "/dashboard/keuangan", icon: Wallet },
+      {
+        label: "Laporan Finansial",
+        href: "/dashboard/laporan/bulanan",
+        icon: TrendingUp,
+        children: [
+          { label: "Laporan Harian", href: "/dashboard/laporan/harian", icon: Calendar },
+          { label: "Laporan Mingguan", href: "/dashboard/laporan/mingguan", icon: CalendarRange },
+          { label: "Laporan Bulanan", href: "/dashboard/laporan/bulanan", icon: CalendarDays },
+          { label: "Laporan Tahunan", href: "/dashboard/laporan/tahunan", icon: TrendingUp },
+        ],
+      },
       { label: "Penggajian Tim", href: "/dashboard/gaji", icon: Banknote },
       { label: "Permohonan", href: "/dashboard/inquiries", icon: Inbox },
       { label: "Proyek", href: "/dashboard/proyek", icon: FolderKanban },

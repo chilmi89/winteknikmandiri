@@ -136,6 +136,50 @@ func (ctrl *KeuanganController) GetNextKodeJurnal(c *gin.Context) {
 	})
 }
 
+// GetLaporan godoc
+// @Summary     Laporan & Analitik Keuangan untuk 4 periode (harian, mingguan, bulanan, tahunan)
+// @Tags        keuangan
+// @Produce     json
+// @Param       periode query string false "Periode: harian / mingguan / bulanan / tahunan"
+// @Param       tanggal query string false "Tanggal YYYY-MM-DD (harian)"
+// @Param       start_date query string false "Tanggal mulai YYYY-MM-DD (mingguan)"
+// @Param       end_date query string false "Tanggal selesai YYYY-MM-DD (mingguan)"
+// @Param       month query int false "Bulan 1-12 (bulanan)"
+// @Param       year query int false "Tahun e.g. 2026 (bulanan & tahunan)"
+// @Param       order_id query string false "Filter per proyek (UUID)"
+// @Param       kategori_id query string false "Filter per kategori (UUID)"
+// @Param       sort_dir query string false "Urutan: asc / desc"
+// @Param       page query int false "Nomor halaman" default(1)
+// @Param       limit query int false "Limit per halaman" default(10)
+// @Success     200 {object} dto.LaporanEnvelope
+// @Router      /api/v1/keuangan/laporan [get]
+func (ctrl *KeuanganController) GetLaporan(c *gin.Context) {
+	periode := c.DefaultQuery("periode", "bulanan")
+	tanggal := c.Query("tanggal")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	month, _ := strconv.Atoi(c.Query("month"))
+	year, _ := strconv.Atoi(c.Query("year"))
+	orderID := c.Query("order_id")
+	kategoriID := c.Query("kategori_id")
+	sortDir := c.DefaultQuery("sort_dir", "desc")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	res, err := ctrl.svc.GetLaporanData(
+		c.Request.Context(), periode, tanggal, startDate, endDate, month, year,
+		orderID, kategoriID, sortDir, page, limit,
+	)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.LaporanEnvelope{
+		Message: "Data laporan keuangan berhasil dimuat",
+		Data:    *res,
+	})
+}
+
 // ListJurnal godoc
 // @Summary     Daftar buku kas & jurnal keuangan lengkap dengan summary saldo & pagination
 // @Tags        keuangan

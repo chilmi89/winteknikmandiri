@@ -18,6 +18,9 @@ func RegisterKeuanganRoutes(rg *gin.RouterGroup, db *sql.DB) {
 
 	keuanganGroup := rg.Group("/keuangan")
 	{
+		// 0. Laporan Finansial 4 Periode
+		keuanganGroup.GET("/laporan", ctrl.GetLaporan)
+
 		// 1. Kategori Keuangan
 		kategoriGroup := keuanganGroup.Group("/kategori")
 		{

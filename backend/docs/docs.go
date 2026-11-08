@@ -1573,6 +1573,95 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/keuangan/laporan": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Laporan \u0026 Analitik Keuangan untuk 4 periode (harian, mingguan, bulanan, tahunan)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Periode: harian / mingguan / bulanan / tahunan",
+                        "name": "periode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tanggal YYYY-MM-DD (harian)",
+                        "name": "tanggal",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tanggal mulai YYYY-MM-DD (mingguan)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tanggal selesai YYYY-MM-DD (mingguan)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bulan 1-12 (bulanan)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tahun e.g. 2026 (bulanan \u0026 tahunan)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter per proyek (UUID)",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter per kategori (UUID)",
+                        "name": "kategori_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Urutan: asc / desc",
+                        "name": "sort_dir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Nomor halaman",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit per halaman",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LaporanEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/orders": {
             "get": {
                 "produces": [
@@ -3283,6 +3372,32 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ChartBarPoint": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "pemasukan": {
+                    "type": "integer"
+                },
+                "pemasukan_str": {
+                    "type": "string"
+                },
+                "pengeluaran": {
+                    "type": "integer"
+                },
+                "pengeluaran_str": {
+                    "type": "string"
+                },
+                "saldo": {
+                    "type": "integer"
+                },
+                "saldo_str": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ClickOrderRequest": {
             "type": "object",
             "required": [
@@ -4396,6 +4511,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.KategoriBreakdown": {
+            "type": "object",
+            "properties": {
+                "amount_numeric": {
+                    "type": "integer"
+                },
+                "kategori": {
+                    "type": "string"
+                },
+                "percentage": {
+                    "type": "number"
+                },
+                "tipe": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.KategoriEnvelope": {
             "type": "object",
             "properties": {
@@ -4454,6 +4589,134 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "sisa_saldo_kas": {
+                    "type": "string"
+                },
+                "total_pemasukan": {
+                    "type": "string"
+                },
+                "total_pengeluaran": {
+                    "type": "string"
+                },
+                "total_transaksi": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.LaporanEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.LaporanResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LaporanItemRow": {
+            "type": "object",
+            "properties": {
+                "amount_numeric": {
+                    "type": "integer"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "jurnal_id": {
+                    "type": "string"
+                },
+                "kode_gaji": {
+                    "type": "string"
+                },
+                "kode_jurnal": {
+                    "type": "string"
+                },
+                "metode_pembayaran": {
+                    "type": "string"
+                },
+                "nama_kategori": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "sumber": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "type": "string"
+                },
+                "waktu_transaksi": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LaporanResponse": {
+            "type": "object",
+            "properties": {
+                "chart": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ChartBarPoint"
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LaporanItemRow"
+                    }
+                },
+                "kategori_breakdown": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.KategoriBreakdown"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "periode": {
+                    "type": "string"
+                },
+                "periode_label": {
+                    "type": "string"
+                },
+                "summary": {
+                    "$ref": "#/definitions/dto.LaporanSummary"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.LaporanSummary": {
+            "type": "object",
+            "properties": {
+                "numeric_pemasukan": {
+                    "type": "integer"
+                },
+                "numeric_pengeluaran": {
+                    "type": "integer"
+                },
+                "numeric_saldo": {
+                    "type": "integer"
+                },
+                "profit_margin_pct": {
+                    "type": "number"
+                },
+                "saldo_bersih": {
                     "type": "string"
                 },
                 "total_pemasukan": {

@@ -146,3 +146,68 @@ type KategoriEnvelope struct {
 type KeuanganMessageResponse struct {
 	Message string `json:"message"`
 }
+
+// ---------- DTO LAPORAN & ANALITIK KEUANGAN (4 PERIODE) ----------
+
+type LaporanSummary struct {
+	TotalPemasukan     string  `json:"total_pemasukan"`
+	TotalPengeluaran   string  `json:"total_pengeluaran"`
+	SaldoBersih        string  `json:"saldo_bersih"`
+	NumericPemasukan   int64   `json:"numeric_pemasukan"`
+	NumericPengeluaran int64   `json:"numeric_pengeluaran"`
+	NumericSaldo       int64   `json:"numeric_saldo"`
+	ProfitMarginPct    float64 `json:"profit_margin_pct"`
+	TotalTransaksi     int64   `json:"total_transaksi"`
+}
+
+type ChartBarPoint struct {
+	Label          string `json:"label"`
+	Pemasukan      int64  `json:"pemasukan"`
+	Pengeluaran    int64  `json:"pengeluaran"`
+	Saldo          int64  `json:"saldo"`
+	PemasukanStr   string `json:"pemasukan_str"`
+	PengeluaranStr string `json:"pengeluaran_str"`
+	SaldoStr       string `json:"saldo_str"`
+}
+
+type KategoriBreakdown struct {
+	Kategori      string  `json:"kategori"`
+	Tipe          string  `json:"tipe"`
+	Total         string  `json:"total"`
+	AmountNumeric int64   `json:"amount_numeric"`
+	Percentage    float64 `json:"percentage"`
+}
+
+type LaporanItemRow struct {
+	ID               string    `json:"id"`
+	JurnalID         string    `json:"jurnal_id"`
+	KodeJurnal       string    `json:"kode_jurnal"`
+	WaktuTransaksi   time.Time `json:"waktu_transaksi"`
+	Tipe             string    `json:"tipe"`
+	Deskripsi        string    `json:"deskripsi"`
+	NamaKategori     string    `json:"nama_kategori"`
+	MetodePembayaran string    `json:"metode_pembayaran"`
+	Nominal          string    `json:"nominal"`
+	AmountNumeric    int64     `json:"amount_numeric"`
+	Sumber           string    `json:"sumber"`
+	InvoiceNo        string    `json:"invoice_no,omitempty"`
+	KodeGaji         string    `json:"kode_gaji,omitempty"`
+}
+
+type LaporanResponse struct {
+	Periode           string              `json:"periode"`
+	PeriodeLabel      string              `json:"periode_label"`
+	Summary           LaporanSummary      `json:"summary"`
+	Chart             []ChartBarPoint     `json:"chart"`
+	KategoriBreakdown []KategoriBreakdown `json:"kategori_breakdown"`
+	Total             int64               `json:"total"`
+	Page              int                 `json:"page"`
+	Limit             int                 `json:"limit"`
+	TotalPages        int                 `json:"total_pages"`
+	Items             []LaporanItemRow    `json:"items"`
+}
+
+type LaporanEnvelope struct {
+	Message string          `json:"message,omitempty"`
+	Data    LaporanResponse `json:"data"`
+}

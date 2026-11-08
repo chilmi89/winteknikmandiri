@@ -28,6 +28,23 @@ definitions:
       message:
         type: string
     type: object
+  dto.ChartBarPoint:
+    properties:
+      label:
+        type: string
+      pemasukan:
+        type: integer
+      pemasukan_str:
+        type: string
+      pengeluaran:
+        type: integer
+      pengeluaran_str:
+        type: string
+      saldo:
+        type: integer
+      saldo_str:
+        type: string
+    type: object
   dto.ClickOrderRequest:
     properties:
       category:
@@ -795,6 +812,19 @@ definitions:
       message:
         type: string
     type: object
+  dto.KategoriBreakdown:
+    properties:
+      amount_numeric:
+        type: integer
+      kategori:
+        type: string
+      percentage:
+        type: number
+      tipe:
+        type: string
+      total:
+        type: string
+    type: object
   dto.KategoriEnvelope:
     properties:
       data:
@@ -833,6 +863,90 @@ definitions:
       numeric_saldo:
         type: integer
       sisa_saldo_kas:
+        type: string
+      total_pemasukan:
+        type: string
+      total_pengeluaran:
+        type: string
+      total_transaksi:
+        type: integer
+    type: object
+  dto.LaporanEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.LaporanResponse'
+      message:
+        type: string
+    type: object
+  dto.LaporanItemRow:
+    properties:
+      amount_numeric:
+        type: integer
+      deskripsi:
+        type: string
+      id:
+        type: string
+      invoice_no:
+        type: string
+      jurnal_id:
+        type: string
+      kode_gaji:
+        type: string
+      kode_jurnal:
+        type: string
+      metode_pembayaran:
+        type: string
+      nama_kategori:
+        type: string
+      nominal:
+        type: string
+      sumber:
+        type: string
+      tipe:
+        type: string
+      waktu_transaksi:
+        type: string
+    type: object
+  dto.LaporanResponse:
+    properties:
+      chart:
+        items:
+          $ref: '#/definitions/dto.ChartBarPoint'
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/dto.LaporanItemRow'
+        type: array
+      kategori_breakdown:
+        items:
+          $ref: '#/definitions/dto.KategoriBreakdown'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      periode:
+        type: string
+      periode_label:
+        type: string
+      summary:
+        $ref: '#/definitions/dto.LaporanSummary'
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.LaporanSummary:
+    properties:
+      numeric_pemasukan:
+        type: integer
+      numeric_pengeluaran:
+        type: integer
+      numeric_saldo:
+        type: integer
+      profit_margin_pct:
+        type: number
+      saldo_bersih:
         type: string
       total_pemasukan:
         type: string
@@ -2717,6 +2831,66 @@ paths:
           schema:
             $ref: '#/definitions/dto.KategoriEnvelope'
       summary: Perbarui kategori keuangan
+      tags:
+      - keuangan
+  /api/v1/keuangan/laporan:
+    get:
+      parameters:
+      - description: 'Periode: harian / mingguan / bulanan / tahunan'
+        in: query
+        name: periode
+        type: string
+      - description: Tanggal YYYY-MM-DD (harian)
+        in: query
+        name: tanggal
+        type: string
+      - description: Tanggal mulai YYYY-MM-DD (mingguan)
+        in: query
+        name: start_date
+        type: string
+      - description: Tanggal selesai YYYY-MM-DD (mingguan)
+        in: query
+        name: end_date
+        type: string
+      - description: Bulan 1-12 (bulanan)
+        in: query
+        name: month
+        type: integer
+      - description: Tahun e.g. 2026 (bulanan & tahunan)
+        in: query
+        name: year
+        type: integer
+      - description: Filter per proyek (UUID)
+        in: query
+        name: order_id
+        type: string
+      - description: Filter per kategori (UUID)
+        in: query
+        name: kategori_id
+        type: string
+      - description: 'Urutan: asc / desc'
+        in: query
+        name: sort_dir
+        type: string
+      - default: 1
+        description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit per halaman
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LaporanEnvelope'
+      summary: Laporan & Analitik Keuangan untuk 4 periode (harian, mingguan, bulanan,
+        tahunan)
       tags:
       - keuangan
   /api/v1/orders:
