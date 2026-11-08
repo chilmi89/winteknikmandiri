@@ -12,6 +12,7 @@ type OrderResponse struct {
 	CustomerName    string              `json:"customer_name"`
 	CustomerPhone   string              `json:"customer_phone"`
 	Address         string              `json:"address"`
+	MapsURL         string              `json:"maps_url"`
 	Notes           string              `json:"notes"`
 	TotalAmount     string              `json:"total_amount"`
 	Status          string              `json:"status"`
@@ -69,6 +70,7 @@ type UpdateOrderRequest struct {
 	CustomerName   *string `json:"customer_name"`
 	CustomerPhone  *string `json:"customer_phone"`
 	Address        *string `json:"address"`
+	MapsURL        *string `json:"maps_url"`
 	Notes          *string `json:"notes"`
 	TotalAmount    *string `json:"total_amount"`
 	Status         *string `json:"status"`

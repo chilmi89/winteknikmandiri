@@ -16,7 +16,7 @@ import type { Order } from "@/lib/orders";
 import { StatusBadge, type StatusTone } from "@/components/dashboard/data-table/StatusBadge";
 import DataTableEmpty from "@/components/dashboard/data-table/DataTableEmpty";
 import DataTableSkeleton from "@/components/dashboard/data-table/DataTableSkeleton";
-import { formatDate } from "@/lib/dashboard/format";
+import { formatDateTime } from "@/lib/dashboard/format";
 
 type OrderTableProps = {
   items: Order[];
@@ -114,8 +114,8 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
                   >
                     {order.invoice_no}
                   </button>
-                  <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                    {formatDate(order.created_at)}
+                  <p className="text-[10.5px] text-slate-500 mt-0.5 font-mono">
+                    {formatDateTime(order.created_at)} WIB
                   </p>
                 </TableCell>
 

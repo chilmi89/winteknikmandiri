@@ -16,6 +16,7 @@ type Order struct {
 	CustomerName    *string     `json:"customer_name,omitempty"`
 	CustomerPhone   *string     `json:"customer_phone,omitempty"`
 	Address         *string     `json:"address,omitempty"`
+	MapsURL         *string     `json:"maps_url,omitempty"`
 	Notes           *string     `json:"notes,omitempty"`
 	TotalAmount     string      `json:"total_amount"`
 	Status          string      `json:"status"`

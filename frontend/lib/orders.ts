@@ -32,6 +32,7 @@ export type Order = {
   customer_name?: string;
   customer_phone?: string;
   address?: string;
+  maps_url?: string;
   notes?: string;
   total_amount: string;
   status: OrderStatus;
@@ -66,6 +67,7 @@ export type UpdateOrderHeaderPayload = {
   customer_name?: string;
   customer_phone?: string;
   address?: string;
+  maps_url?: string;
   notes?: string;
   total_amount?: string;
   status?: string;

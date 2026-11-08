@@ -207,6 +207,10 @@ func toOrderDTO(o *model.Order) dto.OrderResponse {
 	if o.Address != nil {
 		addr = *o.Address
 	}
+	mURL := ""
+	if o.MapsURL != nil {
+		mURL = *o.MapsURL
+	}
 	notes := ""
 	if o.Notes != nil {
 		notes = *o.Notes
@@ -226,6 +230,7 @@ func toOrderDTO(o *model.Order) dto.OrderResponse {
 		CustomerName:    cName,
 		CustomerPhone:   cPhone,
 		Address:         addr,
+		MapsURL:         mURL,
 		Notes:           notes,
 		TotalAmount:     o.TotalAmount,
 		Status:          o.Status,

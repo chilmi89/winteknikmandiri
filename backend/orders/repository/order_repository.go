@@ -172,7 +172,7 @@ func (r *OrderRepository) ListOrders(ctx context.Context, status string, search 
 	query := `
 		SELECT
 			id, invoice_no, initial_category, initial_service, initial_price,
-			customer_name, customer_phone, address, notes, total_amount, status,
+			customer_name, customer_phone, address, maps_url, notes, total_amount, status,
 			created_at, updated_at
 		FROM orders
 		WHERE deleted_at IS NULL
@@ -212,7 +212,7 @@ func (r *OrderRepository) ListOrders(ctx context.Context, status string, search 
 		var o model.Order
 		if err := rows.Scan(
 			&o.ID, &o.InvoiceNo, &o.InitialCategory, &o.InitialService, &o.InitialPrice,
-			&o.CustomerName, &o.CustomerPhone, &o.Address, &o.Notes, &o.TotalAmount, &o.Status,
+			&o.CustomerName, &o.CustomerPhone, &o.Address, &o.MapsURL, &o.Notes, &o.TotalAmount, &o.Status,
 			&o.CreatedAt, &o.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -227,7 +227,7 @@ func (r *OrderRepository) GetOrderByIDOrInvoice(ctx context.Context, idOrInv str
 	query := `
 		SELECT
 			id, invoice_no, initial_category, initial_service, initial_price,
-			customer_name, customer_phone, address, notes, total_amount, status,
+			customer_name, customer_phone, address, maps_url, notes, total_amount, status,
 			created_at, updated_at
 		FROM orders
 		WHERE (id::text = $1 OR invoice_no = $1) AND deleted_at IS NULL
@@ -235,7 +235,7 @@ func (r *OrderRepository) GetOrderByIDOrInvoice(ctx context.Context, idOrInv str
 	var o model.Order
 	err := r.db.QueryRowContext(ctx, query, idOrInv).Scan(
 		&o.ID, &o.InvoiceNo, &o.InitialCategory, &o.InitialService, &o.InitialPrice,
-		&o.CustomerName, &o.CustomerPhone, &o.Address, &o.Notes, &o.TotalAmount, &o.Status,
+		&o.CustomerName, &o.CustomerPhone, &o.Address, &o.MapsURL, &o.Notes, &o.TotalAmount, &o.Status,
 		&o.CreatedAt, &o.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -287,6 +287,10 @@ func (r *OrderRepository) UpdateOrder(ctx context.Context, current *model.Order,
 	if req.Address != nil {
 		addr = req.Address
 	}
+	mURL := current.MapsURL
+	if req.MapsURL != nil {
+		mURL = req.MapsURL
+	}
 	notes := current.Notes
 	if req.Notes != nil {
 		notes = req.Notes
@@ -307,19 +311,19 @@ func (r *OrderRepository) UpdateOrder(ctx context.Context, current *model.Order,
 	query := `
 		UPDATE orders
 		SET
-			customer_name = $1, customer_phone = $2, address = $3, notes = $4,
-			total_amount = $5, status = $6, initial_service = $7, updated_at = NOW()
-		WHERE id = $8::uuid AND deleted_at IS NULL
+			customer_name = $1, customer_phone = $2, address = $3, maps_url = $4, notes = $5,
+			total_amount = $6, status = $7, initial_service = $8, updated_at = NOW()
+		WHERE id = $9::uuid AND deleted_at IS NULL
 		RETURNING id, invoice_no, initial_category, initial_service, initial_price,
-		          customer_name, customer_phone, address, notes, total_amount, status,
+		          customer_name, customer_phone, address, maps_url, notes, total_amount, status,
 		          created_at, updated_at
 	`
 	var o model.Order
 	err := r.db.QueryRowContext(ctx, query,
-		cName, cPhone, addr, notes, total, status, initSvc, current.ID,
+		cName, cPhone, addr, mURL, notes, total, status, initSvc, current.ID,
 	).Scan(
 		&o.ID, &o.InvoiceNo, &o.InitialCategory, &o.InitialService, &o.InitialPrice,
-		&o.CustomerName, &o.CustomerPhone, &o.Address, &o.Notes, &o.TotalAmount, &o.Status,
+		&o.CustomerName, &o.CustomerPhone, &o.Address, &o.MapsURL, &o.Notes, &o.TotalAmount, &o.Status,
 		&o.CreatedAt, &o.UpdatedAt,
 	)
 	if err != nil {

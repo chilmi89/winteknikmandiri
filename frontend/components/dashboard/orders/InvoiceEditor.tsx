@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Plus, Trash2, Check, RefreshCw, Send, DollarSign, User, Phone, MapPin, FileText, Star } from "lucide-react";
+import { Copy, Plus, Trash2, Check, RefreshCw, Send, DollarSign, User, Phone, MapPin, FileText, Star, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +47,7 @@ export function InvoiceEditor({
   const [customerName, setCustomerName] = useState(order.customer_name || "");
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone || "");
   const [address, setAddress] = useState(order.address || "");
+  const [mapsUrl, setMapsUrl] = useState(order.maps_url || "");
   const [notes, setNotes] = useState(order.notes || "");
   const [status, setStatus] = useState(order.status || "negosiasi");
   const [savingHeader, setSavingHeader] = useState(false);
@@ -104,6 +105,7 @@ export function InvoiceEditor({
         customer_name: customerName.trim(),
         customer_phone: customerPhone.trim(),
         address: address.trim(),
+        maps_url: mapsUrl.trim(),
         notes: notes.trim(),
         status,
         total_amount: calculatedTotal,
@@ -192,6 +194,8 @@ export function InvoiceEditor({
     let text = `*INVOICE KESEPAKATAN - CV WIN TEKNIK MANDIRI*\n`;
     text += `No. Invoice: *${order.invoice_no}*\n`;
     if (customerName) text += `Klien: ${customerName}\n`;
+    if (address) text += `Alamat: ${address}\n`;
+    if (mapsUrl) text += `Lokasi Maps: ${mapsUrl}\n`;
     text += `Status: ${status.toUpperCase()}\n\n`;
     text += `*Rincian Layanan:*\n`;
 
@@ -306,19 +310,24 @@ export function InvoiceEditor({
                       )}
                     </TableCell>
 
-                    {/* Saklar Toggle On/Off Headline */}
+                    {/* Saklar Toggle On/Off Headline (Bentuk Switch Oval Fisik Sesuai Gambar) */}
                     <TableCell className="px-2 py-2.5 text-center align-middle">
                       <button
                         type="button"
+                        role="switch"
+                        aria-checked={isCurrentHeadline}
                         onClick={() => handleToggleHeadline(it.item_name)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border transition-colors ${
-                          isCurrentHeadline
-                            ? "bg-amber-100 text-amber-900 border-amber-300 shadow-xs"
-                            : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isCurrentHeadline ? "bg-[#6366F1]" : "bg-slate-300"
                         }`}
-                        title={isCurrentHeadline ? "Layanan ini adalah Headline aktif" : "Klik untuk jadikan Headline judul utama"}
+                        title={isCurrentHeadline ? "Layanan ini Headline Utama" : "Klik saklar untuk jadikan Headline"}
                       >
-                        {isCurrentHeadline ? "ON" : "OFF"}
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block size-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            isCurrentHeadline ? "translate-x-4.5" : "translate-x-1"
+                          }`}
+                        />
                       </button>
                     </TableCell>
 
@@ -502,12 +511,39 @@ export function InvoiceEditor({
 
           <div>
             <label className="block text-[11px] font-medium text-slate-600 mb-1">
-              Alamat Survei / Lokasi (Opsional)
+              Link Shareloc Google Maps (Opsional dari WA)
+            </label>
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={mapsUrl}
+                onChange={(e) => setMapsUrl(e.target.value)}
+                placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/..."
+                className="h-8 text-xs bg-white font-mono flex-1"
+              />
+              {mapsUrl && (
+                <a
+                  href={mapsUrl.startsWith("http") ? mapsUrl : `https://${mapsUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-8 px-2.5 rounded-md border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs inline-flex items-center gap-1 shrink-0"
+                  title="Buka rute peta di Google Maps"
+                >
+                  <MapPin className="size-3 text-[#A82020]" />
+                  <span>Peta</span>
+                  <ExternalLink className="size-3" />
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 mb-1">
+              Alamat Tertulis / Patokan Lokasi (Opsional)
             </label>
             <Input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Contoh: Jl. Dhoho No. 12, Kediri"
+              placeholder="Contoh: Jl. Dhoho No. 12 (Samping Masjid, Pagar Hitam)"
               className="h-8 text-xs bg-white"
             />
           </div>
