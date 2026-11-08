@@ -7,7 +7,6 @@ import {
   Edit2,
   FileText,
   Receipt,
-  Store,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -160,13 +159,8 @@ export function JurnalTable({
                         {item.judul || `Rekap Kas ${item.kode_jurnal}`}
                       </span>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                          <Store className="size-3 text-slate-400" />
-                          {item.cabang || "Workshop Pusat Kediri"}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-[11px] font-semibold text-slate-600">
-                          {item.items ? item.items.length : 0} transaksi
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          {item.items ? item.items.length : 0} transaksi terlampir
                         </span>
                         {item.catatan && (
                           <span className="text-[11px] text-slate-400 italic truncate max-w-[200px]">

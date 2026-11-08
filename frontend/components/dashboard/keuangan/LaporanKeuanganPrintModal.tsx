@@ -77,32 +77,31 @@ export function LaporanKeuanganPrintModal({
               >
                 {/* 1. KOP SURAT RESMI (Sesuai KOP SURAT READY.docx) */}
                 <div className="pb-3 border-b-4 border-double border-slate-950">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center">
                     {/* Logo Perusahaan */}
-                    <div className="w-24 shrink-0 flex items-center justify-center">
+                    <div className="w-[105px] shrink-0 flex items-center justify-start">
                       <img
                         src="/logo/logo_kop.png"
                         alt="Logo CV Win Teknik Mandiri"
-                        className="w-20 h-auto object-contain"
+                        className="w-[88px] h-auto object-contain"
                         onError={(e) => {
-                          // Fallback to standard logo if needed
                           (e.currentTarget as HTMLImageElement).src = "/logo/logo_wtm.png";
                         }}
                       />
                     </div>
 
-                    {/* Informasi Kop Surat */}
-                    <div className="flex-1 text-center font-sans">
+                    {/* Informasi Kop Surat - dengan pr-[105px] agar teks benar-benar tepat di tengah (center) halaman */}
+                    <div className="flex-1 text-center font-sans pr-[105px]">
                       <h1 className="text-xl sm:text-2xl font-black tracking-wide text-slate-950 uppercase leading-none font-arial">
                         CV. WIN TEKNIK MANDIRI
                       </h1>
-                      <h2 className="text-sm sm:text-base font-bold tracking-widest text-[#EE0000] uppercase mt-0.5">
+                      <h2 className="text-sm sm:text-base font-bold tracking-widest text-[#EE0000] uppercase mt-1">
                         CONTRACTOR &amp; SUPPLIER
                       </h2>
-                      <p className="text-[11px] text-slate-700 mt-1 leading-tight">
+                      <p className="text-[11px] text-slate-800 mt-1.5 leading-snug font-medium">
                         Jalan Diponegoro - Purwokerto – Ngadiluwih - Kediri – Jawa Timur 64171
                       </p>
-                      <p className="text-[10.5px] italic text-slate-600 mt-0.5">
+                      <p className="text-[10px] italic text-slate-700 mt-0.5">
                         Telepon: (+62) 812-1662-2840, E-mail: win.teknikmandiri@gmail.com
                       </p>
                     </div>
@@ -119,7 +118,7 @@ export function LaporanKeuanganPrintModal({
                   </p>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                <div className="mt-4 grid grid-cols-3 gap-4 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-200">
                   <div>
                     <span className="text-slate-500 block">Uraian Dokumen:</span>
                     <span className="font-bold text-slate-900">{note.judul || "Rekap Kas Finansial"}</span>
@@ -135,10 +134,6 @@ export function LaporanKeuanganPrintModal({
                     <span className="font-bold uppercase text-slate-900">
                       {note.status === "lunas" ? "LUNAS (SELESAI)" : "DRAFT (SEMENTARA)"}
                     </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">Cabang Operasional:</span>
-                    <span className="font-bold text-slate-900">{note.cabang || "Workshop Pusat Kediri"}</span>
                   </div>
                 </div>
 
@@ -236,11 +231,11 @@ export function LaporanKeuanganPrintModal({
                   </div>
                 )}
 
-                {/* 5. Kolom Tanda Tangan Resmi Pengesahan */}
+                {/* 5. Kolom Tanda Tangan Resmi Pengesahan: Pimpinan di Kiri, Admin di Kanan */}
                 <div className="mt-8 pt-4 grid grid-cols-2 gap-8 text-xs text-center print:break-inside-avoid">
                   <div>
-                    <p className="text-slate-500">Dibuat Oleh,</p>
-                    <p className="font-bold text-slate-800 mt-0.5">Administrasi Keuangan</p>
+                    <p className="text-slate-500">Menyetujui,</p>
+                    <p className="font-bold text-slate-800 mt-0.5">Pimpinan CV. Win Teknik Mandiri</p>
                     <div className="h-16" />
                     <p className="font-bold text-slate-900 border-t border-slate-300 inline-block px-8 pt-1">
                       ( .................................................. )
@@ -252,9 +247,12 @@ export function LaporanKeuanganPrintModal({
                       Kediri, {currentDateStr}
                     </p>
                     <p className="font-bold text-slate-800 mt-0.5">
-                      Pimpinan CV. Win Teknik Mandiri
+                      Dibuat Oleh,
                     </p>
-                    <div className="h-16" />
+                    <p className="font-bold text-slate-800">
+                      Administrasi Keuangan
+                    </p>
+                    <div className="h-12" />
                     <p className="font-bold text-slate-900 border-t border-slate-300 inline-block px-8 pt-1">
                       ( .................................................. )
                     </p>
