@@ -8,6 +8,7 @@ import {
   Clock,
   Filter,
   Plus,
+  Printer,
   Receipt,
   RefreshCw,
   RotateCcw,
@@ -48,6 +49,7 @@ import { JurnalTable } from "./JurnalTable";
 import { CatatFinansialEditor } from "./CatatFinansialEditor";
 import { JurnalDeleteDialog } from "./JurnalDeleteDialog";
 import { KategoriManager } from "./KategoriManager";
+import { LaporanKeuanganPrintModal } from "./LaporanKeuanganPrintModal";
 
 type OpenTab = {
   id: string; // 'new' atau UUID
@@ -89,6 +91,25 @@ export function KeuanganWorkspace() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortOption, setSortOption] = useState<"desc" | "asc" | "nominal_desc" | "nominal_asc">("desc");
+
+  // Selection Checkbox State & Print Modal
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const allIds = data.map((d) => d.id);
+    if (allIds.every((id) => selectedIds.includes(id))) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(Array.from(new Set([...selectedIds, ...allIds])));
+    }
+  };
 
   // Pagination States
   const [page, setPage] = useState(1);
@@ -338,14 +359,33 @@ export function KeuanganWorkspace() {
                 Rekap nota keuangan, mutasi kas operasional, dan riwayat pembukuan kas CV Win Teknik Mandiri.
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={handleOpenNewTab}
-              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
-            >
-              <Plus className="size-4" />
-              + Catat Transaksi Baru
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Tombol Print Tunggal (Mendukung Single atau Multi-Data Checkbox) */}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedIds.length === 0}
+                onClick={() => setShowPrintModal(true)}
+                className="inline-flex items-center gap-2 border-slate-300 text-slate-800 hover:bg-slate-100 font-bold text-xs px-4 py-2 rounded-xl shadow-2xs transition disabled:opacity-40 disabled:cursor-not-allowed"
+                title={
+                  selectedIds.length === 0
+                    ? "Centang minimal satu nota di tabel untuk mencetak laporan PDF"
+                    : "Cetak laporan PDF ber-kop surat resmi"
+                }
+              >
+                <Printer className="size-4 text-emerald-600" />
+                Cetak Laporan PDF {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleOpenNewTab}
+                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
+              >
+                <Plus className="size-4" />
+                + Catat Transaksi Baru
+              </Button>
+            </div>
           </div>
 
           {/* 3 KARTU SUMMARY ARUS KAS TOTAL */}
@@ -542,10 +582,13 @@ export function KeuanganWorkspace() {
               </div>
             </div>
 
-            {/* Tabel Transaksi */}
+            {/* Tabel Transaksi dengan Checkbox Pilihan Cetak */}
             <JurnalTable
               data={data}
               loading={loading}
+              selectedIds={selectedIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
               onOpenNote={handleOpenNote}
               onDelete={(item) => setDeletingJurnal(item)}
             />
@@ -610,6 +653,13 @@ export function KeuanganWorkspace() {
         onConfirm={handleConfirmDelete}
         busy={isDeleting}
         error={deleteError}
+      />
+
+      {/* Modal Pratinjau & Cetak Laporan PDF Ber-Kop Surat Resmi WTM */}
+      <LaporanKeuanganPrintModal
+        open={showPrintModal}
+        onOpenChange={setShowPrintModal}
+        selectedNotes={data.filter((d) => selectedIds.includes(d.id))}
       />
     </div>
   );

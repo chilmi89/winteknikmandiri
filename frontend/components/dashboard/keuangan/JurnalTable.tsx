@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/dashboard/data-table/StatusBadge";
 import { formatDateTime } from "@/lib/dashboard/format";
 import type { JurnalKeuangan } from "@/lib/keuangan";
@@ -27,6 +28,9 @@ import type { JurnalKeuangan } from "@/lib/keuangan";
 type JurnalTableProps = {
   data: JurnalKeuangan[];
   loading: boolean;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
   onOpenNote: (item: JurnalKeuangan) => void;
   onDelete: (item: JurnalKeuangan) => void;
 };
@@ -34,14 +38,27 @@ type JurnalTableProps = {
 export function JurnalTable({
   data,
   loading,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
   onOpenNote,
   onDelete,
 }: JurnalTableProps) {
+  const allSelected = data.length > 0 && data.every((it) => selectedIds.includes(it.id));
+
   return (
     <div className="relative overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/50">
+            {/* Checkbox Pilih Semua Sebelum Tanggal & Waktu */}
+            <TableHead className="w-[45px] text-center px-3">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={onToggleSelectAll}
+                aria-label="Pilih semua nota"
+              />
+            </TableHead>
             <TableHead className="min-w-[160px] text-xs font-bold text-slate-700">
               Tanggal & Waktu (WIB)
             </TableHead>
@@ -72,7 +89,7 @@ export function JurnalTable({
         <TableBody>
           {loading && data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="h-48 text-center text-slate-400">
+              <TableCell colSpan={9} className="h-48 text-center text-slate-400">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
                   <span className="text-xs">Memuat daftar jurnal transaksi...</span>
@@ -81,7 +98,7 @@ export function JurnalTable({
             </TableRow>
           ) : data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="h-48 text-center text-slate-400">
+              <TableCell colSpan={9} className="h-48 text-center text-slate-400">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <Receipt className="size-9 text-slate-300" />
                   <p className="text-sm font-semibold text-slate-700">
@@ -98,13 +115,28 @@ export function JurnalTable({
               const inNum = item.numeric_pemasukan || 0;
               const outNum = item.numeric_pengeluaran || 0;
               const saldoNum = item.numeric_saldo || 0;
+              const isSelected = selectedIds.includes(item.id);
 
               return (
                 <TableRow
                   key={item.id}
-                  className="group border-b border-slate-100 transition-colors hover:bg-slate-50/80 cursor-pointer"
+                  className={`group border-b border-slate-100 transition-colors cursor-pointer ${
+                    isSelected ? "bg-blue-50/40 hover:bg-blue-50/70" : "hover:bg-slate-50/80"
+                  }`}
                   onClick={() => onOpenNote(item)}
                 >
+                  {/* Checkbox Baris Sebelum Tanggal & Waktu */}
+                  <TableCell
+                    className="text-center px-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onToggleSelect(item.id)}
+                      aria-label={`Pilih nota ${item.kode_jurnal}`}
+                    />
+                  </TableCell>
+
                   {/* Tanggal & Waktu WIB */}
                   <TableCell className="text-xs text-slate-700 font-medium whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
