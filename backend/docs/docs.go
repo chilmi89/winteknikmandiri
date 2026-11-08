@@ -1202,6 +1202,354 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/keuangan/jurnal": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Daftar buku kas \u0026 jurnal keuangan lengkap dengan summary saldo \u0026 pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cari kode, judul, catatan",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter tipe: pemasukan / pengeluaran",
+                        "name": "tipe",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter kategori (UUID)",
+                        "name": "kategori_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter proyek / invoice (UUID)",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter slip gaji (UUID)",
+                        "name": "gaji_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter metode: cash / transfer / kasbon",
+                        "name": "pembayaran",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter status: lunas / pending / batal",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by: tanggal / nominal / judul",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort dir: asc / desc",
+                        "name": "sort_dir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Nomor halaman",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit per halaman",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListJurnalEnvelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Catat transaksi jurnal kas baru (manual / tarik dari proyek / tarik dari gaji)",
+                "parameters": [
+                    {
+                        "description": "Data transaksi",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateJurnalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JurnalEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keuangan/jurnal/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Detail transaksi jurnal kas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Jurnal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JurnalEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Perbarui transaksi jurnal kas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Jurnal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateJurnalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.JurnalEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Hapus transaksi jurnal kas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Jurnal (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KeuanganMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keuangan/kategori": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Daftar kategori keuangan (pemasukan / pengeluaran)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter tipe: pemasukan / pengeluaran",
+                        "name": "tipe",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListKategoriEnvelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Tambah kategori keuangan baru",
+                "parameters": [
+                    {
+                        "description": "Data kategori",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateKategoriRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KategoriEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keuangan/kategori/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Perbarui kategori keuangan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kategori (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateKategoriRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KategoriEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Hapus kategori keuangan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kategori (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.KeuanganMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/orders": {
             "get": {
                 "produces": [
@@ -3200,6 +3548,73 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateJurnalRequest": {
+            "type": "object",
+            "required": [
+                "judul",
+                "nominal",
+                "tipe"
+            ],
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "gaji_id": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "kategori_id": {
+                    "type": "string"
+                },
+                "metode_pembayaran": {
+                    "description": "'cash', 'transfer', 'kasbon'",
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "'lunas', 'pending', 'batal'",
+                    "type": "string"
+                },
+                "sumber": {
+                    "description": "'manual', 'proyek', 'gaji'",
+                    "type": "string"
+                },
+                "tanggal": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "tipe": {
+                    "description": "'pemasukan' atau 'pengeluaran'",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateKategoriRequest": {
+            "type": "object",
+            "required": [
+                "nama_kategori",
+                "tipe"
+            ],
+            "properties": {
+                "deskripsi": {
+                    "type": "string"
+                },
+                "nama_kategori": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "description": "'pemasukan' atau 'pengeluaran'",
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateManualOrderRequest": {
             "type": "object",
             "properties": {
@@ -3775,11 +4190,155 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.JurnalEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.JurnalResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JurnalResponse": {
+            "type": "object",
+            "properties": {
+                "amount_numeric": {
+                    "type": "integer"
+                },
+                "catatan": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gaji_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "kategori_id": {
+                    "type": "string"
+                },
+                "kode_gaji": {
+                    "type": "string"
+                },
+                "kode_jurnal": {
+                    "type": "string"
+                },
+                "metode_pembayaran": {
+                    "type": "string"
+                },
+                "nama_kategori": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "sumber": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.KatalogMessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.KategoriEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.KategoriResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.KategoriResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_system": {
+                    "type": "boolean"
+                },
+                "nama_kategori": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.KeuanganMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.KeuanganSummary": {
+            "type": "object",
+            "properties": {
+                "numeric_pemasukan": {
+                    "type": "integer"
+                },
+                "numeric_pengeluaran": {
+                    "type": "integer"
+                },
+                "numeric_saldo": {
+                    "type": "integer"
+                },
+                "sisa_saldo_kas": {
+                    "type": "string"
+                },
+                "total_pemasukan": {
+                    "type": "string"
+                },
+                "total_pengeluaran": {
+                    "type": "string"
+                },
+                "total_transaksi": {
+                    "type": "integer"
                 }
             }
         },
@@ -3878,6 +4437,57 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ServiceItemResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListJurnalEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.ListJurnalResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListJurnalResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.JurnalResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "$ref": "#/definitions/dto.KeuanganSummary"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ListKategoriEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.KategoriResponse"
                     }
                 },
                 "message": {
@@ -4458,6 +5068,12 @@ const docTemplate = `{
                 "catatan": {
                     "type": "string"
                 },
+                "proyek": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachProyekRequest"
+                    }
+                },
                 "status": {
                     "type": "string"
                 },
@@ -4585,6 +5201,58 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "maxLength": 100
+                }
+            }
+        },
+        "dto.UpdateJurnalRequest": {
+            "type": "object",
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "gaji_id": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "kategori_id": {
+                    "type": "string"
+                },
+                "metode_pembayaran": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "sumber": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateKategoriRequest": {
+            "type": "object",
+            "properties": {
+                "deskripsi": {
+                    "type": "string"
+                },
+                "nama_kategori": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "type": "string"
                 }
             }
         },

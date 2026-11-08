@@ -14,6 +14,7 @@ import {
   Settings,
   Share2,
   Users,
+  Wallet,
   Wrench,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ export const dashboardNav: DashboardNavGroup[] = [
     title: "Operasional",
     items: [
       { label: "Pesanan & Invoice", href: "/dashboard/orders", icon: FileText },
+      { label: "Manajemen Keuangan", href: "/dashboard/keuangan", icon: Wallet },
       { label: "Penggajian Tim", href: "/dashboard/gaji", icon: Banknote },
       { label: "Permohonan", href: "/dashboard/inquiries", icon: Inbox },
       { label: "Proyek", href: "/dashboard/proyek", icon: FolderKanban },

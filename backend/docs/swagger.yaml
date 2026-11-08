@@ -233,6 +233,53 @@ definitions:
     - day_label
     - hours
     type: object
+  dto.CreateJurnalRequest:
+    properties:
+      catatan:
+        type: string
+      gaji_id:
+        type: string
+      judul:
+        type: string
+      kategori_id:
+        type: string
+      metode_pembayaran:
+        description: '''cash'', ''transfer'', ''kasbon'''
+        type: string
+      nominal:
+        type: string
+      order_id:
+        type: string
+      status:
+        description: '''lunas'', ''pending'', ''batal'''
+        type: string
+      sumber:
+        description: '''manual'', ''proyek'', ''gaji'''
+        type: string
+      tanggal:
+        description: YYYY-MM-DD
+        type: string
+      tipe:
+        description: '''pemasukan'' atau ''pengeluaran'''
+        type: string
+    required:
+    - judul
+    - nominal
+    - tipe
+    type: object
+  dto.CreateKategoriRequest:
+    properties:
+      deskripsi:
+        type: string
+      nama_kategori:
+        type: string
+      tipe:
+        description: '''pemasukan'' atau ''pengeluaran'''
+        type: string
+    required:
+    - nama_kategori
+    - tipe
+    type: object
   dto.CreateManualOrderRequest:
     properties:
       address:
@@ -627,10 +674,104 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.JurnalEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.JurnalResponse'
+      message:
+        type: string
+    type: object
+  dto.JurnalResponse:
+    properties:
+      amount_numeric:
+        type: integer
+      catatan:
+        type: string
+      created_at:
+        type: string
+      gaji_id:
+        type: string
+      id:
+        type: string
+      invoice_no:
+        type: string
+      judul:
+        type: string
+      kategori_id:
+        type: string
+      kode_gaji:
+        type: string
+      kode_jurnal:
+        type: string
+      metode_pembayaran:
+        type: string
+      nama_kategori:
+        type: string
+      nominal:
+        type: string
+      order_id:
+        type: string
+      status:
+        type: string
+      sumber:
+        type: string
+      tanggal:
+        type: string
+      tipe:
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.KatalogMessageResponse:
     properties:
       message:
         type: string
+    type: object
+  dto.KategoriEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.KategoriResponse'
+      message:
+        type: string
+    type: object
+  dto.KategoriResponse:
+    properties:
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      id:
+        type: string
+      is_system:
+        type: boolean
+      nama_kategori:
+        type: string
+      tipe:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.KeuanganMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.KeuanganSummary:
+    properties:
+      numeric_pemasukan:
+        type: integer
+      numeric_pengeluaran:
+        type: integer
+      numeric_saldo:
+        type: integer
+      sisa_saldo_kas:
+        type: string
+      total_pemasukan:
+        type: string
+      total_pengeluaran:
+        type: string
+      total_transaksi:
+        type: integer
     type: object
   dto.ListCategoryEnvelope:
     properties:
@@ -694,6 +835,39 @@ definitions:
       data:
         items:
           $ref: '#/definitions/dto.ServiceItemResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  dto.ListJurnalEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.ListJurnalResponse'
+      message:
+        type: string
+    type: object
+  dto.ListJurnalResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.JurnalResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      summary:
+        $ref: '#/definitions/dto.KeuanganSummary'
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.ListKategoriEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.KategoriResponse'
         type: array
       message:
         type: string
@@ -1090,6 +1264,10 @@ definitions:
     properties:
       catatan:
         type: string
+      proyek:
+        items:
+          $ref: '#/definitions/dto.AttachProyekRequest'
+        type: array
       status:
         type: string
       team_id:
@@ -1177,6 +1355,40 @@ definitions:
         type: string
       title:
         maxLength: 100
+        type: string
+    type: object
+  dto.UpdateJurnalRequest:
+    properties:
+      catatan:
+        type: string
+      gaji_id:
+        type: string
+      judul:
+        type: string
+      kategori_id:
+        type: string
+      metode_pembayaran:
+        type: string
+      nominal:
+        type: string
+      order_id:
+        type: string
+      status:
+        type: string
+      sumber:
+        type: string
+      tanggal:
+        type: string
+      tipe:
+        type: string
+    type: object
+  dto.UpdateKategoriRequest:
+    properties:
+      deskripsi:
+        type: string
+      nama_kategori:
+        type: string
+      tipe:
         type: string
     type: object
   dto.UpdateMisiRequest:
@@ -2196,6 +2408,234 @@ paths:
       summary: Perbarui pengaturan kartu jam operasional
       tags:
       - jam_operasional
+  /api/v1/keuangan/jurnal:
+    get:
+      parameters:
+      - description: Cari kode, judul, catatan
+        in: query
+        name: search
+        type: string
+      - description: 'Filter tipe: pemasukan / pengeluaran'
+        in: query
+        name: tipe
+        type: string
+      - description: Filter kategori (UUID)
+        in: query
+        name: kategori_id
+        type: string
+      - description: Filter proyek / invoice (UUID)
+        in: query
+        name: order_id
+        type: string
+      - description: Filter slip gaji (UUID)
+        in: query
+        name: gaji_id
+        type: string
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      - description: 'Filter metode: cash / transfer / kasbon'
+        in: query
+        name: pembayaran
+        type: string
+      - description: 'Filter status: lunas / pending / batal'
+        in: query
+        name: status
+        type: string
+      - description: 'Sort by: tanggal / nominal / judul'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort dir: asc / desc'
+        in: query
+        name: sort_dir
+        type: string
+      - default: 1
+        description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit per halaman
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListJurnalEnvelope'
+      summary: Daftar buku kas & jurnal keuangan lengkap dengan summary saldo & pagination
+      tags:
+      - keuangan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data transaksi
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateJurnalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.JurnalEnvelope'
+      summary: Catat transaksi jurnal kas baru (manual / tarik dari proyek / tarik
+        dari gaji)
+      tags:
+      - keuangan
+  /api/v1/keuangan/jurnal/{id}:
+    delete:
+      parameters:
+      - description: ID Jurnal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KeuanganMessageResponse'
+      summary: Hapus transaksi jurnal kas
+      tags:
+      - keuangan
+    get:
+      parameters:
+      - description: ID Jurnal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JurnalEnvelope'
+      summary: Detail transaksi jurnal kas
+      tags:
+      - keuangan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Jurnal (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateJurnalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JurnalEnvelope'
+      summary: Perbarui transaksi jurnal kas
+      tags:
+      - keuangan
+  /api/v1/keuangan/kategori:
+    get:
+      parameters:
+      - description: 'Filter tipe: pemasukan / pengeluaran'
+        in: query
+        name: tipe
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListKategoriEnvelope'
+      summary: Daftar kategori keuangan (pemasukan / pengeluaran)
+      tags:
+      - keuangan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data kategori
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateKategoriRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.KategoriEnvelope'
+      summary: Tambah kategori keuangan baru
+      tags:
+      - keuangan
+  /api/v1/keuangan/kategori/{id}:
+    delete:
+      parameters:
+      - description: ID Kategori (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KeuanganMessageResponse'
+      summary: Hapus kategori keuangan
+      tags:
+      - keuangan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Kategori (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateKategoriRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KategoriEnvelope'
+      summary: Perbarui kategori keuangan
+      tags:
+      - keuangan
   /api/v1/orders:
     get:
       parameters:

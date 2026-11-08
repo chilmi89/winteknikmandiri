@@ -1,0 +1,255 @@
+package controller
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"winteknikmandiri-backend/internal/apperr"
+	"winteknikmandiri-backend/internal/httpx"
+	"winteknikmandiri-backend/keuangan/dto"
+	"winteknikmandiri-backend/keuangan/service"
+)
+
+// KeuanganController menangani endpoint HTTP modul keuangan.
+type KeuanganController struct {
+	svc *service.KeuanganService
+}
+
+// NewKeuanganController membuat instance controller baru.
+func NewKeuanganController(svc *service.KeuanganService) *KeuanganController {
+	return &KeuanganController{svc: svc}
+}
+
+// ---------- 1. KATEGORI CONTROLLER ----------
+
+// ListKategori godoc
+// @Summary     Daftar kategori keuangan (pemasukan / pengeluaran)
+// @Tags        keuangan
+// @Produce     json
+// @Param       tipe query string false "Filter tipe: pemasukan / pengeluaran"
+// @Success     200 {object} dto.ListKategoriEnvelope
+// @Router      /api/v1/keuangan/kategori [get]
+func (ctrl *KeuanganController) ListKategori(c *gin.Context) {
+	tipe := c.Query("tipe")
+	res, err := ctrl.svc.ListKategori(c.Request.Context(), tipe)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.ListKategoriEnvelope{
+		Message: "Daftar kategori keuangan berhasil dimuat",
+		Data:    res,
+	})
+}
+
+// CreateKategori godoc
+// @Summary     Tambah kategori keuangan baru
+// @Tags        keuangan
+// @Accept      json
+// @Produce     json
+// @Param       body body dto.CreateKategoriRequest true "Data kategori"
+// @Success     201 {object} dto.KategoriEnvelope
+// @Router      /api/v1/keuangan/kategori [post]
+func (ctrl *KeuanganController) CreateKategori(c *gin.Context) {
+	var req dto.CreateKategoriRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
+		return
+	}
+	res, err := ctrl.svc.CreateKategori(c.Request.Context(), req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.KategoriEnvelope{
+		Message: "Kategori keuangan berhasil dibuat",
+		Data:    *res,
+	})
+}
+
+// UpdateKategori godoc
+// @Summary     Perbarui kategori keuangan
+// @Tags        keuangan
+// @Accept      json
+// @Produce     json
+// @Param       id path string true "ID Kategori (UUID)"
+// @Param       body body dto.UpdateKategoriRequest true "Data update"
+// @Success     200 {object} dto.KategoriEnvelope
+// @Router      /api/v1/keuangan/kategori/{id} [put]
+func (ctrl *KeuanganController) UpdateKategori(c *gin.Context) {
+	id := c.Param("id")
+	var req dto.UpdateKategoriRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
+		return
+	}
+	res, err := ctrl.svc.UpdateKategori(c.Request.Context(), id, req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.KategoriEnvelope{
+		Message: "Kategori keuangan berhasil diperbarui",
+		Data:    *res,
+	})
+}
+
+// DeleteKategori godoc
+// @Summary     Hapus kategori keuangan
+// @Tags        keuangan
+// @Produce     json
+// @Param       id path string true "ID Kategori (UUID)"
+// @Success     200 {object} dto.KeuanganMessageResponse
+// @Router      /api/v1/keuangan/kategori/{id} [delete]
+func (ctrl *KeuanganController) DeleteKategori(c *gin.Context) {
+	id := c.Param("id")
+	if err := ctrl.svc.DeleteKategori(c.Request.Context(), id); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.KeuanganMessageResponse{
+		Message: "Kategori keuangan berhasil dihapus",
+	})
+}
+
+// ---------- 2. JURNAL KEUANGAN CONTROLLER ----------
+
+// ListJurnal godoc
+// @Summary     Daftar buku kas & jurnal keuangan lengkap dengan summary saldo & pagination
+// @Tags        keuangan
+// @Produce     json
+// @Param       search query string false "Cari kode, judul, catatan"
+// @Param       tipe query string false "Filter tipe: pemasukan / pengeluaran"
+// @Param       kategori_id query string false "Filter kategori (UUID)"
+// @Param       order_id query string false "Filter proyek / invoice (UUID)"
+// @Param       gaji_id query string false "Filter slip gaji (UUID)"
+// @Param       date_from query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param       date_to query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Param       pembayaran query string false "Filter metode: cash / transfer / kasbon"
+// @Param       status query string false "Filter status: lunas / pending / batal"
+// @Param       sort_by query string false "Sort by: tanggal / nominal / judul"
+// @Param       sort_dir query string false "Sort dir: asc / desc"
+// @Param       page query int false "Nomor halaman" default(1)
+// @Param       limit query int false "Limit per halaman" default(10)
+// @Success     200 {object} dto.ListJurnalEnvelope
+// @Router      /api/v1/keuangan/jurnal [get]
+func (ctrl *KeuanganController) ListJurnal(c *gin.Context) {
+	search := c.Query("search")
+	tipe := c.Query("tipe")
+	kategoriID := c.Query("kategori_id")
+	orderID := c.Query("order_id")
+	gajiID := c.Query("gaji_id")
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+	pembayaran := c.Query("pembayaran")
+	status := c.Query("status")
+	sortBy := c.Query("sort_by")
+	sortDir := c.Query("sort_dir")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	res, err := ctrl.svc.ListJurnal(
+		c.Request.Context(), search, tipe, kategoriID, orderID, gajiID,
+		dateFrom, dateTo, pembayaran, status, sortBy, sortDir, page, limit,
+	)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.ListJurnalEnvelope{
+		Message: "Daftar jurnal kas keuangan berhasil dimuat",
+		Data:    *res,
+	})
+}
+
+// GetJurnalByID godoc
+// @Summary     Detail transaksi jurnal kas
+// @Tags        keuangan
+// @Produce     json
+// @Param       id path string true "ID Jurnal (UUID)"
+// @Success     200 {object} dto.JurnalEnvelope
+// @Router      /api/v1/keuangan/jurnal/{id} [get]
+func (ctrl *KeuanganController) GetJurnalByID(c *gin.Context) {
+	id := c.Param("id")
+	res, err := ctrl.svc.GetJurnalByID(c.Request.Context(), id)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.JurnalEnvelope{
+		Message: "Detail transaksi jurnal kas berhasil dimuat",
+		Data:    *res,
+	})
+}
+
+// CreateJurnal godoc
+// @Summary     Catat transaksi jurnal kas baru (manual / tarik dari proyek / tarik dari gaji)
+// @Tags        keuangan
+// @Accept      json
+// @Produce     json
+// @Param       body body dto.CreateJurnalRequest true "Data transaksi"
+// @Success     201 {object} dto.JurnalEnvelope
+// @Router      /api/v1/keuangan/jurnal [post]
+func (ctrl *KeuanganController) CreateJurnal(c *gin.Context) {
+	var req dto.CreateJurnalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
+		return
+	}
+	res, err := ctrl.svc.CreateJurnal(c.Request.Context(), req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.JurnalEnvelope{
+		Message: "Transaksi jurnal berhasil dicatat",
+		Data:    *res,
+	})
+}
+
+// UpdateJurnal godoc
+// @Summary     Perbarui transaksi jurnal kas
+// @Tags        keuangan
+// @Accept      json
+// @Produce     json
+// @Param       id path string true "ID Jurnal (UUID)"
+// @Param       body body dto.UpdateJurnalRequest true "Data update"
+// @Success     200 {object} dto.JurnalEnvelope
+// @Router      /api/v1/keuangan/jurnal/{id} [put]
+func (ctrl *KeuanganController) UpdateJurnal(c *gin.Context) {
+	id := c.Param("id")
+	var req dto.UpdateJurnalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, apperr.Validation("Validasi gagal", err.Error()))
+		return
+	}
+	res, err := ctrl.svc.UpdateJurnal(c.Request.Context(), id, req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.JurnalEnvelope{
+		Message: "Transaksi jurnal berhasil diperbarui",
+		Data:    *res,
+	})
+}
+
+// DeleteJurnal godoc
+// @Summary     Hapus transaksi jurnal kas
+// @Tags        keuangan
+// @Produce     json
+// @Param       id path string true "ID Jurnal (UUID)"
+// @Success     200 {object} dto.KeuanganMessageResponse
+// @Router      /api/v1/keuangan/jurnal/{id} [delete]
+func (ctrl *KeuanganController) DeleteJurnal(c *gin.Context) {
+	id := c.Param("id")
+	if err := ctrl.svc.DeleteJurnal(c.Request.Context(), id); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.KeuanganMessageResponse{
+		Message: "Transaksi jurnal berhasil dihapus",
+	})
+}
