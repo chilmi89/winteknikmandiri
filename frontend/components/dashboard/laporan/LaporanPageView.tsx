@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/toast";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
 import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
@@ -101,12 +102,30 @@ export function LaporanPageView({
   // Print PDF Modal
   const [showPdfModal, setShowPdfModal] = useState(false);
 
-  // Load orders for filter
+  // Selection Checkbox State (Custom Export Single/Multi Data)
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
+
+  // Load orders for filter (hanya proyek yang berstatus selesai/closing)
   useEffect(() => {
     listOrdersAdmin("", "", "").then((list) => {
-      setOrders(list);
+      setOrders(list.filter((o) => o.status === "selesai"));
     });
   }, []);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedRowIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const currentItemIds = (data?.items || []).map((it) => it.id);
+    if (currentItemIds.every((id) => selectedRowIds.includes(id))) {
+      setSelectedRowIds([]);
+    } else {
+      setSelectedRowIds(Array.from(new Set([...selectedRowIds, ...currentItemIds])));
+    }
+  };
 
   // Fetch Report Data
   const loadReport = useCallback(
@@ -156,14 +175,70 @@ export function LaporanPageView({
 
   const handleExportExcel = () => {
     if (!data) return;
+    const allItems = data.items;
+    const targetItems = selectedRowIds.length > 0 ? allItems.filter((it) => selectedRowIds.includes(it.id)) : allItems;
+
+    let targetSummary = data.summary;
+    if (selectedRowIds.length > 0) {
+      let inSum = 0;
+      let outSum = 0;
+      for (const it of targetItems) {
+        if (it.tipe === "pemasukan") inSum += it.amount_numeric;
+        else outSum += it.amount_numeric;
+      }
+      const sal = inSum - outSum;
+      let margin = 0;
+      if (inSum > 0) margin = Math.round((sal / inSum) * 1000) / 10;
+      targetSummary = {
+        total_pemasukan: `Rp ${inSum.toLocaleString("id-ID")}`,
+        total_pengeluaran: `Rp ${outSum.toLocaleString("id-ID")}`,
+        saldo_bersih: sal < 0 ? `-Rp ${Math.abs(sal).toLocaleString("id-ID")}` : `Rp ${sal.toLocaleString("id-ID")}`,
+        numeric_pemasukan: inSum,
+        numeric_pengeluaran: outSum,
+        numeric_saldo: sal,
+        profit_margin_pct: margin,
+        total_transaksi: targetItems.length,
+      };
+    }
+
     const filename = `Laporan_${periode}_${new Date().toISOString().split("T")[0]}`;
-    exportLaporanToExcel(filename, data.periode_label, data.summary, data.items);
+    exportLaporanToExcel(filename, data.periode_label, targetSummary, targetItems);
     toast.add({
       title: "File Excel Berhasil Diunduh",
-      description: `Format CSV/Excel telah disimpan ke folder download.`,
+      description: `Format Excel telah disimpan ke folder download.`,
       type: "success",
     });
   };
+
+  // Data yang akan dicetak di PDF Modal (mendukung seleksi data)
+  const pdfReportData = useMemo(() => {
+    if (!data) return null;
+    if (selectedRowIds.length === 0) return data;
+    const filtered = data.items.filter((it) => selectedRowIds.includes(it.id));
+    let inSum = 0;
+    let outSum = 0;
+    for (const it of filtered) {
+      if (it.tipe === "pemasukan") inSum += it.amount_numeric;
+      else outSum += it.amount_numeric;
+    }
+    const sal = inSum - outSum;
+    let margin = 0;
+    if (inSum > 0) margin = Math.round((sal / inSum) * 1000) / 10;
+    return {
+      ...data,
+      summary: {
+        total_pemasukan: `Rp ${inSum.toLocaleString("id-ID")}`,
+        total_pengeluaran: `Rp ${outSum.toLocaleString("id-ID")}`,
+        saldo_bersih: sal < 0 ? `-Rp ${Math.abs(sal).toLocaleString("id-ID")}` : `Rp ${sal.toLocaleString("id-ID")}`,
+        numeric_pemasukan: inSum,
+        numeric_pengeluaran: outSum,
+        numeric_saldo: sal,
+        profit_margin_pct: margin,
+        total_transaksi: filtered.length,
+      },
+      items: filtered,
+    };
+  }, [data, selectedRowIds]);
 
   const summary = data?.summary || {
     total_pemasukan: "Rp 0",
@@ -206,7 +281,7 @@ export function LaporanPageView({
             className="gap-2 border-slate-300 text-slate-800 hover:bg-slate-50 font-bold text-xs px-4 py-2 rounded-xl shadow-2xs transition"
           >
             <Download className="size-4 text-emerald-600" />
-            Export Excel
+            Export Excel {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
           </Button>
 
           {/* Tombol Cetak PDF Ber-Kop Surat Resmi WTM */}
@@ -217,7 +292,7 @@ export function LaporanPageView({
             className="gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
           >
             <Printer className="size-4 text-emerald-400" />
-            Cetak PDF Resmi
+            Cetak PDF Resmi {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
           </Button>
         </div>
       </div>
@@ -469,9 +544,9 @@ export function LaporanPageView({
                         : orders.find((o) => o.id === selectedOrderId)?.invoice_no || "Proyek"}
                     </span>
                   </SelectTrigger>
-                  <SelectContent className="max-h-56">
+                  <SelectContent className="max-h-56 min-w-[280px]">
                     <SelectGroup>
-                      <SelectItem value="all">Semua Proyek</SelectItem>
+                      <SelectItem value="all">Semua Proyek (Closing)</SelectItem>
                       {orders.map((ord) => (
                         <SelectItem key={ord.id} value={ord.id}>
                           {ord.invoice_no} · {ord.initial_service}
@@ -525,6 +600,14 @@ export function LaporanPageView({
           <Table>
             <TableHeader>
               <TableRow className="border-b border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/50">
+                {/* Checkbox Pilih Data Sebelum Kolom No */}
+                <TableHead className="w-10 text-center px-2">
+                  <Checkbox
+                    checked={items.length > 0 && items.every((it) => selectedRowIds.includes(it.id))}
+                    onCheckedChange={handleToggleSelectAll}
+                    aria-label="Pilih semua baris"
+                  />
+                </TableHead>
                 <TableHead className="w-12 text-center text-xs font-bold text-slate-700">No</TableHead>
                 <TableHead className="min-w-[150px] text-xs font-bold text-slate-700">Waktu (WIB)</TableHead>
                 <TableHead className="w-28 text-xs font-bold text-slate-700">No. Nota</TableHead>
@@ -539,7 +622,7 @@ export function LaporanPageView({
             <TableBody>
               {loading && items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-40 text-center text-slate-400">
+                  <TableCell colSpan={9} className="h-40 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <span className="size-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
                       <span className="text-xs">Memuat rincian laporan keuangan...</span>
@@ -548,7 +631,7 @@ export function LaporanPageView({
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-40 text-center text-slate-400 text-xs">
+                  <TableCell colSpan={9} className="h-40 text-center text-slate-400 text-xs">
                     Tidak ada transaksi pada periode ini.
                   </TableCell>
                 </TableRow>
@@ -556,9 +639,23 @@ export function LaporanPageView({
                 items.map((row, idx) => {
                   const isIncome = row.tipe === "pemasukan";
                   const realIndex = (page - 1) * pageSize + idx + 1;
+                  const isChecked = selectedRowIds.includes(row.id);
 
                   return (
-                    <TableRow key={row.id || idx} className="border-b border-slate-100 hover:bg-slate-50/70">
+                    <TableRow
+                      key={row.id || idx}
+                      className={`border-b border-slate-100 transition-colors ${
+                        isChecked ? "bg-blue-50/40 hover:bg-blue-50/70" : "hover:bg-slate-50/70"
+                      }`}
+                    >
+                      {/* Checkbox Sebelum Kolom No */}
+                      <TableCell className="text-center px-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => handleToggleSelect(row.id)}
+                          aria-label={"Pilih baris " + realIndex}
+                        />
+                      </TableCell>
                       <TableCell className="text-center text-xs text-slate-500 font-medium">{realIndex}</TableCell>
                       <TableCell className="text-xs text-slate-700 whitespace-nowrap">
                         {formatDateTime(row.waktu_transaksi)}
@@ -619,7 +716,7 @@ export function LaporanPageView({
       <LaporanPdfModal
         open={showPdfModal}
         onOpenChange={setShowPdfModal}
-        reportData={data}
+        reportData={pdfReportData}
         periodLabel={data?.periode_label || pageTitle}
       />
     </div>

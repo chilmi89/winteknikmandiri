@@ -128,7 +128,7 @@ export function AnimatedBarChart({
                   {/* Batang Pemasukan (Emerald Gradient) */}
                   <div className="w-1/2 max-w-[28px] h-full flex items-end">
                     <div
-                      style={{ height: `${Math.max(inPct, 2)}%` }}
+                      style={{ height: item.pemasukan > 0 ? `${Math.max(inPct, 6)}%` : "0%" }}
                       className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-teal-400 transition-all duration-700 ease-out shadow-xs group-hover:brightness-110"
                     />
                   </div>
@@ -136,7 +136,7 @@ export function AnimatedBarChart({
                   {/* Batang Pengeluaran (Rose Gradient) */}
                   <div className="w-1/2 max-w-[28px] h-full flex items-end">
                     <div
-                      style={{ height: `${Math.max(outPct, 2)}%` }}
+                      style={{ height: item.pengeluaran > 0 ? `${Math.max(outPct, 6)}%` : "0%" }}
                       className="w-full rounded-t-md bg-gradient-to-t from-rose-600 to-pink-500 transition-all duration-700 ease-out shadow-xs group-hover:brightness-110"
                     />
                   </div>

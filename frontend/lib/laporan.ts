@@ -94,7 +94,7 @@ export async function fetchLaporanKeuangan(params: {
 }
 
 /**
- * Ekspor data laporan keuangan ke file CSV/Excel dengan format rapi dan UTF-8 BOM.
+ * Ekspor data laporan keuangan ke file Excel (.xls) berstandar akuntansi dengan header tabel berwarna dan gridlines rapi.
  */
 export function exportLaporanToExcel(
   filename: string,
@@ -102,79 +102,134 @@ export function exportLaporanToExcel(
   summary: LaporanSummary,
   items: LaporanItemRow[]
 ) {
-  const escapeCsv = (str: string | number | undefined | null) => {
-    if (str === undefined || str === null) return '""';
-    const s = String(str).replace(/"/g, '""');
-    return `"${s}"`;
-  };
+  const currentDate = formatDateTime(new Date().toISOString()) + " WIB";
 
-  const rows: string[][] = [
-    ["CV. WIN TEKNIK MANDIRI - LAPORAN KEUANGAN & MUTASI KAS"],
-    [`Periode: ${periodeLabel}`],
-    [`Dicetak pada: ${formatDateTime(new Date().toISOString())} WIB`],
-    [],
-    ["RINGKASAN ARUS KAS:"],
-    ["Total Pemasukan", summary.total_pemasukan],
-    ["Total Pengeluaran", summary.total_pengeluaran],
-    ["Saldo Bersih Kas", summary.saldo_bersih],
-    ["Profit Margin", `${summary.profit_margin_pct}%`],
-    ["Total Transaksi", String(summary.total_transaksi)],
-    [],
-    [
-      "No",
-      "Tanggal & Waktu (WIB)",
-      "No. Nota",
-      "Tipe",
-      "Uraian / Keterangan",
-      "Kategori Akun",
-      "Metode Pembayaran",
-      "Pemasukan (Rp)",
-      "Pengeluaran (Rp)",
-      "Referensi Proyek / Gaji",
-    ],
-  ];
+  let html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+      <!--[if gte mso 9]>
+      <xml>
+        <x:ExcelWorkbook>
+          <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+              <x:Name>Laporan Finansial</x:Name>
+              <x:WorksheetOptions>
+                <x:DisplayGridlines/>
+              </x:WorksheetOptions>
+            </x:ExcelWorksheet>
+          </x:ExcelWorksheets>
+        </x:ExcelWorkbook>
+      </xml>
+      <![endif]-->
+      <style>
+        body { font-family: Calibri, Arial, sans-serif; }
+        .company-header { font-size: 16pt; font-weight: bold; color: #0F172A; text-align: center; }
+        .company-sub { font-size: 12pt; font-weight: bold; color: #EE0000; text-align: center; }
+        .company-contact { font-size: 9pt; color: #475569; text-align: center; }
+        .doc-title { font-size: 14pt; font-weight: bold; color: #0F172A; text-align: center; text-decoration: underline; }
+        .meta-text { font-size: 10pt; color: #334155; }
+        
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th { background-color: #0F172A; color: #FFFFFF; font-weight: bold; font-size: 10pt; padding: 10px 8px; border: 1px solid #334155; text-align: center; }
+        td { border: 1px solid #CBD5E1; padding: 7px 8px; font-size: 9.5pt; color: #1E293B; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .income-val { color: #059669; font-weight: bold; text-align: right; }
+        .expense-val { color: #DC2626; font-weight: bold; text-align: right; }
+        .summary-box { background-color: #F8FAFC; border: 1px solid #CBD5E1; }
+        .total-row { background-color: #E2E8F0; font-weight: bold; font-size: 10pt; }
+        .saldo-row { background-color: #0F172A; color: #10B981; font-weight: bold; font-size: 11pt; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <tr><td colspan="8" class="company-header">CV. WIN TEKNIK MANDIRI</td></tr>
+        <tr><td colspan="8" class="company-sub">CONTRACTOR &amp; SUPPLIER</td></tr>
+        <tr><td colspan="8" class="company-contact">Jalan Diponegoro - Purwokerto – Ngadiluwih - Kediri – Jawa Timur 64171 | Telp: (+62) 812-1662-2840</td></tr>
+        <tr><td colspan="8"></td></tr>
+        <tr><td colspan="8" class="doc-title">LAPORAN KAS &amp; TRANSAKSI FINANSIAL</td></tr>
+        <tr><td colspan="8" class="meta-text text-center"><strong>Periode:</strong> ${periodeLabel} | <strong>Dicetak:</strong> ${currentDate}</td></tr>
+        <tr><td colspan="8"></td></tr>
+      </table>
+
+      <!-- Kotak Ringkasan Arus Kas -->
+      <table style="width: 70%; margin-bottom: 15px;">
+        <tr class="summary-box">
+          <td style="font-weight:bold; background-color: #F1F5F9;">Total Pemasukan:</td>
+          <td class="income-val">${summary.total_pemasukan}</td>
+          <td style="font-weight:bold; background-color: #F1F5F9;">Saldo Bersih Kas:</td>
+          <td style="font-weight:bold; text-align: right;">${summary.saldo_bersih}</td>
+        </tr>
+        <tr class="summary-box">
+          <td style="font-weight:bold; background-color: #F1F5F9;">Total Pengeluaran:</td>
+          <td class="expense-val">${summary.total_pengeluaran}</td>
+          <td style="font-weight:bold; background-color: #F1F5F9;">Profit Margin:</td>
+          <td style="font-weight:bold; text-align: right;">${summary.profit_margin_pct}% (${summary.total_transaksi} Transaksi)</td>
+        </tr>
+      </table>
+
+      <!-- Tabel Rincian Data Transaksi -->
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">No</th>
+            <th style="width: 140px;">Waktu (WIB)</th>
+            <th style="width: 120px;">No. Nota</th>
+            <th style="width: 280px;">Uraian / Keterangan</th>
+            <th style="width: 150px;">Kategori Akun</th>
+            <th style="width: 90px;">Metode</th>
+            <th style="width: 130px;">Pemasukan (Rp)</th>
+            <th style="width: 130px;">Pengeluaran (Rp)</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
 
   items.forEach((it, idx) => {
     const isIncome = it.tipe === "pemasukan";
-    let ref = it.sumber;
-    if (it.invoice_no) ref = `Proyek: ${it.invoice_no}`;
-    else if (it.kode_gaji) ref = `Gaji: ${it.kode_gaji}`;
+    let desc = it.deskripsi;
+    if (it.invoice_no) desc += ` [Proyek: ${it.invoice_no}]`;
+    if (it.kode_gaji) desc += ` [Gaji: ${it.kode_gaji}]`;
 
-    rows.push([
-      String(idx + 1),
-      formatDateTime(it.waktu_transaksi) + " WIB",
-      it.kode_jurnal,
-      isIncome ? "Pemasukan" : "Pengeluaran",
-      it.deskripsi,
-      it.nama_kategori || "Umum",
-      it.metode_pembayaran.toUpperCase(),
-      isIncome ? String(it.amount_numeric) : "0",
-      !isIncome ? String(it.amount_numeric) : "0",
-      ref,
-    ]);
+    html += `
+      <tr>
+        <td class="text-center">${idx + 1}</td>
+        <td class="text-center">${formatDateTime(it.waktu_transaksi)}</td>
+        <td class="text-center" style="font-family: monospace; font-weight: bold;">${it.kode_jurnal}</td>
+        <td class="text-left">${desc}</td>
+        <td class="text-left">${it.nama_kategori || "Umum"}</td>
+        <td class="text-center" style="text-transform: capitalize;">${it.metode_pembayaran}</td>
+        <td class="income-val">${isIncome ? it.nominal : "-"}</td>
+        <td class="expense-val">${!isIncome ? it.nominal : "-"}</td>
+      </tr>
+    `;
   });
 
-  // Tambahkan baris Total di akhir
-  rows.push([]);
-  rows.push([
-    "TOTAL",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    String(summary.numeric_pemasukan),
-    String(summary.numeric_pengeluaran),
-    `SALDO: ${summary.saldo_bersih}`,
-  ]);
+  html += `
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="6" class="text-right" style="font-weight: bold;">TOTAL PERIODE:</td>
+            <td class="income-val">${summary.total_pemasukan}</td>
+            <td class="expense-val">${summary.total_pengeluaran}</td>
+          </tr>
+          <tr class="saldo-row">
+            <td colspan="6" class="text-right" style="font-weight: bold; color: #FFFFFF;">SALDO KAS BERSIH:</td>
+            <td colspan="2" class="text-right" style="font-size: 11pt; color: #10B981; font-weight: bold;">${summary.saldo_bersih}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </body>
+    </html>
+  `;
 
-  const csvContent = "\uFEFF" + rows.map((r) => r.map(escapeCsv).join(",")).join("\r\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `${filename}.csv`);
+  link.setAttribute("download", `${filename}.xls`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

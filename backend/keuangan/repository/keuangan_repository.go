@@ -675,8 +675,8 @@ func (r *KeuanganRepository) GetLaporanData(
 
 	switch periode {
 	case "harian":
-		// Jam 08:00 sampai 20:00
-		hourLabels := []string{"08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"}
+		// Mencakup penuh 24 jam dalam 8 slot 3-jam (00, 03, 06, 09, 12, 15, 18, 21)
+		hourLabels := []string{"00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"}
 		chartMapIn := make(map[int]int64)
 		chartMapOut := make(map[int]int64)
 
@@ -705,10 +705,10 @@ func (r *KeuanganRepository) GetLaporanData(
 		}
 
 		chartPoints = make([]dto.ChartBarPoint, len(hourLabels))
-		hours := []int{8, 10, 12, 14, 16, 18, 20}
+		hours := []int{0, 3, 6, 9, 12, 15, 18, 21}
 		for i, h := range hours {
-			inV := chartMapIn[h] + chartMapIn[h+1]
-			outV := chartMapOut[h] + chartMapOut[h+1]
+			inV := chartMapIn[h] + chartMapIn[h+1] + chartMapIn[h+2]
+			outV := chartMapOut[h] + chartMapOut[h+1] + chartMapOut[h+2]
 			salV := inV - outV
 			chartPoints[i] = dto.ChartBarPoint{
 				Label:          hourLabels[i],
