@@ -15,6 +15,7 @@ import (
 	faqrepository "winteknikmandiri-backend/faqs/repository"
 	faqrouter "winteknikmandiri-backend/faqs/router"
 	faqservice "winteknikmandiri-backend/faqs/service"
+	gajirouter "winteknikmandiri-backend/gaji/router"
 	galleryrouter "winteknikmandiri-backend/gallery/router"
 	healthcontroller "winteknikmandiri-backend/health/controller"
 	healthrouter "winteknikmandiri-backend/health/router"
@@ -77,6 +78,7 @@ func SetupRouter() *gin.Engine {
 	registerGalleryRoutes(v1)
 	registerKatalogRoutes(v1)
 	registerOrderRoutes(v1)
+	registerGajiRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})
@@ -155,6 +157,11 @@ func registerKatalogRoutes(rg *gin.RouterGroup) {
 // registerOrderRoutes merakit layer fitur Pesanan & Invoice Nego.
 func registerOrderRoutes(rg *gin.RouterGroup) {
 	orderrouter.RegisterOrderRoutes(rg, database.DB)
+}
+
+// registerGajiRoutes merakit layer fitur Penggajian Tim Multi-Proyek.
+func registerGajiRoutes(rg *gin.RouterGroup) {
+	gajirouter.RegisterGajiRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

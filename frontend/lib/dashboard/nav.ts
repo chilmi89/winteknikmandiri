@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Banknote,
   Clock,
   Columns3,
   Compass,
@@ -51,6 +52,7 @@ export const dashboardNav: DashboardNavGroup[] = [
     title: "Operasional",
     items: [
       { label: "Pesanan & Invoice", href: "/dashboard/orders", icon: FileText },
+      { label: "Penggajian Tim", href: "/dashboard/gaji", icon: Banknote },
       { label: "Permohonan", href: "/dashboard/inquiries", icon: Inbox },
       { label: "Proyek", href: "/dashboard/proyek", icon: FolderKanban },
       { label: "Tim", href: "/dashboard/tim", icon: Users },

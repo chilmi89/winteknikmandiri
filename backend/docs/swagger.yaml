@@ -1,5 +1,17 @@
 basePath: /
 definitions:
+  dto.AttachProyekRequest:
+    properties:
+      keterangan:
+        type: string
+      nominal:
+        type: string
+      order_id:
+        type: string
+    required:
+    - nominal
+    - order_id
+    type: object
   dto.CategoryCountResponse:
     properties:
       category:
@@ -76,6 +88,21 @@ definitions:
     required:
     - answer
     - question
+    type: object
+  dto.CreateGajiRequest:
+    properties:
+      catatan:
+        type: string
+      proyek:
+        items:
+          $ref: '#/definitions/dto.AttachProyekRequest'
+        type: array
+      status:
+        type: string
+      team_id:
+        type: string
+    required:
+    - team_id
     type: object
   dto.CreateGalleryProjectRequest:
     properties:
@@ -365,6 +392,68 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.GajiEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.GajiResponse'
+      message:
+        type: string
+    type: object
+  dto.GajiMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.GajiProyekResponse:
+    properties:
+      created_at:
+        type: string
+      gaji_id:
+        type: string
+      id:
+        type: string
+      invoice_no:
+        type: string
+      keterangan:
+        type: string
+      nama_customer:
+        type: string
+      nama_layanan:
+        type: string
+      nominal:
+        type: string
+      order_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.GajiResponse:
+    properties:
+      catatan:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      kode_gaji:
+        type: string
+      proyek:
+        items:
+          $ref: '#/definitions/dto.GajiProyekResponse'
+        type: array
+      status:
+        type: string
+      team_id:
+        type: string
+      team_name:
+        type: string
+      team_skill:
+        type: string
+      total_gaji:
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.GalleryBundleEnvelope:
     properties:
       data:
@@ -565,6 +654,28 @@ definitions:
       total:
         type: integer
     type: object
+  dto.ListGajiEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.ListGajiResponse'
+      message:
+        type: string
+    type: object
+  dto.ListGajiResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.GajiResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   dto.ListInquiryResponse:
     properties:
       data:
@@ -719,6 +830,8 @@ definitions:
         items:
           $ref: '#/definitions/dto.OrderItemResponse'
         type: array
+      maps_url:
+        type: string
       notes:
         type: string
       status:
@@ -973,6 +1086,15 @@ definitions:
     - answer
     - question
     type: object
+  dto.UpdateGajiRequest:
+    properties:
+      catatan:
+        type: string
+      status:
+        type: string
+      team_id:
+        type: string
+    type: object
   dto.UpdateGalleryProjectRequest:
     properties:
       category:
@@ -1083,6 +1205,10 @@ definitions:
       customer_name:
         type: string
       customer_phone:
+        type: string
+      initial_service:
+        type: string
+      maps_url:
         type: string
       notes:
         type: string
@@ -1455,6 +1581,201 @@ paths:
       summary: Perbarui FAQ
       tags:
       - faqs
+  /api/v1/gaji:
+    get:
+      parameters:
+      - description: Filter per Tim (UUID)
+        in: query
+        name: team_id
+        type: string
+      - description: Filter per Proyek / Order (UUID)
+        in: query
+        name: order_id
+        type: string
+      - description: Filter per tanggal YYYY-MM-DD
+        in: query
+        name: date
+        type: string
+      - description: Filter status (draft, dibayar)
+        in: query
+        name: status
+        type: string
+      - description: Cari kode gaji / nama tim
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Jumlah data per halaman
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListGajiEnvelope'
+      summary: Daftar slip gaji tim dengan filter & pagination
+      tags:
+      - gaji
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload slip gaji
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateGajiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Buat slip gaji baru untuk tim tertentu
+      tags:
+      - gaji
+  /api/v1/gaji/{id}:
+    delete:
+      parameters:
+      - description: ID Slip Gaji (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GajiMessageResponse'
+      summary: Hapus slip gaji (soft delete)
+      tags:
+      - gaji
+    get:
+      parameters:
+      - description: ID Slip Gaji (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Detail slip gaji tim beserta seluruh proyek yang ditempelkan
+      tags:
+      - gaji
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Slip Gaji (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload edit
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGajiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Perbarui slip gaji (status, catatan, tim)
+      tags:
+      - gaji
+  /api/v1/gaji/{id}/proyek:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Slip Gaji (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data proyek & upah borongan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AttachProyekRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Tempelkan proyek ke slip gaji
+      tags:
+      - gaji
+  /api/v1/gaji/proyek/{proyek_id}:
+    delete:
+      parameters:
+      - description: ID Gaji Proyek (UUID)
+        in: path
+        name: proyek_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Lepas proyek dari slip gaji
+      tags:
+      - gaji
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Gaji Proyek (UUID)
+        in: path
+        name: proyek_id
+        required: true
+        type: string
+      - description: Nominal upah baru (mis. Rp 1.500.000)
+        in: query
+        name: nominal
+        required: true
+        type: string
+      - description: Catatan khusus
+        in: query
+        name: keterangan
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GajiEnvelope'
+      summary: Edit nominal upah borongan proyek
+      tags:
+      - gaji
   /api/v1/gallery:
     get:
       description: Mengembalikan seluruh daftar proyek, total counter, dan tab kategori

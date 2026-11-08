@@ -274,6 +274,304 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/gaji": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Daftar slip gaji tim dengan filter \u0026 pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter per Tim (UUID)",
+                        "name": "team_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter per Proyek / Order (UUID)",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter per tanggal YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter status (draft, dibayar)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cari kode gaji / nama tim",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Nomor halaman",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Jumlah data per halaman",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListGajiEnvelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Buat slip gaji baru untuk tim tertentu",
+                "parameters": [
+                    {
+                        "description": "Payload slip gaji",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGajiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gaji/proyek/{proyek_id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Edit nominal upah borongan proyek",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Gaji Proyek (UUID)",
+                        "name": "proyek_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nominal upah baru (mis. Rp 1.500.000)",
+                        "name": "nominal",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Catatan khusus",
+                        "name": "keterangan",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Lepas proyek dari slip gaji",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Gaji Proyek (UUID)",
+                        "name": "proyek_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gaji/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Detail slip gaji tim beserta seluruh proyek yang ditempelkan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Slip Gaji (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Perbarui slip gaji (status, catatan, tim)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Slip Gaji (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload edit",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGajiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Hapus slip gaji (soft delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Slip Gaji (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gaji/{id}/proyek": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gaji"
+                ],
+                "summary": "Tempelkan proyek ke slip gaji",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Slip Gaji (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data proyek \u0026 upah borongan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AttachProyekRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GajiEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/gallery": {
             "get": {
                 "description": "Mengembalikan seluruh daftar proyek, total counter, dan tab kategori unik yang dihitung otomatis.",
@@ -2572,6 +2870,24 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.AttachProyekRequest": {
+            "type": "object",
+            "required": [
+                "nominal",
+                "order_id"
+            ],
+            "properties": {
+                "keterangan": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CategoryCountResponse": {
             "type": "object",
             "properties": {
@@ -2681,6 +2997,29 @@ const docTemplate = `{
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CreateGajiRequest": {
+            "type": "object",
+            "required": [
+                "team_id"
+            ],
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "proyek": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachProyekRequest"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3085,6 +3424,101 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GajiEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.GajiResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GajiMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GajiProyekResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "gaji_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "nama_customer": {
+                    "type": "string"
+                },
+                "nama_layanan": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GajiResponse": {
+            "type": "object",
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kode_gaji": {
+                    "type": "string"
+                },
+                "proyek": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GajiProyekResponse"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                },
+                "team_skill": {
+                    "type": "string"
+                },
+                "total_gaji": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.GalleryBundleEnvelope": {
             "type": "object",
             "properties": {
@@ -3383,6 +3817,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ListGajiEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.ListGajiResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListGajiResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GajiResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.ListInquiryResponse": {
             "type": "object",
             "properties": {
@@ -3615,6 +4083,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.OrderItemResponse"
                     }
+                },
+                "maps_url": {
+                    "type": "string"
                 },
                 "notes": {
                     "type": "string"
@@ -3981,6 +4452,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateGajiRequest": {
+            "type": "object",
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateGalleryProjectRequest": {
             "type": "object",
             "properties": {
@@ -4140,6 +4625,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer_phone": {
+                    "type": "string"
+                },
+                "initial_service": {
+                    "type": "string"
+                },
+                "maps_url": {
                     "type": "string"
                 },
                 "notes": {
