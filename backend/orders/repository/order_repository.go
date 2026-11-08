@@ -299,20 +299,24 @@ func (r *OrderRepository) UpdateOrder(ctx context.Context, current *model.Order,
 	if req.Status != nil {
 		status = *req.Status
 	}
+	initSvc := current.InitialService
+	if req.InitialService != nil && *req.InitialService != "" {
+		initSvc = *req.InitialService
+	}
 
 	query := `
 		UPDATE orders
 		SET
 			customer_name = $1, customer_phone = $2, address = $3, notes = $4,
-			total_amount = $5, status = $6, updated_at = NOW()
-		WHERE id = $7::uuid AND deleted_at IS NULL
+			total_amount = $5, status = $6, initial_service = $7, updated_at = NOW()
+		WHERE id = $8::uuid AND deleted_at IS NULL
 		RETURNING id, invoice_no, initial_category, initial_service, initial_price,
 		          customer_name, customer_phone, address, notes, total_amount, status,
 		          created_at, updated_at
 	`
 	var o model.Order
 	err := r.db.QueryRowContext(ctx, query,
-		cName, cPhone, addr, notes, total, status, current.ID,
+		cName, cPhone, addr, notes, total, status, initSvc, current.ID,
 	).Scan(
 		&o.ID, &o.InvoiceNo, &o.InitialCategory, &o.InitialService, &o.InitialPrice,
 		&o.CustomerName, &o.CustomerPhone, &o.Address, &o.Notes, &o.TotalAmount, &o.Status,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, X, Trash2, ExternalLink } from "lucide-react";
+import { Search, X, Trash2, ExternalLink, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,15 +47,15 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTableProps) {
   if (loading && items.length === 0) {
-    return <DataTableSkeleton columns={7} rows={6} />;
+    return <DataTableSkeleton columns={6} rows={6} />;
   }
 
   if (!loading && items.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-sm font-semibold text-slate-800">Belum ada pesanan masuk</p>
+        <p className="text-sm font-semibold text-slate-800">Belum ada pesanan yang sesuai</p>
         <p className="text-xs text-slate-500 mt-1">
-          Setiap kali pelanggan klik tombol Pesan di web, nomor invoice otomatis terbuat di sini.
+          Pesanan baru dari web akan otomatis muncul di sini.
         </p>
       </div>
     );
@@ -69,8 +69,8 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
             <TableHead className="h-10 w-[16%] px-4 text-xs font-medium text-slate-500">
               No. Invoice
             </TableHead>
-            <TableHead className="h-10 w-[24%] px-4 text-xs font-medium text-slate-500">
-              Layanan Awal (Web)
+            <TableHead className="h-10 w-[28%] px-4 text-xs font-medium text-slate-500">
+              Layanan Utama (Headline)
             </TableHead>
             <TableHead className="h-10 w-[18%] px-4 text-xs font-medium text-slate-500">
               Pelanggan
@@ -78,10 +78,10 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
             <TableHead className="h-10 w-[14%] px-4 text-xs font-medium text-slate-500">
               Total Fiks
             </TableHead>
-            <TableHead className="h-10 w-[14%] px-4 text-xs font-medium text-slate-500">
+            <TableHead className="h-10 w-[12%] px-4 text-xs font-medium text-slate-500">
               Status
             </TableHead>
-            <TableHead className="h-10 w-[14%] px-4 text-right text-xs font-medium text-slate-500">
+            <TableHead className="h-10 w-[12%] px-4 text-right text-xs font-medium text-slate-500">
               Aksi
             </TableHead>
           </TableRow>
@@ -91,6 +91,14 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
           {items.map((order) => {
             const tone = STATUS_TONES[order.status] || "neutral";
             const label = STATUS_LABELS[order.status] || order.status;
+
+            // Prioritas Headline: Jika admin sudah memilih saklar headline (disimpan di initial_service)
+            // atau jika ada baris items kesepakatan, gunakan nama tersebut
+            const headlineTitle =
+              order.initial_service ||
+              (order.items && order.items.length > 0 ? order.items[0].item_name : "Layanan AC");
+
+            const isCustomNegotiated = order.total_amount && order.total_amount !== order.initial_price;
 
             return (
               <TableRow
@@ -111,13 +119,18 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
                   </p>
                 </TableCell>
 
-                {/* Layanan Awal */}
-                <TableCell className="w-[24%] px-4 py-3.5 align-middle whitespace-normal">
-                  <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">
-                    {order.initial_service}
-                  </p>
+                {/* Layanan Utama / Headline Hasil Saklar Nego */}
+                <TableCell className="w-[28%] px-4 py-3.5 align-middle whitespace-normal">
+                  <div className="flex items-center gap-1.5">
+                    {isCustomNegotiated && (
+                      <Star className="size-3 text-amber-500 fill-amber-500 shrink-0" />
+                    )}
+                    <p className="text-[13px] font-semibold text-slate-900 line-clamp-1" title={headlineTitle}>
+                      {headlineTitle}
+                    </p>
+                  </div>
                   <span className="text-[11px] text-slate-500 line-clamp-1">
-                    {order.initial_category || "Umum"} · {order.initial_price}
+                    {order.initial_category || "Layanan"} {order.items && order.items.length > 1 ? `(+${order.items.length - 1} item lain)` : ""}
                   </span>
                 </TableCell>
 
@@ -143,12 +156,12 @@ export function OrderTable({ items, loading, onOpenTab, onDelete }: OrderTablePr
                 </TableCell>
 
                 {/* Status */}
-                <TableCell className="w-[14%] px-4 py-3.5 align-middle whitespace-nowrap">
+                <TableCell className="w-[12%] px-4 py-3.5 align-middle whitespace-nowrap">
                   <StatusBadge tone={tone}>{label}</StatusBadge>
                 </TableCell>
 
                 {/* Aksi */}
-                <TableCell className="w-[14%] px-4 py-3.5 text-right align-middle whitespace-nowrap">
+                <TableCell className="w-[12%] px-4 py-3.5 text-right align-middle whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1.5">
                     <Button
                       size="xs"

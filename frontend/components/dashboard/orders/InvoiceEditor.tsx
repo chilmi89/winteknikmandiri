@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Plus, Trash2, Check, RefreshCw, Send, DollarSign, User, Phone, MapPin, FileText } from "lucide-react";
+import { Copy, Plus, Trash2, Check, RefreshCw, Send, DollarSign, User, Phone, MapPin, FileText, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,7 +48,7 @@ export function InvoiceEditor({
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone || "");
   const [address, setAddress] = useState(order.address || "");
   const [notes, setNotes] = useState(order.notes || "");
-  const [status, setStatus] = useState(order.status || "belum_diproses");
+  const [status, setStatus] = useState(order.status || "negosiasi");
   const [savingHeader, setSavingHeader] = useState(false);
 
   // State tambah item
@@ -69,7 +69,6 @@ export function InvoiceEditor({
   const calculateTotal = () => {
     let sum = 0;
     for (const it of order.items) {
-      // Ambil angka dari price (misal: "Rp 65.000" -> 65000)
       const num = parseInt(it.price.replace(/[^0-9]/g, ""), 10) || 0;
       sum += num * it.qty;
     }
@@ -77,6 +76,25 @@ export function InvoiceEditor({
   };
 
   const calculatedTotal = calculateTotal();
+
+  // Saklar Toggle: Jadikan Item Ini Sebagai Headline Judul Utama
+  const handleToggleHeadline = async (itemName: string) => {
+    try {
+      await onUpdateHeader({
+        initial_service: itemName,
+      });
+      toast.add({
+        title: "Headline Diperbarui!",
+        description: `"${itemName}" sekarang menjadi judul utama di daftar pesanan & invoice.`,
+        type: "success",
+      });
+    } catch {
+      toast.add({
+        title: "Gagal mengganti headline",
+        type: "error",
+      });
+    }
+  };
 
   // Simpan Sementara / Draft Header
   const handleSaveHeader = async () => {
@@ -205,12 +223,12 @@ export function InvoiceEditor({
                 {order.invoice_no}
               </span>
               <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs font-semibold text-slate-700">
-                Layanan Awal: {order.initial_service}
+              <span className="text-xs font-bold text-slate-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                Headline: {order.initial_service}
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Kategori: {order.initial_category || "Umum"} · Estimasi Web: {order.initial_price}
+            <p className="mt-1 text-xs text-slate-500">
+              Kategori: {order.initial_category || "Umum"} · Estimasi Awal: {order.initial_price}
             </p>
           </div>
 
@@ -224,16 +242,19 @@ export function InvoiceEditor({
           <Table className="w-full table-fixed text-xs">
             <TableHeader>
               <TableRow className="bg-slate-50 border-slate-200">
-                <TableHead className="w-[45%] px-3 py-2 font-medium text-slate-600">
+                <TableHead className="w-[42%] px-3 py-2 font-medium text-slate-600">
                   Layanan / Pekerjaan
                 </TableHead>
-                <TableHead className="w-[15%] px-2 py-2 text-center font-medium text-slate-600">
+                <TableHead className="w-[12%] px-2 py-2 text-center font-medium text-slate-600">
                   Qty
                 </TableHead>
-                <TableHead className="w-[25%] px-3 py-2 text-right font-medium text-slate-600">
+                <TableHead className="w-[22%] px-3 py-2 text-right font-medium text-slate-600">
                   Harga Nego
                 </TableHead>
-                <TableHead className="w-[15%] px-2 py-2 text-center font-medium text-slate-600">
+                <TableHead className="w-[12%] px-2 py-2 text-center font-medium text-slate-600">
+                  Headline
+                </TableHead>
+                <TableHead className="w-[12%] px-2 py-2 text-center font-medium text-slate-600">
                   Aksi
                 </TableHead>
               </TableRow>
@@ -242,11 +263,17 @@ export function InvoiceEditor({
             <TableBody>
               {order.items.map((it) => {
                 const isEditing = editingItemId === it.id;
+                const isCurrentHeadline = order.initial_service === it.item_name;
 
                 return (
-                  <TableRow key={it.id} className="border-slate-100 hover:bg-slate-50/60">
+                  <TableRow key={it.id} className={`border-slate-100 transition-colors ${isCurrentHeadline ? "bg-amber-50/40" : "hover:bg-slate-50/60"}`}>
                     <TableCell className="px-3 py-2.5 align-middle">
-                      <p className="font-semibold text-slate-800 line-clamp-1">{it.item_name}</p>
+                      <div className="flex items-center gap-1.5">
+                        {isCurrentHeadline && (
+                          <Star className="size-3 text-amber-500 fill-amber-500 shrink-0" />
+                        )}
+                        <p className="font-semibold text-slate-800 line-clamp-1">{it.item_name}</p>
+                      </div>
                       <span className="text-[10px] text-slate-400 font-mono">
                         {it.service_id ? "Dari Katalog" : "Custom Nego"}
                       </span>
@@ -277,6 +304,22 @@ export function InvoiceEditor({
                       ) : (
                         it.price
                       )}
+                    </TableCell>
+
+                    {/* Saklar Toggle On/Off Headline */}
+                    <TableCell className="px-2 py-2.5 text-center align-middle">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleHeadline(it.item_name)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border transition-colors ${
+                          isCurrentHeadline
+                            ? "bg-amber-100 text-amber-900 border-amber-300 shadow-xs"
+                            : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                        }`}
+                        title={isCurrentHeadline ? "Layanan ini adalah Headline aktif" : "Klik untuk jadikan Headline judul utama"}
+                      >
+                        {isCurrentHeadline ? "ON" : "OFF"}
+                      </button>
                     </TableCell>
 
                     <TableCell className="px-2 py-2.5 text-center align-middle">
@@ -374,13 +417,13 @@ export function InvoiceEditor({
               <Input
                 value={customItemName}
                 onChange={(e) => setCustomItemName(e.target.value)}
-                placeholder="Nama pekerjaan custom (mis. Ganti stop kontak pipa)"
+                placeholder="Nama pekerjaan custom (mis. borongan duction)"
                 className="sm:col-span-6 h-8 text-xs bg-white"
               />
               <Input
                 value={customPrice}
                 onChange={(e) => setCustomPrice(e.target.value)}
-                placeholder="Harga (mis. Rp 150.000)"
+                placeholder="Harga (mis. Rp 1.200.000)"
                 className="sm:col-span-3 h-8 text-xs bg-white font-mono"
               />
               <Input
@@ -485,7 +528,6 @@ export function InvoiceEditor({
 
         {/* Action Buttons */}
         <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {/* Tombol Simpan Sementara */}
           <Button
             type="button"
             onClick={handleSaveHeader}
@@ -495,7 +537,6 @@ export function InvoiceEditor({
             {savingHeader ? "Menyimpan..." : "💾 Simpan Sementara (Draft)"}
           </Button>
 
-          {/* Tombol Salin Rincian untuk WA */}
           <Button
             type="button"
             variant="outline"

@@ -69,6 +69,7 @@ export type UpdateOrderHeaderPayload = {
   notes?: string;
   total_amount?: string;
   status?: string;
+  initial_service?: string;
 };
 
 export type ClickOrderPayload = {

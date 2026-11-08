@@ -64,14 +64,15 @@ type ClickOrderResponse struct {
 	WaURL     string `json:"wa_url"`
 }
 
-// UpdateOrderRequest admin mengupdate data header order (nama, WA, alamat, status, total).
+// UpdateOrderRequest admin mengupdate data header order (nama, WA, alamat, status, total, headline).
 type UpdateOrderRequest struct {
-	CustomerName  *string `json:"customer_name"`
-	CustomerPhone *string `json:"customer_phone"`
-	Address       *string `json:"address"`
-	Notes         *string `json:"notes"`
-	TotalAmount   *string `json:"total_amount"`
-	Status        *string `json:"status"`
+	CustomerName   *string `json:"customer_name"`
+	CustomerPhone  *string `json:"customer_phone"`
+	Address        *string `json:"address"`
+	Notes          *string `json:"notes"`
+	TotalAmount    *string `json:"total_amount"`
+	Status         *string `json:"status"`
+	InitialService *string `json:"initial_service"`
 }
 
 // SaveOrderItemRequest payload tambah/ubah baris rincian layanan pada invoice.
