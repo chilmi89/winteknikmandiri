@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Banknote,
+  Check,
+  ChevronDown,
   Copy,
   Plus,
+  Search,
   Trash2,
-  Check,
-  Briefcase,
-  AlertCircle,
-  Building2,
-  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +19,12 @@ import {
   SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { FormDialog } from "@/components/dashboard/dialogs/FormDialog";
 import { toast } from "@/components/ui/toast";
 import type {
   Gaji,
   CreateGajiPayload,
-  AttachProyekPayload,
   UpdateGajiPayload,
 } from "@/lib/gaji";
 import type { TeamMemberItem } from "@/lib/teamMembers";
@@ -47,7 +43,7 @@ type GajiDialogProps = {
   onOpenChange: (open: boolean) => void;
   gaji: Gaji | null; // null = buat baru
   teamList: TeamMemberItem[];
-  orderList: Order[];
+  orderList: Order[]; // hanya order yang statusnya selesai/closing
   onSubmitCreate: (payload: CreateGajiPayload) => Promise<void>;
   onSubmitUpdate: (
     id: string,
@@ -62,6 +58,172 @@ function formatRupiahInput(value: string | number): string {
   if (!digits) return "";
   const num = parseInt(digits, 10);
   return `Rp ${num.toLocaleString("id-ID")}`;
+}
+
+/**
+ * Dropdown pemilih proyek dengan fitur pencarian kode INV, nama proyek, atau nama klien.
+ * Menampilkan label deskriptif yang rapi tanpa pernah menampilkan kode UUID.
+ */
+function SearchableProjectSelect({
+  value,
+  onChange,
+  orders,
+}: {
+  value: string;
+  onChange: (orderId: string) => void;
+  orders: Order[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOrder = useMemo(
+    () => orders.find((o) => o.id === value),
+    [orders, value]
+  );
+
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Filter order berdasarkan invoice_no, nama layanan, atau nama klien
+  const filteredOrders = useMemo(() => {
+    if (!query.trim()) return orders;
+    const q = query.toLowerCase();
+    return orders.filter(
+      (o) =>
+        o.invoice_no?.toLowerCase().includes(q) ||
+        o.initial_service?.toLowerCase().includes(q) ||
+        o.customer_name?.toLowerCase().includes(q)
+    );
+  }, [orders, query]);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      {/* Tombol Trigger Dropdown */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-left shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+      >
+        <span className="truncate pr-2 font-medium">
+          {selectedOrder ? (
+            <span className="text-slate-900">
+              <span className="font-bold text-slate-900">
+                {selectedOrder.invoice_no}
+              </span>
+              {" · "}
+              <span className="text-slate-700">
+                {selectedOrder.initial_service || "Layanan Proyek"}
+              </span>
+              {selectedOrder.customer_name ? (
+                <span className="text-slate-500">
+                  {" "}
+                  ({selectedOrder.customer_name})
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-slate-400">
+              Pilih Invoice Proyek Selesai...
+            </span>
+          )}
+        </span>
+        <ChevronDown className="size-4 shrink-0 text-slate-400" />
+      </button>
+
+      {/* Popover Pencarian & List Proyek */}
+      {isOpen && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[290px] rounded-lg border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in-0 zoom-in-95">
+          {/* Kolom Search by Kode INV */}
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Cari kode INV (mis: INV-2611) atau nama..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-slate-900 focus:bg-white"
+            />
+          </div>
+
+          {/* List Proyek */}
+          <div className="max-h-52 overflow-y-auto space-y-1">
+            {filteredOrders.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-400">
+                {orders.length === 0 ? (
+                  <span>
+                    Belum ada proyek dengan status <strong>Selesai</strong> (closing).
+                  </span>
+                ) : (
+                  <span>Tidak ada proyek yang sesuai dengan kata kunci.</span>
+                )}
+              </div>
+            ) : (
+              filteredOrders.map((ord) => {
+                const isSelected = ord.id === value;
+                return (
+                  <button
+                    key={ord.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(ord.id);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
+                    className={`flex w-full items-start justify-between rounded-md p-2 text-left text-xs transition ${
+                      isSelected
+                        ? "bg-slate-100 text-slate-900 font-semibold"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-900">
+                          {ord.invoice_no}
+                        </span>
+                        <span className="truncate text-slate-700">
+                          · {ord.initial_service || "Layanan Proyek"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-500">
+                        {ord.customer_name && (
+                          <span className="truncate">
+                            Klien: {ord.customer_name}
+                          </span>
+                        )}
+                        <span className="rounded bg-emerald-50 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                          Selesai
+                        </span>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check className="size-4 shrink-0 text-emerald-600 mt-0.5" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function GajiDialog({
@@ -162,9 +324,14 @@ export function GajiDialog({
 
   const calculatedTotal = calculateTotal();
 
+  // Selected team object untuk label trigger yang bersih
+  const selectedTeam = useMemo(
+    () => teamList.find((t) => t.id === teamId),
+    [teamList, teamId]
+  );
+
   // Salin ringkasan ke WhatsApp
   const handleCopyWhatsApp = () => {
-    const selectedTeam = teamList.find((t) => t.id === teamId);
     let text = `*SLIP GAJI TIM TEKNISI - CV WIN TEKNIK MANDIRI*\n`;
     if (gaji?.kode_gaji) {
       text += `No. Slip: *${gaji.kode_gaji}*\n`;
@@ -259,7 +426,7 @@ export function GajiDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? `Kelola Slip Gaji ${gaji?.kode_gaji}` : "Buat Slip Gaji Tim Baru"}
-      description="Hubungkan tim teknisi dengan proyek-proyek yang telah dikerjakan beserta upah nominal borongannya."
+      description="Hubungkan tim teknisi dengan proyek-proyek yang telah closing / selesai dikerjakan beserta upah nominal borongannya."
       icon={<Banknote className="size-4" />}
       busy={busy}
       error={error}
@@ -285,11 +452,12 @@ export function GajiDialog({
             >
               Batal
             </Button>
+            {/* Tombol Tambah Data / Submit: Berwarna Hitam */}
             <Button
               type="button"
               onClick={handleSubmit}
               disabled={busy}
-              className="bg-[#2279cf] text-white hover:bg-[#1a61a6]"
+              className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition"
             >
               {busy ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Buat Slip Gaji"}
             </Button>
@@ -300,13 +468,18 @@ export function GajiDialog({
       <form onSubmit={handleSubmit} className="space-y-5 p-5">
         {/* Baris 1: Tim Teknisi & Status Pembayaran */}
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Tim Teknisi */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700">
               Tim Teknisi <span className="text-rose-500">*</span>
             </label>
             <Select value={teamId} onValueChange={(val) => setTeamId(val || "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih Tim Teknisi" />
+              <SelectTrigger className="w-full text-xs">
+                <span className="truncate">
+                  {selectedTeam
+                    ? `${selectedTeam.name} (${selectedTeam.skill})`
+                    : "Pilih Tim Teknisi"}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -320,6 +493,7 @@ export function GajiDialog({
             </Select>
           </div>
 
+          {/* Status Pembayaran */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700">
               Status Pembayaran
@@ -328,8 +502,12 @@ export function GajiDialog({
               value={status}
               onValueChange={(val) => setStatus((val as "draft" | "dibayar") || "draft")}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-full text-xs">
+                <span className="truncate">
+                  {status === "dibayar"
+                    ? "🟢 Dibayar (Lunas)"
+                    : "🟡 Draft (Belum Dibayar)"}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -346,18 +524,18 @@ export function GajiDialog({
           <div className="flex items-center justify-between pb-3">
             <div>
               <h4 className="text-sm font-semibold text-slate-900">
-                Proyek & Pekerjaan Layanan
+                Proyek Selesai & Pekerjaan Layanan
               </h4>
               <p className="text-xs text-slate-500">
-                Pilih proyek dari daftar invoice, nama proyek otomatis terhubung.
+                Hanya menampilkan proyek berstatus <strong>Selesai</strong> (closing). Bisa dicari via kode INV.
               </p>
             </div>
+            {/* Tombol Tambah Proyek: Berwarna Hitam */}
             <Button
               type="button"
-              variant="outline"
               size="sm"
               onClick={handleAddRow}
-              className="gap-1.5 text-xs text-[#2279cf] border-[#2279cf]/30 hover:bg-[#2279cf]/10"
+              className="gap-1.5 text-xs bg-slate-900 text-white hover:bg-slate-800 shadow-2xs transition"
             >
               <Plus className="size-3.5" />
               Tambah Proyek
@@ -393,39 +571,18 @@ export function GajiDialog({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-12">
-                    {/* Pilih Order Proyek */}
+                    {/* Pilih Order Proyek: Searchable Dropdown */}
                     <div className="sm:col-span-7">
                       <label className="text-[11px] font-medium text-slate-600 block mb-1">
-                        Pilih Invoice Proyek
+                        Pilih Invoice Proyek (Selesai)
                       </label>
-                      <Select
+                      <SearchableProjectSelect
                         value={row.order_id}
-                        onValueChange={(val) =>
-                          handleRowChange(index, "order_id", val || "")
+                        onChange={(val) =>
+                          handleRowChange(index, "order_id", val)
                         }
-                      >
-                        <SelectTrigger className="w-full text-xs">
-                          <SelectValue placeholder="Pilih Order / Proyek" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-56">
-                          <SelectGroup>
-                            {orderList.map((ord) => (
-                              <SelectItem key={ord.id} value={ord.id}>
-                                <div className="flex flex-col text-left">
-                                  <span className="font-semibold text-slate-800">
-                                    {ord.invoice_no} · {ord.initial_service || "Layanan Proyek"}
-                                  </span>
-                                  {ord.customer_name && (
-                                    <span className="text-[10px] text-slate-400">
-                                      Klien: {ord.customer_name}
-                                    </span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
+                        orders={orderList}
+                      />
                     </div>
 
                     {/* Nominal Upah Borongan */}

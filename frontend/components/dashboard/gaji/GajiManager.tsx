@@ -59,7 +59,8 @@ export function GajiManager() {
 
   // Data rujukan untuk dropdown relasi
   const [teamList, setTeamList] = useState<TeamMemberItem[]>([]);
-  const [orderList, setOrderList] = useState<Order[]>([]);
+  const [orderList, setOrderList] = useState<Order[]>([]); // Seluruh order untuk filter
+  const [closedOrders, setClosedOrders] = useState<Order[]>([]); // Hanya order berstatus selesai (closing) untuk slip gaji
 
   // Filter state
   const [search, setSearch] = useState("");
@@ -91,6 +92,9 @@ export function GajiManager() {
         ]);
         setTeamList(teams);
         setOrderList(orders);
+        // Hanya proyek yang sudah closing / selesai dikerjakan yang dapat dipilih untuk slip gaji
+        const closed = orders.filter((o) => o.status === "selesai");
+        setClosedOrders(closed);
       } catch (err) {
         console.error("Gagal memuat opsi relasi tim/proyek", err);
       }
@@ -256,7 +260,7 @@ export function GajiManager() {
             setEditingGaji(null);
             setShowDialog(true);
           }}
-          className="inline-flex items-center gap-2 bg-[#2279cf] px-4 py-2 font-medium text-white shadow-sm transition hover:bg-[#1b62a6]"
+          className="inline-flex items-center gap-2 bg-slate-900 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-slate-800"
         >
           <Plus className="size-4" />
           Buat Slip Gaji
@@ -363,7 +367,16 @@ export function GajiManager() {
                   }}
                 >
                   <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Semua Proyek" />
+                    <span className="truncate">
+                      {orderFilter === "all"
+                        ? "Semua Proyek"
+                        : (() => {
+                            const found = orderList.find((o) => o.id === orderFilter);
+                            return found
+                              ? `${found.invoice_no} · ${found.initial_service || "Layanan"}`
+                              : "Pilih Proyek";
+                          })()}
+                    </span>
                   </SelectTrigger>
                   <SelectContent className="max-h-56">
                     <SelectGroup>
@@ -421,7 +434,11 @@ export function GajiManager() {
                   }}
                 >
                   <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Semua Tim" />
+                    <span className="truncate">
+                      {teamFilter === "all"
+                        ? "Semua Tim"
+                        : teamList.find((t) => t.id === teamFilter)?.name || "Pilih Tim"}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -449,7 +466,13 @@ export function GajiManager() {
                   }}
                 >
                   <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Semua Status" />
+                    <span className="truncate">
+                      {statusFilter === "all"
+                        ? "Semua Status"
+                        : statusFilter === "dibayar"
+                        ? "🟢 Dibayar (Lunas)"
+                        : "🟡 Draft (Belum Bayar)"}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -504,7 +527,7 @@ export function GajiManager() {
         }}
         gaji={editingGaji}
         teamList={teamList}
-        orderList={orderList}
+        orderList={closedOrders}
         onSubmitCreate={handleCreateGaji}
         onSubmitUpdate={handleUpdateGaji}
       />
