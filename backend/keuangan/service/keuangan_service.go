@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -18,7 +19,7 @@ import (
 
 var nonDigitRegex = regexp.MustCompile(`[^0-9]`)
 
-// KeuanganService mengelola alur bisnis transaksi keuangan, kategori, dan ringkasan arus kas.
+// KeuanganService mengelola alur bisnis nota kas, rincian transaksi, dan kategori akun.
 type KeuanganService struct {
 	repo *repository.KeuanganRepository
 }
@@ -133,19 +134,15 @@ func (s *KeuanganService) DeleteKategori(ctx context.Context, idStr string) erro
 	return nil
 }
 
-// ---------- 2. JURNAL KEUANGAN SERVICE ----------
+// ---------- 2. BUKU KAS & JURNAL TRANSAKSI SERVICE ----------
 
 func (s *KeuanganService) ListJurnal(
 	ctx context.Context,
 	search string,
-	tipe string,
-	kategoriID string,
-	orderID string,
-	gajiID string,
+	status string,
+	cabang string,
 	dateFrom string,
 	dateTo string,
-	pembayaran string,
-	status string,
 	sortBy string,
 	sortDir string,
 	page int,
@@ -159,9 +156,7 @@ func (s *KeuanganService) ListJurnal(
 	}
 
 	items, total, sumIn, sumOut, err := s.repo.ListJurnal(
-		ctx, search, tipe, kategoriID, orderID, gajiID,
-		dateFrom, dateTo, pembayaran, status,
-		sortBy, sortDir, page, limit,
+		ctx, search, status, cabang, dateFrom, dateTo, sortBy, sortDir, page, limit,
 	)
 	if err != nil {
 		return nil, err
@@ -205,50 +200,16 @@ func (s *KeuanganService) GetJurnalByID(ctx context.Context, idStr string) (*dto
 		return nil, err
 	}
 	if it == nil {
-		return nil, apperr.NotFound("Transaksi jurnal tidak ditemukan")
+		return nil, apperr.NotFound("Nota kas jurnal tidak ditemukan")
 	}
 	res := toJurnalDTO(it)
 	return &res, nil
 }
 
 func (s *KeuanganService) CreateJurnal(ctx context.Context, req dto.CreateJurnalRequest) (*dto.JurnalResponse, error) {
-	tipe := strings.ToLower(strings.TrimSpace(req.Tipe))
-	if tipe != "pemasukan" && tipe != "pengeluaran" {
-		return nil, apperr.Validation("Tipe jurnal harus 'pemasukan' atau 'pengeluaran'", "")
-	}
-	judul := strings.TrimSpace(req.Judul)
-	if judul == "" {
-		return nil, apperr.Validation("Judul transaksi wajib diisi", "")
-	}
-
-	// Parsing nominal
-	amountNumeric := parseNumeric(req.Nominal)
-	if amountNumeric <= 0 {
-		return nil, apperr.Validation("Nominal harus lebih dari 0", "")
-	}
-	req.Nominal = fmt.Sprintf("Rp %s", formatRupiah(amountNumeric))
-	req.Tipe = tipe
-	req.Judul = judul
-
-	var katUUID *uuid.UUID
-	if req.KategoriID != nil && *req.KategoriID != "" {
-		if parsed, err := uuid.Parse(*req.KategoriID); err == nil {
-			katUUID = &parsed
-		}
-	}
-
-	var ordUUID *uuid.UUID
-	if req.OrderID != nil && *req.OrderID != "" {
-		if parsed, err := uuid.Parse(*req.OrderID); err == nil {
-			ordUUID = &parsed
-		}
-	}
-
-	var gjUUID *uuid.UUID
-	if req.GajiID != nil && *req.GajiID != "" {
-		if parsed, err := uuid.Parse(*req.GajiID); err == nil {
-			gjUUID = &parsed
-		}
+	waktu := time.Now()
+	if req.WaktuTransaksi != nil && *req.WaktuTransaksi != "" {
+		waktu = parseWaktu(*req.WaktuTransaksi)
 	}
 
 	kodeJurnal, err := s.repo.GenerateKodeJurnal(ctx)
@@ -256,10 +217,84 @@ func (s *KeuanganService) CreateJurnal(ctx context.Context, req dto.CreateJurnal
 		return nil, fmt.Errorf("generate kode jurnal: %w", err)
 	}
 
-	it, err := s.repo.CreateJurnal(ctx, kodeJurnal, amountNumeric, katUUID, ordUUID, gjUUID, req)
+	// Proses items & hitung total
+	modelItems := make([]model.JurnalItem, 0, len(req.Items))
+	var sumIn int64
+	var sumOut int64
+
+	for _, itemReq := range req.Items {
+		tipe := strings.ToLower(strings.TrimSpace(itemReq.Tipe))
+		if tipe != "pemasukan" && tipe != "pengeluaran" {
+			continue
+		}
+		num := parseNumeric(itemReq.Nominal)
+		if num <= 0 {
+			continue
+		}
+
+		if tipe == "pemasukan" {
+			sumIn += num
+		} else {
+			sumOut += num
+		}
+
+		var katUUID *uuid.UUID
+		if itemReq.KategoriID != nil && *itemReq.KategoriID != "" {
+			if parsed, err := uuid.Parse(*itemReq.KategoriID); err == nil {
+				katUUID = &parsed
+			}
+		}
+
+		var ordUUID *uuid.UUID
+		if itemReq.OrderID != nil && *itemReq.OrderID != "" {
+			if parsed, err := uuid.Parse(*itemReq.OrderID); err == nil {
+				ordUUID = &parsed
+			}
+		}
+
+		var gjUUID *uuid.UUID
+		if itemReq.GajiID != nil && *itemReq.GajiID != "" {
+			if parsed, err := uuid.Parse(*itemReq.GajiID); err == nil {
+				gjUUID = &parsed
+			}
+		}
+
+		pembayaran := itemReq.MetodePembayaran
+		if pembayaran == "" {
+			pembayaran = "transfer"
+		}
+		sumber := itemReq.Sumber
+		if sumber == "" {
+			sumber = "manual"
+		}
+
+		modelItems = append(modelItems, model.JurnalItem{
+			Tipe:             tipe,
+			Deskripsi:        itemReq.Deskripsi,
+			KategoriID:       katUUID,
+			MetodePembayaran: pembayaran,
+			Nominal:          fmt.Sprintf("Rp %s", formatRupiah(num)),
+			AmountNumeric:    num,
+			Sumber:           sumber,
+			OrderID:          ordUUID,
+			GajiID:           gjUUID,
+			Catatan:          itemReq.Catatan,
+		})
+	}
+
+	saldo := sumIn - sumOut
+	totInStr := fmt.Sprintf("Rp %s", formatRupiah(sumIn))
+	totOutStr := fmt.Sprintf("Rp %s", formatRupiah(sumOut))
+	saldoStr := formatSaldo(saldo)
+
+	it, err := s.repo.CreateJurnal(
+		ctx, kodeJurnal, req.Judul, waktu, req.Cabang, req.Status, req.Catatan,
+		modelItems, totInStr, totOutStr, saldoStr, sumIn, sumOut, saldo,
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	res := toJurnalDTO(it)
 	return &res, nil
 }
@@ -274,58 +309,124 @@ func (s *KeuanganService) UpdateJurnal(ctx context.Context, idStr string, req dt
 		return nil, err
 	}
 	if current == nil {
-		return nil, apperr.NotFound("Transaksi jurnal tidak ditemukan")
+		return nil, apperr.NotFound("Nota kas jurnal tidak ditemukan")
 	}
 
-	amountNumeric := current.AmountNumeric
-	if req.Nominal != nil {
-		amountNumeric = parseNumeric(*req.Nominal)
-		if amountNumeric <= 0 {
-			return nil, apperr.Validation("Nominal harus lebih dari 0", "")
+	judul := current.Judul
+	if req.Judul != nil {
+		judul = *req.Judul
+	}
+
+	waktu := current.WaktuTransaksi
+	if req.WaktuTransaksi != nil && *req.WaktuTransaksi != "" {
+		waktu = parseWaktu(*req.WaktuTransaksi)
+	}
+
+	cabang := current.Cabang
+	if req.Cabang != nil {
+		cabang = *req.Cabang
+	}
+
+	status := current.Status
+	if req.Status != nil {
+		status = *req.Status
+	}
+
+	catatan := current.Catatan
+	if req.Catatan != nil {
+		catatan = *req.Catatan
+	}
+
+	var modelItems *[]model.JurnalItem
+	totInStr := current.TotalPemasukan
+	totOutStr := current.TotalPengeluaran
+	saldoStr := current.SaldoBersih
+	numIn := current.NumericPemasukan
+	numOut := current.NumericPengeluaran
+	numSaldo := current.NumericSaldo
+
+	if req.Items != nil {
+		itemsArr := make([]model.JurnalItem, 0, len(*req.Items))
+		var sumIn int64
+		var sumOut int64
+
+		for _, itemReq := range *req.Items {
+			tipe := strings.ToLower(strings.TrimSpace(itemReq.Tipe))
+			if tipe != "pemasukan" && tipe != "pengeluaran" {
+				continue
+			}
+			num := parseNumeric(itemReq.Nominal)
+			if num <= 0 {
+				continue
+			}
+
+			if tipe == "pemasukan" {
+				sumIn += num
+			} else {
+				sumOut += num
+			}
+
+			var katUUID *uuid.UUID
+			if itemReq.KategoriID != nil && *itemReq.KategoriID != "" {
+				if parsed, err := uuid.Parse(*itemReq.KategoriID); err == nil {
+					katUUID = &parsed
+				}
+			}
+
+			var ordUUID *uuid.UUID
+			if itemReq.OrderID != nil && *itemReq.OrderID != "" {
+				if parsed, err := uuid.Parse(*itemReq.OrderID); err == nil {
+					ordUUID = &parsed
+				}
+			}
+
+			var gjUUID *uuid.UUID
+			if itemReq.GajiID != nil && *itemReq.GajiID != "" {
+				if parsed, err := uuid.Parse(*itemReq.GajiID); err == nil {
+					gjUUID = &parsed
+				}
+			}
+
+			pembayaran := itemReq.MetodePembayaran
+			if pembayaran == "" {
+				pembayaran = "transfer"
+			}
+			sumber := itemReq.Sumber
+			if sumber == "" {
+				sumber = "manual"
+			}
+
+			itemsArr = append(itemsArr, model.JurnalItem{
+				Tipe:             tipe,
+				Deskripsi:        itemReq.Deskripsi,
+				KategoriID:       katUUID,
+				MetodePembayaran: pembayaran,
+				Nominal:          fmt.Sprintf("Rp %s", formatRupiah(num)),
+				AmountNumeric:    num,
+				Sumber:           sumber,
+				OrderID:          ordUUID,
+				GajiID:           gjUUID,
+				Catatan:          itemReq.Catatan,
+			})
 		}
-		formatted := fmt.Sprintf("Rp %s", formatRupiah(amountNumeric))
-		req.Nominal = &formatted
+
+		modelItems = &itemsArr
+		numIn = sumIn
+		numOut = sumOut
+		numSaldo = sumIn - sumOut
+		totInStr = fmt.Sprintf("Rp %s", formatRupiah(numIn))
+		totOutStr = fmt.Sprintf("Rp %s", formatRupiah(numOut))
+		saldoStr = formatSaldo(numSaldo)
 	}
 
-	if req.Tipe != nil {
-		t := strings.ToLower(strings.TrimSpace(*req.Tipe))
-		if t != "pemasukan" && t != "pengeluaran" {
-			return nil, apperr.Validation("Tipe jurnal harus 'pemasukan' atau 'pengeluaran'", "")
-		}
-		req.Tipe = &t
-	}
-
-	var katUUID *uuid.UUID = current.KategoriID
-	if req.KategoriID != nil {
-		if *req.KategoriID == "" {
-			katUUID = nil
-		} else if parsed, err := uuid.Parse(*req.KategoriID); err == nil {
-			katUUID = &parsed
-		}
-	}
-
-	var ordUUID *uuid.UUID = current.OrderID
-	if req.OrderID != nil {
-		if *req.OrderID == "" {
-			ordUUID = nil
-		} else if parsed, err := uuid.Parse(*req.OrderID); err == nil {
-			ordUUID = &parsed
-		}
-	}
-
-	var gjUUID *uuid.UUID = current.GajiID
-	if req.GajiID != nil {
-		if *req.GajiID == "" {
-			gjUUID = nil
-		} else if parsed, err := uuid.Parse(*req.GajiID); err == nil {
-			gjUUID = &parsed
-		}
-	}
-
-	updated, err := s.repo.UpdateJurnal(ctx, current, amountNumeric, katUUID, ordUUID, gjUUID, req)
+	updated, err := s.repo.UpdateJurnal(
+		ctx, current, judul, waktu, cabang, status, catatan,
+		modelItems, totInStr, totOutStr, saldoStr, numIn, numOut, numSaldo,
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	res := toJurnalDTO(updated)
 	return &res, nil
 }
@@ -340,12 +441,27 @@ func (s *KeuanganService) DeleteJurnal(ctx context.Context, idStr string) error 
 		return err
 	}
 	if !deleted {
-		return apperr.NotFound("Transaksi jurnal tidak ditemukan")
+		return apperr.NotFound("Nota kas jurnal tidak ditemukan")
 	}
 	return nil
 }
 
 // ---------- HELPER UTILS ----------
+
+func parseWaktu(str string) time.Time {
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04",
+		"2006-01-02 15:04",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.ParseInLocation(f, str, time.Local); err == nil {
+			return t
+		}
+	}
+	return time.Now()
+}
 
 func parseNumeric(s string) int64 {
 	digits := nonDigitRegex.ReplaceAllString(s, "")
@@ -392,41 +508,61 @@ func toKategoriDTO(k *model.KategoriKeuangan) dto.KategoriResponse {
 }
 
 func toJurnalDTO(j *model.JurnalKeuangan) dto.JurnalResponse {
-	var katID *string
-	if j.KategoriID != nil {
-		s := j.KategoriID.String()
-		katID = &s
-	}
-	var ordID *string
-	if j.OrderID != nil {
-		s := j.OrderID.String()
-		ordID = &s
-	}
-	var gjID *string
-	if j.GajiID != nil {
-		s := j.GajiID.String()
-		gjID = &s
+	itemsDTO := make([]dto.JurnalItemResponse, len(j.Items))
+	for i, itm := range j.Items {
+		var katID *string
+		if itm.KategoriID != nil {
+			s := itm.KategoriID.String()
+			katID = &s
+		}
+		var ordID *string
+		if itm.OrderID != nil {
+			s := itm.OrderID.String()
+			ordID = &s
+		}
+		var gjID *string
+		if itm.GajiID != nil {
+			s := itm.GajiID.String()
+			gjID = &s
+		}
+
+		itemsDTO[i] = dto.JurnalItemResponse{
+			ID:               itm.ID.String(),
+			JurnalID:         itm.JurnalID.String(),
+			Tipe:             itm.Tipe,
+			Deskripsi:        itm.Deskripsi,
+			KategoriID:       katID,
+			NamaKategori:     itm.NamaKategori,
+			MetodePembayaran: itm.MetodePembayaran,
+			Nominal:          itm.Nominal,
+			AmountNumeric:    itm.AmountNumeric,
+			Sumber:           itm.Sumber,
+			OrderID:          ordID,
+			InvoiceNo:        itm.InvoiceNo,
+			GajiID:           gjID,
+			KodeGaji:         itm.KodeGaji,
+			Catatan:          itm.Catatan,
+			CreatedAt:        itm.CreatedAt,
+			UpdatedAt:        itm.UpdatedAt,
+		}
 	}
 
 	return dto.JurnalResponse{
-		ID:               j.ID.String(),
-		KodeJurnal:       j.KodeJurnal,
-		Tipe:             j.Tipe,
-		Judul:            j.Judul,
-		KategoriID:       katID,
-		NamaKategori:     j.NamaKategori,
-		MetodePembayaran: j.MetodePembayaran,
-		Nominal:          j.Nominal,
-		AmountNumeric:    j.AmountNumeric,
-		Status:           j.Status,
-		Tanggal:          j.Tanggal,
-		Sumber:           j.Sumber,
-		OrderID:          ordID,
-		InvoiceNo:        j.InvoiceNo,
-		GajiID:           gjID,
-		KodeGaji:         j.KodeGaji,
-		Catatan:          j.Catatan,
-		CreatedAt:        j.CreatedAt,
-		UpdatedAt:        j.UpdatedAt,
+		ID:                 j.ID.String(),
+		KodeJurnal:         j.KodeJurnal,
+		Judul:              j.Judul,
+		WaktuTransaksi:     j.WaktuTransaksi,
+		Cabang:             j.Cabang,
+		Status:             j.Status,
+		TotalPemasukan:     j.TotalPemasukan,
+		TotalPengeluaran:   j.TotalPengeluaran,
+		SaldoBersih:        j.SaldoBersih,
+		NumericPemasukan:   j.NumericPemasukan,
+		NumericPengeluaran: j.NumericPengeluaran,
+		NumericSaldo:       j.NumericSaldo,
+		Catatan:            j.Catatan,
+		Items:              itemsDTO,
+		CreatedAt:          j.CreatedAt,
+		UpdatedAt:          j.UpdatedAt,
 	}
 }

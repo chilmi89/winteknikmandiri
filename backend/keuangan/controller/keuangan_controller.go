@@ -121,14 +121,10 @@ func (ctrl *KeuanganController) DeleteKategori(c *gin.Context) {
 // @Tags        keuangan
 // @Produce     json
 // @Param       search query string false "Cari kode, judul, catatan"
-// @Param       tipe query string false "Filter tipe: pemasukan / pengeluaran"
-// @Param       kategori_id query string false "Filter kategori (UUID)"
-// @Param       order_id query string false "Filter proyek / invoice (UUID)"
-// @Param       gaji_id query string false "Filter slip gaji (UUID)"
+// @Param       status query string false "Filter status: draft / lunas / batal"
+// @Param       cabang query string false "Filter cabang operasional"
 // @Param       date_from query string false "Filter tanggal mulai (YYYY-MM-DD)"
 // @Param       date_to query string false "Filter tanggal akhir (YYYY-MM-DD)"
-// @Param       pembayaran query string false "Filter metode: cash / transfer / kasbon"
-// @Param       status query string false "Filter status: lunas / pending / batal"
 // @Param       sort_by query string false "Sort by: tanggal / nominal / judul"
 // @Param       sort_dir query string false "Sort dir: asc / desc"
 // @Param       page query int false "Nomor halaman" default(1)
@@ -137,22 +133,18 @@ func (ctrl *KeuanganController) DeleteKategori(c *gin.Context) {
 // @Router      /api/v1/keuangan/jurnal [get]
 func (ctrl *KeuanganController) ListJurnal(c *gin.Context) {
 	search := c.Query("search")
-	tipe := c.Query("tipe")
-	kategoriID := c.Query("kategori_id")
-	orderID := c.Query("order_id")
-	gajiID := c.Query("gaji_id")
+	status := c.Query("status")
+	cabang := c.Query("cabang")
 	dateFrom := c.Query("date_from")
 	dateTo := c.Query("date_to")
-	pembayaran := c.Query("pembayaran")
-	status := c.Query("status")
 	sortBy := c.Query("sort_by")
 	sortDir := c.Query("sort_dir")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
 	res, err := ctrl.svc.ListJurnal(
-		c.Request.Context(), search, tipe, kategoriID, orderID, gajiID,
-		dateFrom, dateTo, pembayaran, status, sortBy, sortDir, page, limit,
+		c.Request.Context(), search, status, cabang,
+		dateFrom, dateTo, sortBy, sortDir, page, limit,
 	)
 	if err != nil {
 		httpx.Fail(c, err)

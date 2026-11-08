@@ -1220,26 +1220,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter tipe: pemasukan / pengeluaran",
-                        "name": "tipe",
+                        "description": "Filter status: draft / lunas / batal",
+                        "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter kategori (UUID)",
-                        "name": "kategori_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter proyek / invoice (UUID)",
-                        "name": "order_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter slip gaji (UUID)",
-                        "name": "gaji_id",
+                        "description": "Filter cabang operasional",
+                        "name": "cabang",
                         "in": "query"
                     },
                     {
@@ -1252,18 +1240,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter tanggal akhir (YYYY-MM-DD)",
                         "name": "date_to",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter metode: cash / transfer / kasbon",
-                        "name": "pembayaran",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter status: lunas / pending / batal",
-                        "name": "status",
                         "in": "query"
                     },
                     {
@@ -3548,10 +3524,10 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateJurnalRequest": {
+        "dto.CreateJurnalItemRequest": {
             "type": "object",
             "required": [
-                "judul",
+                "deskripsi",
                 "nominal",
                 "tipe"
             ],
@@ -3559,17 +3535,17 @@ const docTemplate = `{
                 "catatan": {
                     "type": "string"
                 },
-                "gaji_id": {
+                "deskripsi": {
                     "type": "string"
                 },
-                "judul": {
+                "gaji_id": {
                     "type": "string"
                 },
                 "kategori_id": {
                     "type": "string"
                 },
                 "metode_pembayaran": {
-                    "description": "'cash', 'transfer', 'kasbon'",
+                    "description": "'transfer', 'cash', 'kasbon', 'qris'",
                     "type": "string"
                 },
                 "nominal": {
@@ -3578,20 +3554,39 @@ const docTemplate = `{
                 "order_id": {
                     "type": "string"
                 },
-                "status": {
-                    "description": "'lunas', 'pending', 'batal'",
-                    "type": "string"
-                },
                 "sumber": {
                     "description": "'manual', 'proyek', 'gaji'",
                     "type": "string"
                 },
-                "tanggal": {
-                    "description": "YYYY-MM-DD",
-                    "type": "string"
-                },
                 "tipe": {
                     "description": "'pemasukan' atau 'pengeluaran'",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateJurnalRequest": {
+            "type": "object",
+            "properties": {
+                "cabang": {
+                    "type": "string"
+                },
+                "catatan": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreateJurnalItemRequest"
+                    }
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "'draft', 'lunas'",
+                    "type": "string"
+                },
+                "waktu_transaksi": {
                     "type": "string"
                 }
             }
@@ -4201,7 +4196,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.JurnalResponse": {
+        "dto.JurnalItemResponse": {
             "type": "object",
             "properties": {
                 "amount_numeric": {
@@ -4213,6 +4208,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "deskripsi": {
+                    "type": "string"
+                },
                 "gaji_id": {
                     "type": "string"
                 },
@@ -4222,7 +4220,7 @@ const docTemplate = `{
                 "invoice_no": {
                     "type": "string"
                 },
-                "judul": {
+                "jurnal_id": {
                     "type": "string"
                 },
                 "kategori_id": {
@@ -4231,10 +4229,8 @@ const docTemplate = `{
                 "kode_gaji": {
                     "type": "string"
                 },
-                "kode_jurnal": {
-                    "type": "string"
-                },
                 "metode_pembayaran": {
+                    "description": "'transfer', 'cash', 'kasbon', 'qris'",
                     "type": "string"
                 },
                 "nama_kategori": {
@@ -4246,19 +4242,72 @@ const docTemplate = `{
                 "order_id": {
                     "type": "string"
                 },
-                "status": {
-                    "type": "string"
-                },
                 "sumber": {
-                    "type": "string"
-                },
-                "tanggal": {
+                    "description": "'manual', 'proyek', 'gaji'",
                     "type": "string"
                 },
                 "tipe": {
+                    "description": "'pemasukan' atau 'pengeluaran'",
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.JurnalResponse": {
+            "type": "object",
+            "properties": {
+                "cabang": {
+                    "type": "string"
+                },
+                "catatan": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.JurnalItemResponse"
+                    }
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "kode_jurnal": {
+                    "type": "string"
+                },
+                "numeric_pemasukan": {
+                    "type": "integer"
+                },
+                "numeric_pengeluaran": {
+                    "type": "integer"
+                },
+                "numeric_saldo": {
+                    "type": "integer"
+                },
+                "saldo_bersih": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "'draft', 'lunas', 'batal'",
+                    "type": "string"
+                },
+                "total_pemasukan": {
+                    "type": "string"
+                },
+                "total_pengeluaran": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "waktu_transaksi": {
                     "type": "string"
                 }
             }
@@ -5207,37 +5256,25 @@ const docTemplate = `{
         "dto.UpdateJurnalRequest": {
             "type": "object",
             "properties": {
+                "cabang": {
+                    "type": "string"
+                },
                 "catatan": {
                     "type": "string"
                 },
-                "gaji_id": {
-                    "type": "string"
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreateJurnalItemRequest"
+                    }
                 },
                 "judul": {
-                    "type": "string"
-                },
-                "kategori_id": {
-                    "type": "string"
-                },
-                "metode_pembayaran": {
-                    "type": "string"
-                },
-                "nominal": {
-                    "type": "string"
-                },
-                "order_id": {
                     "type": "string"
                 },
                 "status": {
                     "type": "string"
                 },
-                "sumber": {
-                    "type": "string"
-                },
-                "tanggal": {
-                    "type": "string"
-                },
-                "tipe": {
+                "waktu_transaksi": {
                     "type": "string"
                 }
             }

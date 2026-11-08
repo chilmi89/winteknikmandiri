@@ -3,10 +3,11 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
-  CreditCard,
+  Clock,
   Edit2,
   FileText,
   Receipt,
+  Store,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -20,20 +21,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/dashboard/data-table/StatusBadge";
-import { formatDate } from "@/lib/dashboard/format";
+import { formatDateTime } from "@/lib/dashboard/format";
 import type { JurnalKeuangan } from "@/lib/keuangan";
 
 type JurnalTableProps = {
   data: JurnalKeuangan[];
   loading: boolean;
-  onEdit: (item: JurnalKeuangan) => void;
+  onOpenNote: (item: JurnalKeuangan) => void;
   onDelete: (item: JurnalKeuangan) => void;
 };
 
 export function JurnalTable({
   data,
   loading,
-  onEdit,
+  onOpenNote,
   onDelete,
 }: JurnalTableProps) {
   return (
@@ -41,28 +42,28 @@ export function JurnalTable({
       <Table>
         <TableHeader>
           <TableRow className="border-b border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/50">
-            <TableHead className="w-[120px] text-xs font-semibold text-slate-700">
-              Tanggal
+            <TableHead className="min-w-[160px] text-xs font-bold text-slate-700">
+              Tanggal & Waktu (WIB)
             </TableHead>
-            <TableHead className="w-[130px] text-xs font-semibold text-slate-700">
-              Kode Jurnal
+            <TableHead className="w-[140px] text-xs font-bold text-slate-700">
+              No. Nota
             </TableHead>
-            <TableHead className="min-w-[260px] text-xs font-semibold text-slate-700">
-              Uraian & Kategori
+            <TableHead className="min-w-[260px] text-xs font-bold text-slate-700">
+              Laporan & Rincian
             </TableHead>
-            <TableHead className="w-[130px] text-xs font-semibold text-slate-700">
-              Arus Kas
+            <TableHead className="min-w-[130px] text-xs font-bold text-slate-700">
+              Pemasukan
             </TableHead>
-            <TableHead className="w-[120px] text-xs font-semibold text-slate-700">
-              Metode
+            <TableHead className="min-w-[130px] text-xs font-bold text-slate-700">
+              Pengeluaran
             </TableHead>
-            <TableHead className="min-w-[140px] text-xs font-semibold text-slate-700">
-              Nominal (Rp)
+            <TableHead className="min-w-[140px] text-xs font-bold text-slate-700">
+              Saldo Bersih
             </TableHead>
-            <TableHead className="w-[110px] text-xs font-semibold text-slate-700">
+            <TableHead className="w-[110px] text-xs font-bold text-slate-700">
               Status
             </TableHead>
-            <TableHead className="w-[90px] text-right text-xs font-semibold text-slate-700">
+            <TableHead className="w-[90px] text-right text-xs font-bold text-slate-700">
               Aksi
             </TableHead>
           </TableRow>
@@ -74,7 +75,7 @@ export function JurnalTable({
               <TableCell colSpan={8} className="h-48 text-center text-slate-400">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
-                  <span className="text-xs">Memuat data jurnal kas...</span>
+                  <span className="text-xs">Memuat daftar jurnal transaksi...</span>
                 </div>
               </TableCell>
             </TableRow>
@@ -83,58 +84,58 @@ export function JurnalTable({
               <TableCell colSpan={8} className="h-48 text-center text-slate-400">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <Receipt className="size-9 text-slate-300" />
-                  <p className="text-sm font-medium text-slate-600">
-                    Belum ada transaksi jurnal pada filter ini
+                  <p className="text-sm font-semibold text-slate-700">
+                    Belum ada nota jurnal kas pada filter ini
                   </p>
                   <p className="text-xs text-slate-400">
-                    Sesuaikan filter atau klik tombol <strong>+ Buat Jurnal</strong> untuk mencatat kas.
+                    Klik tombol <strong>+ Catat Transaksi Baru</strong> untuk membuka lembar kas baru.
                   </p>
                 </div>
               </TableCell>
             </TableRow>
           ) : (
             data.map((item) => {
-              const isIncome = item.tipe === "pemasukan";
+              const inNum = item.numeric_pemasukan || 0;
+              const outNum = item.numeric_pengeluaran || 0;
+              const saldoNum = item.numeric_saldo || 0;
+
               return (
                 <TableRow
                   key={item.id}
-                  className="group border-b border-slate-100 transition-colors hover:bg-slate-50/80"
+                  className="group border-b border-slate-100 transition-colors hover:bg-slate-50/80 cursor-pointer"
+                  onClick={() => onOpenNote(item)}
                 >
-                  {/* Tanggal */}
-                  <TableCell className="text-xs text-slate-600 whitespace-nowrap">
-                    {formatDate(item.tanggal)}
+                  {/* Tanggal & Waktu WIB */}
+                  <TableCell className="text-xs text-slate-700 font-medium whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="size-3.5 text-slate-400" />
+                      <span>{formatDateTime(item.waktu_transaksi)}</span>
+                      <span className="text-[10px] font-bold text-slate-400">WIB</span>
+                    </div>
                   </TableCell>
 
                   {/* Kode Jurnal */}
                   <TableCell>
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-800">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-900">
                       {item.kode_jurnal}
                     </span>
                   </TableCell>
 
-                  {/* Uraian & Kategori */}
+                  {/* Laporan & Rincian */}
                   <TableCell>
                     <div className="flex flex-col py-0.5">
-                      <span className="text-sm font-semibold text-slate-900 line-clamp-1">
-                        {item.judul}
+                      <span className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-[#2279cf] transition">
+                        {item.judul || `Rekap Kas ${item.kode_jurnal}`}
                       </span>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                        <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[11px] font-medium text-slate-700">
-                          {item.nama_kategori || "Umum"}
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                          <Store className="size-3 text-slate-400" />
+                          {item.cabang || "Workshop Pusat Kediri"}
                         </span>
-
-                        {item.sumber === "proyek" && item.invoice_no && (
-                          <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.2 text-[10px] font-semibold text-blue-700 border border-blue-200">
-                            Proyek: {item.invoice_no}
-                          </span>
-                        )}
-
-                        {item.sumber === "gaji" && item.kode_gaji && (
-                          <span className="inline-flex items-center gap-1 rounded bg-purple-50 px-1.5 py-0.2 text-[10px] font-semibold text-purple-700 border border-purple-200">
-                            Gaji: {item.kode_gaji}
-                          </span>
-                        )}
-
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[11px] font-semibold text-slate-600">
+                          {item.items ? item.items.length : 0} transaksi
+                        </span>
                         {item.catatan && (
                           <span className="text-[11px] text-slate-400 italic truncate max-w-[200px]">
                             — {item.catatan}
@@ -144,43 +145,28 @@ export function JurnalTable({
                     </div>
                   </TableCell>
 
-                  {/* Arus Kas */}
+                  {/* Total Pemasukan */}
                   <TableCell>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold border ${
-                        isIncome
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-rose-50 text-rose-700 border-rose-200"
-                      }`}
-                    >
-                      {isIncome ? (
-                        <ArrowDownRight className="size-3.5" />
-                      ) : (
-                        <ArrowUpRight className="size-3.5" />
-                      )}
-                      {isIncome ? "Pemasukan" : "Pengeluaran"}
+                    <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">
+                      {item.total_pemasukan || "Rp 0"}
                     </span>
                   </TableCell>
 
-                  {/* Metode Pembayaran */}
+                  {/* Total Pengeluaran */}
                   <TableCell>
-                    <span className="text-xs font-medium text-slate-700 capitalize">
-                      {item.metode_pembayaran === "transfer"
-                        ? "Transfer"
-                        : item.metode_pembayaran === "cash"
-                        ? "Tunai"
-                        : "Kasbon"}
+                    <span className="text-xs font-bold text-rose-600 whitespace-nowrap">
+                      {item.total_pengeluaran || "Rp 0"}
                     </span>
                   </TableCell>
 
-                  {/* Nominal */}
+                  {/* Saldo Bersih */}
                   <TableCell>
                     <span
-                      className={`text-sm font-bold whitespace-nowrap ${
-                        isIncome ? "text-emerald-600" : "text-rose-600"
+                      className={`text-xs font-black whitespace-nowrap ${
+                        saldoNum >= 0 ? "text-slate-900" : "text-rose-600"
                       }`}
                     >
-                      {isIncome ? `+ ${item.nominal}` : `- ${item.nominal}`}
+                      {item.saldo_bersih || "Rp 0"}
                     </span>
                   </TableCell>
 
@@ -189,19 +175,19 @@ export function JurnalTable({
                     {item.status === "lunas" ? (
                       <StatusBadge tone="success">Lunas</StatusBadge>
                     ) : (
-                      <StatusBadge tone="warning">Pending</StatusBadge>
+                      <StatusBadge tone="warning">Draft</StatusBadge>
                     )}
                   </TableCell>
 
                   {/* Aksi */}
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(item)}
-                        title="Edit Jurnal"
+                        onClick={() => onOpenNote(item)}
+                        title="Buka Lembar Transaksi"
                         className="size-8 p-0 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       >
                         <Edit2 className="size-3.5" />
@@ -211,7 +197,7 @@ export function JurnalTable({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(item)}
-                        title="Hapus Jurnal"
+                        title="Hapus Nota"
                         className="size-8 p-0 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
                       >
                         <Trash2 className="size-3.5" />

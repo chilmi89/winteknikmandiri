@@ -14,7 +14,7 @@ import (
 	"winteknikmandiri-backend/keuangan/model"
 )
 
-// KeuanganRepository menangani query PostgreSQL untuk kategori_keuangan dan jurnal_keuangan.
+// KeuanganRepository menangani query PostgreSQL untuk kategori_keuangan, jurnal_keuangan, dan jurnal_items.
 type KeuanganRepository struct {
 	db *sql.DB
 }
@@ -26,7 +26,6 @@ func NewKeuanganRepository(db *sql.DB) *KeuanganRepository {
 
 // ---------- 1. MASTER KATEGORI KEUANGAN ----------
 
-// ListKategori mengambil daftar kategori keuangan (opsional filter tipe pemasukan/pengeluaran).
 func (r *KeuanganRepository) ListKategori(ctx context.Context, tipe string) ([]model.KategoriKeuangan, error) {
 	query := `
 		SELECT id, nama_kategori, tipe, deskripsi, is_system, created_at, updated_at
@@ -57,7 +56,6 @@ func (r *KeuanganRepository) ListKategori(ctx context.Context, tipe string) ([]m
 	return items, rows.Err()
 }
 
-// GetKategoriByID mengambil satu kategori berdasarkan ID.
 func (r *KeuanganRepository) GetKategoriByID(ctx context.Context, id uuid.UUID) (*model.KategoriKeuangan, error) {
 	query := `
 		SELECT id, nama_kategori, tipe, deskripsi, is_system, created_at, updated_at
@@ -75,7 +73,6 @@ func (r *KeuanganRepository) GetKategoriByID(ctx context.Context, id uuid.UUID) 
 	return &k, nil
 }
 
-// CreateKategori membuat kategori keuangan baru.
 func (r *KeuanganRepository) CreateKategori(ctx context.Context, req dto.CreateKategoriRequest) (*model.KategoriKeuangan, error) {
 	query := `
 		INSERT INTO kategori_keuangan (nama_kategori, tipe, deskripsi, is_system)
@@ -92,7 +89,6 @@ func (r *KeuanganRepository) CreateKategori(ctx context.Context, req dto.CreateK
 	return &k, nil
 }
 
-// UpdateKategori memperbarui nama atau deskripsi kategori.
 func (r *KeuanganRepository) UpdateKategori(ctx context.Context, current *model.KategoriKeuangan, req dto.UpdateKategoriRequest) (*model.KategoriKeuangan, error) {
 	nama := current.NamaKategori
 	if req.NamaKategori != nil {
@@ -123,7 +119,6 @@ func (r *KeuanganRepository) UpdateKategori(ctx context.Context, current *model.
 	return &k, nil
 }
 
-// DeleteKategori menghapus kategori keuangan (soft delete).
 func (r *KeuanganRepository) DeleteKategori(ctx context.Context, id uuid.UUID) (bool, error) {
 	query := `UPDATE kategori_keuangan SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1::uuid AND deleted_at IS NULL`
 	res, err := r.db.ExecContext(ctx, query, id)
@@ -134,7 +129,7 @@ func (r *KeuanganRepository) DeleteKategori(ctx context.Context, id uuid.UUID) (
 	return affected > 0, err
 }
 
-// ---------- 2. BUKU KAS & JURNAL KEUANGAN ----------
+// ---------- 2. BUKU KAS & JURNAL KEUANGAN (HEADER - ITEMS) ----------
 
 // GenerateKodeJurnal membuat format JRN-YYMM-XXXX.
 func (r *KeuanganRepository) GenerateKodeJurnal(ctx context.Context) (string, error) {
@@ -148,18 +143,14 @@ func (r *KeuanganRepository) GenerateKodeJurnal(ctx context.Context) (string, er
 	return fmt.Sprintf("JRN-%s-%04d", prefix, count+1), nil
 }
 
-// ListJurnal mengambil daftar transaksi jurnal dengan filter dinamis, pagination, dan summary total.
+// ListJurnal mengambil daftar nota kas dengan summary total & pagination.
 func (r *KeuanganRepository) ListJurnal(
 	ctx context.Context,
 	search string,
-	tipe string,
-	kategoriID string,
-	orderID string,
-	gajiID string,
+	status string,
+	cabang string,
 	dateFrom string,
 	dateTo string,
-	pembayaran string,
-	status string,
 	sortBy string,
 	sortDir string,
 	page int,
@@ -177,57 +168,27 @@ func (r *KeuanganRepository) ListJurnal(
 	var args []any
 	argIdx := 1
 
-	if tipe != "" && tipe != "all" {
-		whereClause += fmt.Sprintf(" AND j.tipe = $%d", argIdx)
-		args = append(args, tipe)
+	if status != "" && status != "all" {
+		whereClause += fmt.Sprintf(" AND j.status = $%d", argIdx)
+		args = append(args, status)
 		argIdx++
 	}
 
-	if kategoriID != "" && kategoriID != "all" {
-		if parsed, err := uuid.Parse(kategoriID); err == nil {
-			whereClause += fmt.Sprintf(" AND j.kategori_id = $%d::uuid", argIdx)
-			args = append(args, parsed)
-			argIdx++
-		}
-	}
-
-	if orderID != "" && orderID != "all" {
-		if parsed, err := uuid.Parse(orderID); err == nil {
-			whereClause += fmt.Sprintf(" AND j.order_id = $%d::uuid", argIdx)
-			args = append(args, parsed)
-			argIdx++
-		}
-	}
-
-	if gajiID != "" && gajiID != "all" {
-		if parsed, err := uuid.Parse(gajiID); err == nil {
-			whereClause += fmt.Sprintf(" AND j.gaji_id = $%d::uuid", argIdx)
-			args = append(args, parsed)
-			argIdx++
-		}
+	if cabang != "" && cabang != "all" {
+		whereClause += fmt.Sprintf(" AND j.cabang = $%d", argIdx)
+		args = append(args, cabang)
+		argIdx++
 	}
 
 	if dateFrom != "" {
-		whereClause += fmt.Sprintf(" AND j.tanggal >= $%d::date", argIdx)
+		whereClause += fmt.Sprintf(" AND DATE(j.waktu_transaksi) >= $%d::date", argIdx)
 		args = append(args, dateFrom)
 		argIdx++
 	}
 
 	if dateTo != "" {
-		whereClause += fmt.Sprintf(" AND j.tanggal <= $%d::date", argIdx)
+		whereClause += fmt.Sprintf(" AND DATE(j.waktu_transaksi) <= $%d::date", argIdx)
 		args = append(args, dateTo)
-		argIdx++
-	}
-
-	if pembayaran != "" && pembayaran != "all" {
-		whereClause += fmt.Sprintf(" AND j.metode_pembayaran = $%d", argIdx)
-		args = append(args, pembayaran)
-		argIdx++
-	}
-
-	if status != "" && status != "all" {
-		whereClause += fmt.Sprintf(" AND j.status = $%d", argIdx)
-		args = append(args, status)
 		argIdx++
 	}
 
@@ -236,25 +197,19 @@ func (r *KeuanganRepository) ListJurnal(
 		whereClause += fmt.Sprintf(` AND (
 			j.kode_jurnal ILIKE $%d OR
 			j.judul ILIKE $%d OR
-			j.catatan ILIKE $%d OR
-			COALESCE(k.nama_kategori, '') ILIKE $%d OR
-			COALESCE(o.invoice_no, '') ILIKE $%d OR
-			COALESCE(g.kode_gaji, '') ILIKE $%d
-		)`, argIdx, argIdx, argIdx, argIdx, argIdx, argIdx)
+			j.catatan ILIKE $%d
+		)`, argIdx, argIdx, argIdx)
 		args = append(args, s)
 		argIdx++
 	}
 
-	// 1. Hitung Total & Summary Akumulasi (Pemasukan, Pengeluaran)
+	// Hitung Summary Akumulasi (Pemasukan, Pengeluaran, Total)
 	summaryQuery := fmt.Sprintf(`
 		SELECT
 			COUNT(DISTINCT j.id),
-			COALESCE(SUM(CASE WHEN j.tipe = 'pemasukan' AND j.status != 'batal' THEN j.amount_numeric ELSE 0 END), 0) as total_in,
-			COALESCE(SUM(CASE WHEN j.tipe = 'pengeluaran' AND j.status != 'batal' THEN j.amount_numeric ELSE 0 END), 0) as total_out
+			COALESCE(SUM(j.numeric_pemasukan), 0),
+			COALESCE(SUM(j.numeric_pengeluaran), 0)
 		FROM jurnal_keuangan j
-		LEFT JOIN kategori_keuangan k ON j.kategori_id = k.id
-		LEFT JOIN orders o ON j.order_id = o.id
-		LEFT JOIN gaji g ON j.gaji_id = g.id
 		%s
 	`, whereClause)
 
@@ -265,35 +220,29 @@ func (r *KeuanganRepository) ListJurnal(
 		return nil, 0, 0, 0, fmt.Errorf("summary jurnal: %w", err)
 	}
 
-	// 2. Sorting clause
-	orderBy := "j.tanggal DESC, j.created_at DESC"
+	// Sorting
+	orderBy := "j.waktu_transaksi DESC, j.created_at DESC"
 	dir := "DESC"
 	if strings.ToUpper(sortDir) == "ASC" {
 		dir = "ASC"
 	}
 	switch sortBy {
-	case "tanggal":
-		orderBy = fmt.Sprintf("j.tanggal %s, j.created_at %s", dir, dir)
-	case "nominal":
-		orderBy = fmt.Sprintf("j.amount_numeric %s", dir)
+	case "tanggal", "waktu":
+		orderBy = fmt.Sprintf("j.waktu_transaksi %s", dir)
+	case "nominal", "saldo":
+		orderBy = fmt.Sprintf("j.numeric_saldo %s", dir)
 	case "judul":
 		orderBy = fmt.Sprintf("j.judul %s", dir)
 	}
 
-	// 3. Query Data Halaman Ini
+	// Query Nota
 	dataQuery := fmt.Sprintf(`
 		SELECT
-			j.id, j.kode_jurnal, j.tipe, j.judul,
-			j.kategori_id, COALESCE(k.nama_kategori, 'Umum') as nama_kategori,
-			j.metode_pembayaran, j.nominal, j.amount_numeric, j.status,
-			TO_CHAR(j.tanggal, 'YYYY-MM-DD') as tanggal, j.sumber,
-			j.order_id, COALESCE(o.invoice_no, '') as invoice_no,
-			j.gaji_id, COALESCE(g.kode_gaji, '') as kode_gaji,
+			j.id, j.kode_jurnal, j.judul, j.waktu_transaksi, j.cabang, j.status,
+			j.total_pemasukan, j.total_pengeluaran, j.saldo_bersih,
+			j.numeric_pemasukan, j.numeric_pengeluaran, j.numeric_saldo,
 			j.catatan, j.created_at, j.updated_at
 		FROM jurnal_keuangan j
-		LEFT JOIN kategori_keuangan k ON j.kategori_id = k.id
-		LEFT JOIN orders o ON j.order_id = o.id
-		LEFT JOIN gaji g ON j.gaji_id = g.id
 		%s
 		ORDER BY %s
 		LIMIT $%d OFFSET $%d
@@ -311,12 +260,9 @@ func (r *KeuanganRepository) ListJurnal(
 	for rows.Next() {
 		var it model.JurnalKeuangan
 		if err := rows.Scan(
-			&it.ID, &it.KodeJurnal, &it.Tipe, &it.Judul,
-			&it.KategoriID, &it.NamaKategori,
-			&it.MetodePembayaran, &it.Nominal, &it.AmountNumeric, &it.Status,
-			&it.Tanggal, &it.Sumber,
-			&it.OrderID, &it.InvoiceNo,
-			&it.GajiID, &it.KodeGaji,
+			&it.ID, &it.KodeJurnal, &it.Judul, &it.WaktuTransaksi, &it.Cabang, &it.Status,
+			&it.TotalPemasukan, &it.TotalPengeluaran, &it.SaldoBersih,
+			&it.NumericPemasukan, &it.NumericPengeluaran, &it.NumericSaldo,
 			&it.Catatan, &it.CreatedAt, &it.UpdatedAt,
 		); err != nil {
 			return nil, 0, 0, 0, err
@@ -324,34 +270,76 @@ func (r *KeuanganRepository) ListJurnal(
 		items = append(items, it)
 	}
 
+	// Batch-load items untuk setiap nota yang ada di halaman ini
+	if len(items) > 0 {
+		jurnalIDs := make([]any, len(items))
+		placeholders := make([]string, len(items))
+		for i, it := range items {
+			jurnalIDs[i] = it.ID
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+		}
+
+		itemQuery := fmt.Sprintf(`
+			SELECT
+				ji.id, ji.jurnal_id, ji.tipe, ji.deskripsi,
+				ji.kategori_id, COALESCE(k.nama_kategori, 'Umum') as nama_kategori,
+				ji.metode_pembayaran, ji.nominal, ji.amount_numeric,
+				ji.sumber, ji.order_id, COALESCE(o.invoice_no, '') as invoice_no,
+				ji.gaji_id, COALESCE(g.kode_gaji, '') as kode_gaji,
+				ji.catatan, ji.created_at, ji.updated_at
+			FROM jurnal_items ji
+			LEFT JOIN kategori_keuangan k ON ji.kategori_id = k.id
+			LEFT JOIN orders o ON ji.order_id = o.id
+			LEFT JOIN gaji g ON ji.gaji_id = g.id
+			WHERE ji.jurnal_id IN (%s)
+			ORDER BY ji.created_at ASC
+		`, strings.Join(placeholders, ","))
+
+		itemRows, err := r.db.QueryContext(ctx, itemQuery, jurnalIDs...)
+		if err == nil {
+			defer itemRows.Close()
+			itemMap := make(map[uuid.UUID][]model.JurnalItem)
+			for itemRows.Next() {
+				var itm model.JurnalItem
+				if err := itemRows.Scan(
+					&itm.ID, &itm.JurnalID, &itm.Tipe, &itm.Deskripsi,
+					&itm.KategoriID, &itm.NamaKategori,
+					&itm.MetodePembayaran, &itm.Nominal, &itm.AmountNumeric,
+					&itm.Sumber, &itm.OrderID, &itm.InvoiceNo,
+					&itm.GajiID, &itm.KodeGaji,
+					&itm.Catatan, &itm.CreatedAt, &itm.UpdatedAt,
+				); err == nil {
+					itemMap[itm.JurnalID] = append(itemMap[itm.JurnalID], itm)
+				}
+			}
+			for i := range items {
+				items[i].Items = itemMap[items[i].ID]
+				if items[i].Items == nil {
+					items[i].Items = make([]model.JurnalItem, 0)
+				}
+			}
+		}
+	}
+
 	return items, totalCount, totalIn, totalOut, rows.Err()
 }
 
-// GetJurnalByID mengambil satu transaksi jurnal lengkap dengan relasinya.
+// GetJurnalByID mengambil satu nota jurnal kas lengkap beserta baris-baris rinciannya.
 func (r *KeuanganRepository) GetJurnalByID(ctx context.Context, id uuid.UUID) (*model.JurnalKeuangan, error) {
 	query := `
 		SELECT
-			j.id, j.kode_jurnal, j.tipe, j.judul,
-			j.kategori_id, COALESCE(k.nama_kategori, 'Umum') as nama_kategori,
-			j.metode_pembayaran, j.nominal, j.amount_numeric, j.status,
-			TO_CHAR(j.tanggal, 'YYYY-MM-DD') as tanggal, j.sumber,
-			j.order_id, COALESCE(o.invoice_no, '') as invoice_no,
-			j.gaji_id, COALESCE(g.kode_gaji, '') as kode_gaji,
+			j.id, j.kode_jurnal, j.judul, j.waktu_transaksi, j.cabang, j.status,
+			j.total_pemasukan, j.total_pengeluaran, j.saldo_bersih,
+			j.numeric_pemasukan, j.numeric_pengeluaran, j.numeric_saldo,
 			j.catatan, j.created_at, j.updated_at
 		FROM jurnal_keuangan j
-		LEFT JOIN kategori_keuangan k ON j.kategori_id = k.id
-		LEFT JOIN orders o ON j.order_id = o.id
-		LEFT JOIN gaji g ON j.gaji_id = g.id
 		WHERE j.id = $1::uuid AND j.deleted_at IS NULL
 	`
 	var it model.JurnalKeuangan
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&it.ID, &it.KodeJurnal, &it.Tipe, &it.Judul,
-		&it.KategoriID, &it.NamaKategori,
-		&it.MetodePembayaran, &it.Nominal, &it.AmountNumeric, &it.Status,
-		&it.Tanggal, &it.Sumber,
-		&it.OrderID, &it.InvoiceNo,
-		&it.GajiID, &it.KodeGaji,
+		&it.ID, &it.KodeJurnal, &it.Judul, &it.WaktuTransaksi, &it.Cabang, &it.Status,
+		&it.TotalPemasukan, &it.TotalPengeluaran, &it.SaldoBersih,
+		&it.NumericPemasukan, &it.NumericPengeluaran, &it.NumericSaldo,
 		&it.Catatan, &it.CreatedAt, &it.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -360,129 +348,204 @@ func (r *KeuanganRepository) GetJurnalByID(ctx context.Context, id uuid.UUID) (*
 	if err != nil {
 		return nil, err
 	}
+
+	// Ambil rincian items
+	itemQuery := `
+		SELECT
+			ji.id, ji.jurnal_id, ji.tipe, ji.deskripsi,
+			ji.kategori_id, COALESCE(k.nama_kategori, 'Umum') as nama_kategori,
+			ji.metode_pembayaran, ji.nominal, ji.amount_numeric,
+			ji.sumber, ji.order_id, COALESCE(o.invoice_no, '') as invoice_no,
+			ji.gaji_id, COALESCE(g.kode_gaji, '') as kode_gaji,
+			ji.catatan, ji.created_at, ji.updated_at
+		FROM jurnal_items ji
+		LEFT JOIN kategori_keuangan k ON ji.kategori_id = k.id
+		LEFT JOIN orders o ON ji.order_id = o.id
+		LEFT JOIN gaji g ON ji.gaji_id = g.id
+		WHERE ji.jurnal_id = $1::uuid
+		ORDER BY ji.created_at ASC
+	`
+	rows, err := r.db.QueryContext(ctx, itemQuery, it.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	it.Items = make([]model.JurnalItem, 0)
+	for rows.Next() {
+		var itm model.JurnalItem
+		if err := rows.Scan(
+			&itm.ID, &itm.JurnalID, &itm.Tipe, &itm.Deskripsi,
+			&itm.KategoriID, &itm.NamaKategori,
+			&itm.MetodePembayaran, &itm.Nominal, &itm.AmountNumeric,
+			&itm.Sumber, &itm.OrderID, &itm.InvoiceNo,
+			&itm.GajiID, &itm.KodeGaji,
+			&itm.Catatan, &itm.CreatedAt, &itm.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		it.Items = append(it.Items, itm)
+	}
+
 	return &it, nil
 }
 
-// CreateJurnal membuat entri transaksi jurnal baru.
+// CreateJurnal membuat nota kas baru beserta rincian barisnya dalam 1 transaksi DB.
 func (r *KeuanganRepository) CreateJurnal(
 	ctx context.Context,
 	kodeJurnal string,
-	amountNumeric int64,
-	kategoriUUID *uuid.UUID,
-	orderUUID *uuid.UUID,
-	gajiUUID *uuid.UUID,
-	req dto.CreateJurnalRequest,
+	judul string,
+	waktuTransaksi time.Time,
+	cabang string,
+	status string,
+	catatan string,
+	items []model.JurnalItem,
+	totInStr string,
+	totOutStr string,
+	saldoStr string,
+	numIn int64,
+	numOut int64,
+	numSaldo int64,
 ) (*model.JurnalKeuangan, error) {
-	status := req.Status
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if cabang == "" {
+		cabang = "Workshop Pusat Kediri"
+	}
 	if status == "" {
-		status = "lunas"
+		status = "draft"
 	}
-	pembayaran := req.MetodePembayaran
-	if pembayaran == "" {
-		pembayaran = "transfer"
-	}
-	tanggal := req.Tanggal
-	if tanggal == "" {
-		tanggal = time.Now().Format("2006-01-02")
-	}
-	sumber := req.Sumber
-	if sumber == "" {
-		sumber = "manual"
+	if judul == "" {
+		judul = fmt.Sprintf("Rekap Kas %s", waktuTransaksi.Format("02 Jan 2006"))
 	}
 
 	query := `
 		INSERT INTO jurnal_keuangan (
-			kode_jurnal, tipe, judul, kategori_id, metode_pembayaran,
-			nominal, amount_numeric, status, tanggal, sumber,
-			order_id, gaji_id, catatan
+			kode_jurnal, judul, waktu_transaksi, cabang, status,
+			total_pemasukan, total_pengeluaran, saldo_bersih,
+			numeric_pemasukan, numeric_pengeluaran, numeric_saldo, catatan
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10, $11, $12, $13)
-		RETURNING id, kode_jurnal, tipe, judul, kategori_id, metode_pembayaran,
-		          nominal, amount_numeric, status, TO_CHAR(tanggal, 'YYYY-MM-DD'), sumber,
-		          order_id, gaji_id, catatan, created_at, updated_at
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id
 	`
-	var it model.JurnalKeuangan
-	err := r.db.QueryRowContext(
+	var id uuid.UUID
+	err = tx.QueryRowContext(
 		ctx, query,
-		kodeJurnal, req.Tipe, req.Judul, kategoriUUID, pembayaran,
-		req.Nominal, amountNumeric, status, tanggal, sumber,
-		orderUUID, gajiUUID, req.Catatan,
-	).Scan(
-		&it.ID, &it.KodeJurnal, &it.Tipe, &it.Judul, &it.KategoriID, &it.MetodePembayaran,
-		&it.Nominal, &it.AmountNumeric, &it.Status, &it.Tanggal, &it.Sumber,
-		&it.OrderID, &it.GajiID, &it.Catatan, &it.CreatedAt, &it.UpdatedAt,
-	)
+		kodeJurnal, judul, waktuTransaksi, cabang, status,
+		totInStr, totOutStr, saldoStr,
+		numIn, numOut, numSaldo, catatan,
+	).Scan(&id)
 	if err != nil {
-		return nil, fmt.Errorf("insert jurnal: %w", err)
+		return nil, fmt.Errorf("insert header jurnal: %w", err)
 	}
 
-	return r.GetJurnalByID(ctx, it.ID)
+	// Insert Items
+	itemQuery := `
+		INSERT INTO jurnal_items (
+			jurnal_id, tipe, deskripsi, kategori_id, metode_pembayaran,
+			nominal, amount_numeric, sumber, order_id, gaji_id, catatan
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`
+	for _, itm := range items {
+		_, err = tx.ExecContext(
+			ctx, itemQuery,
+			id, itm.Tipe, itm.Deskripsi, itm.KategoriID, itm.MetodePembayaran,
+			itm.Nominal, itm.AmountNumeric, itm.Sumber, itm.OrderID, itm.GajiID, itm.Catatan,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("insert jurnal_items: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.GetJurnalByID(ctx, id)
 }
 
-// UpdateJurnal memperbarui entri transaksi jurnal kas.
+// UpdateJurnal memperbarui nota kas dan menyinkronkan rincian barisnya dalam 1 transaksi DB.
 func (r *KeuanganRepository) UpdateJurnal(
 	ctx context.Context,
 	current *model.JurnalKeuangan,
-	amountNumeric int64,
-	kategoriUUID *uuid.UUID,
-	orderUUID *uuid.UUID,
-	gajiUUID *uuid.UUID,
-	req dto.UpdateJurnalRequest,
+	judul string,
+	waktuTransaksi time.Time,
+	cabang string,
+	status string,
+	catatan string,
+	items *[]model.JurnalItem,
+	totInStr string,
+	totOutStr string,
+	saldoStr string,
+	numIn int64,
+	numOut int64,
+	numSaldo int64,
 ) (*model.JurnalKeuangan, error) {
-	tipe := current.Tipe
-	if req.Tipe != nil {
-		tipe = *req.Tipe
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	judul := current.Judul
-	if req.Judul != nil {
-		judul = *req.Judul
-	}
-	pembayaran := current.MetodePembayaran
-	if req.MetodePembayaran != nil {
-		pembayaran = *req.MetodePembayaran
-	}
-	nominal := current.Nominal
-	if req.Nominal != nil {
-		nominal = *req.Nominal
-	}
-	status := current.Status
-	if req.Status != nil {
-		status = *req.Status
-	}
-	tanggal := current.Tanggal
-	if req.Tanggal != nil {
-		tanggal = *req.Tanggal
-	}
-	sumber := current.Sumber
-	if req.Sumber != nil {
-		sumber = *req.Sumber
-	}
-	catatan := current.Catatan
-	if req.Catatan != nil {
-		catatan = *req.Catatan
-	}
+	defer tx.Rollback()
 
 	query := `
 		UPDATE jurnal_keuangan
-		SET tipe = $1, judul = $2, kategori_id = $3, metode_pembayaran = $4,
-		    nominal = $5, amount_numeric = $6, status = $7, tanggal = $8::date,
-		    sumber = $9, order_id = $10, gaji_id = $11, catatan = $12, updated_at = NOW()
-		WHERE id = $13::uuid AND deleted_at IS NULL
+		SET judul = $1, waktu_transaksi = $2, cabang = $3, status = $4,
+		    total_pemasukan = $5, total_pengeluaran = $6, saldo_bersih = $7,
+		    numeric_pemasukan = $8, numeric_pengeluaran = $9, numeric_saldo = $10,
+		    catatan = $11, updated_at = NOW()
+		WHERE id = $12::uuid AND deleted_at IS NULL
 	`
-	_, err := r.db.ExecContext(
+	_, err = tx.ExecContext(
 		ctx, query,
-		tipe, judul, kategoriUUID, pembayaran,
-		nominal, amountNumeric, status, tanggal,
-		sumber, orderUUID, gajiUUID, catatan, current.ID,
+		judul, waktuTransaksi, cabang, status,
+		totInStr, totOutStr, saldoStr,
+		numIn, numOut, numSaldo,
+		catatan, current.ID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("update jurnal: %w", err)
+		return nil, fmt.Errorf("update header jurnal: %w", err)
+	}
+
+	if items != nil {
+		// Hapus item lama
+		_, err = tx.ExecContext(ctx, `DELETE FROM jurnal_items WHERE jurnal_id = $1::uuid`, current.ID)
+		if err != nil {
+			return nil, fmt.Errorf("delete old items: %w", err)
+		}
+
+		// Insert item baru
+		itemQuery := `
+			INSERT INTO jurnal_items (
+				jurnal_id, tipe, deskripsi, kategori_id, metode_pembayaran,
+				nominal, amount_numeric, sumber, order_id, gaji_id, catatan
+			)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		`
+		for _, itm := range *items {
+			_, err = tx.ExecContext(
+				ctx, itemQuery,
+				current.ID, itm.Tipe, itm.Deskripsi, itm.KategoriID, itm.MetodePembayaran,
+				itm.Nominal, itm.AmountNumeric, itm.Sumber, itm.OrderID, itm.GajiID, itm.Catatan,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("insert new items: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return r.GetJurnalByID(ctx, current.ID)
 }
 
-// DeleteJurnal soft-delete satu transaksi jurnal keuangan.
+// DeleteJurnal soft-delete nota kas beserta seluruh rinciannya.
 func (r *KeuanganRepository) DeleteJurnal(ctx context.Context, id uuid.UUID) (bool, error) {
 	query := `UPDATE jurnal_keuangan SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1::uuid AND deleted_at IS NULL`
 	res, err := r.db.ExecContext(ctx, query, id)

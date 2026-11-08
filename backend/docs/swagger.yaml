@@ -233,39 +233,51 @@ definitions:
     - day_label
     - hours
     type: object
-  dto.CreateJurnalRequest:
+  dto.CreateJurnalItemRequest:
     properties:
       catatan:
         type: string
-      gaji_id:
+      deskripsi:
         type: string
-      judul:
+      gaji_id:
         type: string
       kategori_id:
         type: string
       metode_pembayaran:
-        description: '''cash'', ''transfer'', ''kasbon'''
+        description: '''transfer'', ''cash'', ''kasbon'', ''qris'''
         type: string
       nominal:
         type: string
       order_id:
         type: string
-      status:
-        description: '''lunas'', ''pending'', ''batal'''
-        type: string
       sumber:
         description: '''manual'', ''proyek'', ''gaji'''
-        type: string
-      tanggal:
-        description: YYYY-MM-DD
         type: string
       tipe:
         description: '''pemasukan'' atau ''pengeluaran'''
         type: string
     required:
-    - judul
+    - deskripsi
     - nominal
     - tipe
+    type: object
+  dto.CreateJurnalRequest:
+    properties:
+      cabang:
+        type: string
+      catatan:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateJurnalItemRequest'
+        type: array
+      judul:
+        type: string
+      status:
+        description: '''draft'', ''lunas'''
+        type: string
+      waktu_transaksi:
+        type: string
     type: object
   dto.CreateKategoriRequest:
     properties:
@@ -681,7 +693,7 @@ definitions:
       message:
         type: string
     type: object
-  dto.JurnalResponse:
+  dto.JurnalItemResponse:
     properties:
       amount_numeric:
         type: integer
@@ -689,21 +701,22 @@ definitions:
         type: string
       created_at:
         type: string
+      deskripsi:
+        type: string
       gaji_id:
         type: string
       id:
         type: string
       invoice_no:
         type: string
-      judul:
+      jurnal_id:
         type: string
       kategori_id:
         type: string
       kode_gaji:
         type: string
-      kode_jurnal:
-        type: string
       metode_pembayaran:
+        description: '''transfer'', ''cash'', ''kasbon'', ''qris'''
         type: string
       nama_kategori:
         type: string
@@ -711,15 +724,51 @@ definitions:
         type: string
       order_id:
         type: string
-      status:
-        type: string
       sumber:
-        type: string
-      tanggal:
+        description: '''manual'', ''proyek'', ''gaji'''
         type: string
       tipe:
+        description: '''pemasukan'' atau ''pengeluaran'''
         type: string
       updated_at:
+        type: string
+    type: object
+  dto.JurnalResponse:
+    properties:
+      cabang:
+        type: string
+      catatan:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.JurnalItemResponse'
+        type: array
+      judul:
+        type: string
+      kode_jurnal:
+        type: string
+      numeric_pemasukan:
+        type: integer
+      numeric_pengeluaran:
+        type: integer
+      numeric_saldo:
+        type: integer
+      saldo_bersih:
+        type: string
+      status:
+        description: '''draft'', ''lunas'', ''batal'''
+        type: string
+      total_pemasukan:
+        type: string
+      total_pengeluaran:
+        type: string
+      updated_at:
+        type: string
+      waktu_transaksi:
         type: string
     type: object
   dto.KatalogMessageResponse:
@@ -1359,27 +1408,19 @@ definitions:
     type: object
   dto.UpdateJurnalRequest:
     properties:
+      cabang:
+        type: string
       catatan:
         type: string
-      gaji_id:
-        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateJurnalItemRequest'
+        type: array
       judul:
-        type: string
-      kategori_id:
-        type: string
-      metode_pembayaran:
-        type: string
-      nominal:
-        type: string
-      order_id:
         type: string
       status:
         type: string
-      sumber:
-        type: string
-      tanggal:
-        type: string
-      tipe:
+      waktu_transaksi:
         type: string
     type: object
   dto.UpdateKategoriRequest:
@@ -2415,21 +2456,13 @@ paths:
         in: query
         name: search
         type: string
-      - description: 'Filter tipe: pemasukan / pengeluaran'
+      - description: 'Filter status: draft / lunas / batal'
         in: query
-        name: tipe
+        name: status
         type: string
-      - description: Filter kategori (UUID)
+      - description: Filter cabang operasional
         in: query
-        name: kategori_id
-        type: string
-      - description: Filter proyek / invoice (UUID)
-        in: query
-        name: order_id
-        type: string
-      - description: Filter slip gaji (UUID)
-        in: query
-        name: gaji_id
+        name: cabang
         type: string
       - description: Filter tanggal mulai (YYYY-MM-DD)
         in: query
@@ -2438,14 +2471,6 @@ paths:
       - description: Filter tanggal akhir (YYYY-MM-DD)
         in: query
         name: date_to
-        type: string
-      - description: 'Filter metode: cash / transfer / kasbon'
-        in: query
-        name: pembayaran
-        type: string
-      - description: 'Filter status: lunas / pending / batal'
-        in: query
-        name: status
         type: string
       - description: 'Sort by: tanggal / nominal / judul'
         in: query

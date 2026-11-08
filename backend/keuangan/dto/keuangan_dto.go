@@ -27,20 +27,18 @@ type UpdateKategoriRequest struct {
 	Deskripsi    *string `json:"deskripsi"`
 }
 
-// JurnalResponse representasi JSON data transaksi jurnal keuangan.
-type JurnalResponse struct {
+// JurnalItemResponse data satu baris rincian transaksi di dalam nota kas.
+type JurnalItemResponse struct {
 	ID               string    `json:"id"`
-	KodeJurnal       string    `json:"kode_jurnal"`
-	Tipe             string    `json:"tipe"`
-	Judul            string    `json:"judul"`
+	JurnalID         string    `json:"jurnal_id"`
+	Tipe             string    `json:"tipe"` // 'pemasukan' atau 'pengeluaran'
+	Deskripsi        string    `json:"deskripsi"`
 	KategoriID       *string   `json:"kategori_id,omitempty"`
 	NamaKategori     string    `json:"nama_kategori"`
-	MetodePembayaran string    `json:"metode_pembayaran"`
+	MetodePembayaran string    `json:"metode_pembayaran"` // 'transfer', 'cash', 'kasbon', 'qris'
 	Nominal          string    `json:"nominal"`
 	AmountNumeric    int64     `json:"amount_numeric"`
-	Status           string    `json:"status"`
-	Tanggal          string    `json:"tanggal"`
-	Sumber           string    `json:"sumber"`
+	Sumber           string    `json:"sumber"` // 'manual', 'proyek', 'gaji'
 	OrderID          *string   `json:"order_id,omitempty"`
 	InvoiceNo        string    `json:"invoice_no,omitempty"`
 	GajiID           *string   `json:"gaji_id,omitempty"`
@@ -50,48 +48,71 @@ type JurnalResponse struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
-// CreateJurnalRequest payload pembuatan transaksi jurnal kas baru.
-type CreateJurnalRequest struct {
+// JurnalResponse representasi JSON nota kas / jurnal keuangan lengkap.
+type JurnalResponse struct {
+	ID                 string               `json:"id"`
+	KodeJurnal         string               `json:"kode_jurnal"`
+	Judul              string               `json:"judul"`
+	WaktuTransaksi     time.Time            `json:"waktu_transaksi"`
+	Cabang             string               `json:"cabang"`
+	Status             string               `json:"status"` // 'draft', 'lunas', 'batal'
+	TotalPemasukan     string               `json:"total_pemasukan"`
+	TotalPengeluaran   string               `json:"total_pengeluaran"`
+	SaldoBersih        string               `json:"saldo_bersih"`
+	NumericPemasukan   int64                `json:"numeric_pemasukan"`
+	NumericPengeluaran int64                `json:"numeric_pengeluaran"`
+	NumericSaldo       int64                `json:"numeric_saldo"`
+	Catatan            string               `json:"catatan"`
+	Items              []JurnalItemResponse `json:"items"`
+	CreatedAt          time.Time            `json:"created_at"`
+	UpdatedAt          time.Time            `json:"updated_at"`
+}
+
+// CreateJurnalItemRequest payload untuk baris rincian transaksi.
+type CreateJurnalItemRequest struct {
 	Tipe             string  `json:"tipe" binding:"required"` // 'pemasukan' atau 'pengeluaran'
-	Judul            string  `json:"judul" binding:"required"`
+	Deskripsi        string  `json:"deskripsi" binding:"required"`
 	KategoriID       *string `json:"kategori_id"`
-	MetodePembayaran string  `json:"metode_pembayaran"` // 'cash', 'transfer', 'kasbon'
+	MetodePembayaran string  `json:"metode_pembayaran"` // 'transfer', 'cash', 'kasbon', 'qris'
 	Nominal          string  `json:"nominal" binding:"required"`
-	Status           string  `json:"status"`            // 'lunas', 'pending', 'batal'
-	Tanggal          string  `json:"tanggal"`           // YYYY-MM-DD
-	Sumber           string  `json:"sumber"`            // 'manual', 'proyek', 'gaji'
+	Sumber           string  `json:"sumber"` // 'manual', 'proyek', 'gaji'
 	OrderID          *string `json:"order_id"`
 	GajiID           *string `json:"gaji_id"`
 	Catatan          string  `json:"catatan"`
 }
 
-// UpdateJurnalRequest payload pembaruan transaksi jurnal kas.
+// CreateJurnalRequest payload pembuatan nota kas baru beserta rinciannya.
+type CreateJurnalRequest struct {
+	Judul          string                    `json:"judul"`
+	WaktuTransaksi *string                   `json:"waktu_transaksi"`
+	Cabang         string                    `json:"cabang"`
+	Status         string                    `json:"status"` // 'draft', 'lunas'
+	Catatan        string                    `json:"catatan"`
+	Items          []CreateJurnalItemRequest `json:"items"`
+}
+
+// UpdateJurnalRequest payload pembaruan nota kas dan rinciannya.
 type UpdateJurnalRequest struct {
-	Tipe             *string `json:"tipe"`
-	Judul            *string `json:"judul"`
-	KategoriID       *string `json:"kategori_id"`
-	MetodePembayaran *string `json:"metode_pembayaran"`
-	Nominal          *string `json:"nominal"`
-	Status           *string `json:"status"`
-	Tanggal          *string `json:"tanggal"`
-	Sumber           *string `json:"sumber"`
-	OrderID          *string `json:"order_id"`
-	GajiID           *string `json:"gaji_id"`
-	Catatan          *string `json:"catatan"`
+	Judul          *string                    `json:"judul"`
+	WaktuTransaksi *string                    `json:"waktu_transaksi"`
+	Cabang         *string                    `json:"cabang"`
+	Status         *string                    `json:"status"`
+	Catatan        *string                    `json:"catatan"`
+	Items          *[]CreateJurnalItemRequest `json:"items"`
 }
 
-// KeuanganSummary ringkasan metrik arus kas (cashflow).
+// KeuanganSummary ringkasan metrik arus kas global / filter.
 type KeuanganSummary struct {
-	TotalPemasukan   string `json:"total_pemasukan"`
-	TotalPengeluaran string `json:"total_pengeluaran"`
-	SisaSaldoKas     string `json:"sisa_saldo_kas"`
-	NumericPemasukan int64  `json:"numeric_pemasukan"`
-	NumericPengeluaran int64 `json:"numeric_pengeluaran"`
-	NumericSaldo     int64  `json:"numeric_saldo"`
-	TotalTransaksi   int64  `json:"total_transaksi"`
+	TotalPemasukan     string `json:"total_pemasukan"`
+	TotalPengeluaran   string `json:"total_pengeluaran"`
+	SisaSaldoKas       string `json:"sisa_saldo_kas"`
+	NumericPemasukan   int64  `json:"numeric_pemasukan"`
+	NumericPengeluaran int64  `json:"numeric_pengeluaran"`
+	NumericSaldo       int64  `json:"numeric_saldo"`
+	TotalTransaksi     int64  `json:"total_transaksi"`
 }
 
-// ListJurnalResponse respon daftar jurnal lengkap dengan pagination & summary kas.
+// ListJurnalResponse respon daftar jurnal kas dengan summary & pagination.
 type ListJurnalResponse struct {
 	Summary    KeuanganSummary  `json:"summary"`
 	Total      int64            `json:"total"`

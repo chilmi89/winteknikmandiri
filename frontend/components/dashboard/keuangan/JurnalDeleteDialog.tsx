@@ -29,11 +29,11 @@ export function JurnalDeleteDialog({
       title="Hapus Transaksi Jurnal?"
       description={
         <span>
-          Apakah Anda yakin ingin menghapus transaksi{" "}
+          Apakah Anda yakin ingin menghapus nota kas{" "}
           <strong className="text-slate-900">{jurnal.kode_jurnal}</strong> -{" "}
-          <strong className="text-slate-900">"{jurnal.judul}"</strong> senilai{" "}
-          <strong className={jurnal.tipe === "pemasukan" ? "text-emerald-600" : "text-rose-600"}>
-            {jurnal.nominal}
+          <strong className="text-slate-900">"{jurnal.judul}"</strong> dengan saldo{" "}
+          <strong className="text-slate-900">
+            {jurnal.saldo_bersih}
           </strong>? Data yang dihapus dapat dipulihkan dari arsip database.
         </span>
       }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  CheckCircle2,
+  Calendar,
   Clock,
   Filter,
   Plus,
@@ -44,15 +44,24 @@ import {
 import { listOrdersAdmin, type Order } from "@/lib/orders";
 import { listGajiAdmin, type Gaji } from "@/lib/gaji";
 import { JurnalTable } from "./JurnalTable";
-import { JurnalDialog } from "./JurnalDialog";
+import { CatatFinansialEditor } from "./CatatFinansialEditor";
 import { JurnalDeleteDialog } from "./JurnalDeleteDialog";
 import { KategoriManager } from "./KategoriManager";
 
-export function KeuanganWorkspace() {
-  // Navigation Tabs: 'jurnal' vs 'kategori'
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"jurnal" | "kategori">("jurnal");
+type OpenTab = {
+  id: string; // 'new' atau UUID
+  title: string;
+};
 
-  // Data Jurnal
+export function KeuanganWorkspace() {
+  // Tab Navigasi Aktif: 'jurnal' | 'kategori' | id open tab
+  const [activeTab, setActiveTab] = useState<string>("jurnal");
+  const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
+
+  // Cache data jurnal yang sedang dibuka di tab
+  const [openedNotes, setOpenedNotes] = useState<Record<string, JurnalKeuangan>>({});
+
+  // Data List Jurnal Transaksi
   const [data, setData] = useState<JurnalKeuangan[]>([]);
   const [summary, setSummary] = useState<KeuanganSummary>({
     total_pemasukan: "Rp 0",
@@ -67,17 +76,15 @@ export function KeuanganWorkspace() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Master Options
+  // Data Rujukan Opsi
   const [categories, setCategories] = useState<KategoriKeuangan[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [gajiList, setGajiList] = useState<Gaji[]>([]);
 
   // Filter States
   const [search, setSearch] = useState("");
-  const [tipeFilter, setTipeFilter] = useState("all");
-  const [kategoriFilter, setKategoriFilter] = useState("all");
-  const [pembayaranFilter, setPembayaranFilter] = useState("all");
-  const [orderFilter, setOrderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [cabangFilter, setCabangFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortOption, setSortOption] = useState<"desc" | "asc" | "nominal_desc" | "nominal_asc">("desc");
@@ -86,16 +93,12 @@ export function KeuanganWorkspace() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Dialog States
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingJurnal, setEditingJurnal] = useState<JurnalKeuangan | null>(null);
-
   // Delete Dialog States
   const [deletingJurnal, setDeletingJurnal] = useState<JurnalKeuangan | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Load Categories & Reference Data
+  // Memuat data referensi (Kategori, Proyek, Gaji)
   const loadReferenceData = useCallback(async () => {
     try {
       const [kat, ordList, gjRes] = await Promise.all([
@@ -104,7 +107,8 @@ export function KeuanganWorkspace() {
         listGajiAdmin({ limit: 100 }),
       ]);
       setCategories(kat);
-      setOrders(ordList);
+      // Filter proyek yang relevan (selesai / closing)
+      setOrders(ordList.filter((o) => o.status === "selesai" || o.status === "deal"));
       setGajiList(gjRes.data || []);
     } catch (err) {
       console.error("Gagal memuat data referensi keuangan", err);
@@ -115,31 +119,29 @@ export function KeuanganWorkspace() {
     loadReferenceData();
   }, [loadReferenceData]);
 
-  // Load Jurnal Data
+  // Memuat daftar jurnal nota
   const loadJurnal = useCallback(
     async (silent = false) => {
       if (!silent) setLoading(true);
       try {
-        let sortBy = "tanggal";
+        let sortBy = "waktu";
         let sortDir = "desc";
         if (sortOption === "asc") {
           sortDir = "asc";
         } else if (sortOption === "nominal_desc") {
-          sortBy = "nominal";
+          sortBy = "saldo";
           sortDir = "desc";
         } else if (sortOption === "nominal_asc") {
-          sortBy = "nominal";
+          sortBy = "saldo";
           sortDir = "asc";
         }
 
         const res = await listJurnalAdmin({
           search: search.trim() || undefined,
-          tipe: tipeFilter !== "all" ? tipeFilter : undefined,
-          kategori_id: kategoriFilter !== "all" ? kategoriFilter : undefined,
-          order_id: orderFilter !== "all" ? orderFilter : undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          cabang: cabangFilter !== "all" ? cabangFilter : undefined,
           date_from: dateFrom || undefined,
           date_to: dateTo || undefined,
-          pembayaran: pembayaranFilter !== "all" ? pembayaranFilter : undefined,
           sort_by: sortBy,
           sort_dir: sortDir,
           page,
@@ -160,31 +162,95 @@ export function KeuanganWorkspace() {
         if (!silent) setLoading(false);
       }
     },
-    [
-      search,
-      tipeFilter,
-      kategoriFilter,
-      orderFilter,
-      dateFrom,
-      dateTo,
-      pembayaranFilter,
-      sortOption,
-      page,
-      pageSize,
-    ]
+    [search, statusFilter, cabangFilter, dateFrom, dateTo, sortOption, page, pageSize]
   );
 
   useEffect(() => {
     loadJurnal();
   }, [loadJurnal]);
 
-  // Reset Filters
+  // Buka Tab "+ Catat Baru"
+  const handleOpenNewTab = () => {
+    if (!openTabs.find((t) => t.id === "new")) {
+      setOpenTabs((prev) => [...prev, { id: "new", title: "+ Catat Baru" }]);
+    }
+    setActiveTab("new");
+  };
+
+  // Buka Tab Nota Eksisting
+  const handleOpenNote = async (item: JurnalKeuangan) => {
+    try {
+      // Ambil detail lengkap jika belum ada di cache
+      const full = await getJurnalDetail(item.id);
+      setOpenedNotes((prev) => ({ ...prev, [item.id]: full }));
+      if (!openTabs.find((t) => t.id === item.id)) {
+        setOpenTabs((prev) => [...prev, { id: item.id, title: full.kode_jurnal }]);
+      }
+      setActiveTab(item.id);
+    } catch {
+      toast.add({ title: "Gagal membuka nota", type: "error" });
+    }
+  };
+
+  // Tutup Tab
+  const handleCloseTab = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenTabs((prev) => prev.filter((t) => t.id !== id));
+    if (activeTab === id) {
+      setActiveTab("jurnal");
+    }
+  };
+
+  // Simpan Nota Baru
+  const handleSaveNew = async (payload: CreateJurnalPayload) => {
+    const created = await createJurnalAdmin(payload);
+    // Tutup tab new dan buka tab dengan id nota baru
+    setOpenTabs((prev) => [
+      ...prev.filter((t) => t.id !== "new"),
+      { id: created.id, title: created.kode_jurnal },
+    ]);
+    setOpenedNotes((prev) => ({ ...prev, [created.id]: created }));
+    setActiveTab(created.id);
+    loadJurnal(true);
+  };
+
+  // Simpan Update Nota Eksisting
+  const handleUpdateExisting = async (id: string, payload: UpdateJurnalPayload) => {
+    const updated = await updateJurnalAdmin(id, payload);
+    setOpenedNotes((prev) => ({ ...prev, [id]: updated }));
+    loadJurnal(true);
+  };
+
+  // Konfirmasi Hapus
+  const handleConfirmDelete = async () => {
+    if (!deletingJurnal) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteJurnalAdmin(deletingJurnal.id);
+      toast.add({
+        title: "Nota Dihapus",
+        description: `Nota ${deletingJurnal.kode_jurnal} berhasil dihapus.`,
+        type: "success",
+      });
+      // Tutup tab jika sedang dibuka
+      setOpenTabs((prev) => prev.filter((t) => t.id !== deletingJurnal.id));
+      if (activeTab === deletingJurnal.id) {
+        setActiveTab("jurnal");
+      }
+      setDeletingJurnal(null);
+      loadJurnal(true);
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Gagal menghapus nota");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleResetFilters = () => {
     setSearch("");
-    setTipeFilter("all");
-    setKategoriFilter("all");
-    setPembayaranFilter("all");
-    setOrderFilter("all");
+    setStatusFilter("all");
+    setCabangFilter("all");
     setDateFrom("");
     setDateTo("");
     setSortOption("desc");
@@ -193,180 +259,157 @@ export function KeuanganWorkspace() {
 
   const hasActiveFilters =
     search !== "" ||
-    tipeFilter !== "all" ||
-    kategoriFilter !== "all" ||
-    pembayaranFilter !== "all" ||
-    orderFilter !== "all" ||
+    statusFilter !== "all" ||
+    cabangFilter !== "all" ||
     dateFrom !== "" ||
     dateTo !== "" ||
     sortOption !== "desc";
-
-  // Create Handler
-  const handleCreateJurnal = async (payload: CreateJurnalPayload) => {
-    await createJurnalAdmin(payload);
-    loadJurnal(true);
-  };
-
-  // Update Handler
-  const handleUpdateJurnal = async (id: string, payload: UpdateJurnalPayload) => {
-    await updateJurnalAdmin(id, payload);
-    loadJurnal(true);
-  };
-
-  // Delete Handler
-  const handleConfirmDelete = async () => {
-    if (!deletingJurnal) return;
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
-      await deleteJurnalAdmin(deletingJurnal.id);
-      toast.add({
-        title: "Transaksi Dihapus",
-        description: `Transaksi ${deletingJurnal.kode_jurnal} berhasil dihapus.`,
-        type: "success",
-      });
-      setDeletingJurnal(null);
-      loadJurnal(true);
-    } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : "Gagal menghapus jurnal");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   const pageStart = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const pageEnd = Math.min(page * pageSize, totalCount);
 
   return (
     <div className="space-y-6">
-      {/* Header Halaman */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Manajemen Keuangan & Arus Kas
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Buku kas keuangan, ringkasan saldo kas, dan pencatatan terintegrasi dengan invoice proyek & slip gaji.
-          </p>
-        </div>
-        <Button
-          type="button"
-          onClick={() => {
-            setEditingJurnal(null);
-            setDialogOpen(true);
-          }}
-          className="inline-flex items-center gap-2 bg-slate-900 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-slate-800"
-        >
-          <Plus className="size-4" />
-          Buat Jurnal Baru
-        </Button>
-      </div>
-
-      {/* 3 KARTU SUMMARY ARUS KAS (REAL-TIME TOTAL) */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {/* Total Pemasukan */}
-        <div className="flex items-center gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
-          <div className="flex size-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-            <ArrowDownRight className="size-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Total Pemasukan (In)
-            </p>
-            <p className="text-xl font-bold text-emerald-600 truncate">
-              {summary.total_pemasukan}
-            </p>
-          </div>
-        </div>
-
-        {/* Total Pengeluaran */}
-        <div className="flex items-center gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
-          <div className="flex size-11 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-            <ArrowUpRight className="size-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Total Pengeluaran (Out)
-            </p>
-            <p className="text-xl font-bold text-rose-600 truncate">
-              {summary.total_pengeluaran}
-            </p>
-          </div>
-        </div>
-
-        {/* Sisa Saldo Kas / Net */}
-        <div className="flex items-center gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
-          <div
-            className={`flex size-11 items-center justify-center rounded-lg ${
-              summary.numeric_saldo >= 0
-                ? "bg-blue-50 text-[#2279cf]"
-                : "bg-rose-50 text-rose-600"
-            }`}
-          >
-            <Wallet className="size-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Sisa Saldo Kas Bersih
-            </p>
-            <p
-              className={`text-xl font-bold truncate ${
-                summary.numeric_saldo >= 0 ? "text-slate-900" : "text-rose-600"
-              }`}
-            >
-              {summary.sisa_saldo_kas}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigasi Multi-Tab Workspace */}
-      <div className="flex border-b border-slate-200 bg-white px-2 pt-2">
+      {/* 1. Header Multi-Tab Workspace */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white px-3 pt-3 rounded-t-xl">
+        {/* Tab 1: Jurnal Transaksi */}
         <button
           type="button"
-          onClick={() => setActiveWorkspaceTab("jurnal")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition ${
-            activeWorkspaceTab === "jurnal"
+          onClick={() => setActiveTab("jurnal")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "jurnal"
               ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Receipt className="size-4" />
-          Buku Kas & Jurnal ({totalCount})
+          📑 Jurnal Transaksi ({totalCount})
         </button>
+
+        {/* Tab 2: Kategori Akun */}
         <button
           type="button"
-          onClick={() => setActiveWorkspaceTab("kategori")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition ${
-            activeWorkspaceTab === "kategori"
+          onClick={() => setActiveTab("kategori")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "kategori"
               ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Tag className="size-4" />
-          Kategori Keuangan ({categories.length})
+          🏷️ Kategori Akun ({categories.length})
         </button>
+
+        {/* Tab-Tab Nota Terbuka (Dinamis) */}
+        {openTabs.map((tab) => (
+          <div
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold cursor-pointer rounded-t-lg transition ${
+              activeTab === tab.id
+                ? "border-[#2279cf] bg-blue-50/60 text-[#2279cf]"
+                : "border-transparent bg-slate-50 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <span>{tab.title}</span>
+            <button
+              type="button"
+              onClick={(e) => handleCloseTab(tab.id, e)}
+              className="size-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-slate-200"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
 
-      {/* TAB 1: BUKU KAS & JURNAL KEUANGAN */}
-      {activeWorkspaceTab === "jurnal" && (
-        <DataTableShell>
-          {/* Toolbar Filter */}
-          <div className="border-b border-slate-200/80 bg-white p-4">
-            <div className="flex flex-col gap-3">
-              {/* Baris Atas: Search & Tombol Reset/Segarkan */}
+      {/* 2. KONTEN TAB: JURNAL TRANSAKSI (RIWAYAT BUKU KAS) */}
+      {activeTab === "jurnal" && (
+        <div className="space-y-6">
+          {/* Header Baris Judul & Tombol Catat Baru */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                Jurnal Transaksi & Buku Kas
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Rekap nota keuangan, mutasi kas operasional, dan riwayat pembukuan kas CV Win Teknik Mandiri.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleOpenNewTab}
+              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
+            >
+              <Plus className="size-4" />
+              + Catat Transaksi Baru
+            </Button>
+          </div>
+
+          {/* 3 KARTU SUMMARY ARUS KAS TOTAL */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Total Pemasukan */}
+            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <ArrowDownRight className="size-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  TOTAL PEMASUKAN
+                </p>
+                <p className="text-xl font-black text-emerald-600 truncate">
+                  {summary.total_pemasukan}
+                </p>
+              </div>
+            </div>
+
+            {/* Total Pengeluaran */}
+            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                <ArrowUpRight className="size-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  TOTAL PENGELUARAN
+                </p>
+                <p className="text-xl font-black text-rose-600 truncate">
+                  {summary.total_pengeluaran}
+                </p>
+              </div>
+            </div>
+
+            {/* Saldo Bersih */}
+            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-900 bg-[#060b1c] p-5 shadow-md text-white">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-slate-800 text-emerald-400">
+                <Wallet className="size-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  SALDO BERSIH KAS
+                </p>
+                <p className="text-xl font-black text-emerald-400 tracking-tight truncate">
+                  {summary.sisa_saldo_kas}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Shell Tabel Jurnal Transaksi */}
+          <DataTableShell>
+            {/* Toolbar Filter */}
+            <div className="border-b border-slate-200/80 bg-white p-4 space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     type="text"
-                    placeholder="Cari kode jurnal, uraian transaksi, atau catatan..."
+                    placeholder="Cari nomor nota (JRN-...), judul transaksi, atau catatan..."
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
                       setPage(1);
                     }}
-                    className="pl-9 text-xs"
+                    className="pl-9 text-xs font-medium"
                   />
                 </div>
 
@@ -396,140 +439,67 @@ export function KeuanganWorkspace() {
                 </div>
               </div>
 
-              {/* Baris Bawah: Filter Tanggal, Tipe, Kategori, Metode, Proyek, Sort */}
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-6">
-                {/* 1. Filter Tipe */}
+              {/* Baris Filter Bawah */}
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+                {/* Filter Status */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
-                    Tipe Arus Kas:
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    Status Nota:
                   </label>
                   <Select
-                    value={tipeFilter}
+                    value={statusFilter}
                     onValueChange={(val) => {
-                      setTipeFilter(val || "all");
+                      setStatusFilter(val || "all");
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-full text-xs">
+                    <SelectTrigger className="w-full text-xs font-medium">
                       <span>
-                        {tipeFilter === "all"
-                          ? "Semua Tipe"
-                          : tipeFilter === "pemasukan"
-                          ? "🟢 Pemasukan"
-                          : "🔴 Pengeluaran"}
+                        {statusFilter === "all"
+                          ? "Semua Status"
+                          : statusFilter === "lunas"
+                          ? "🟢 Lunas"
+                          : "🟡 Draft"}
                       </span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="all">Semua Tipe</SelectItem>
-                        <SelectItem value="pemasukan">🟢 Pemasukan</SelectItem>
-                        <SelectItem value="pengeluaran">🔴 Pengeluaran</SelectItem>
+                        <SelectItem value="all">Semua Status</SelectItem>
+                        <SelectItem value="lunas">🟢 Lunas</SelectItem>
+                        <SelectItem value="draft">🟡 Draft (Sementara)</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* 2. Filter Kategori */}
+                {/* Filter Cabang */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
-                    Kategori Akun:
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    Cabang Operasional:
                   </label>
                   <Select
-                    value={kategoriFilter}
+                    value={cabangFilter}
                     onValueChange={(val) => {
-                      setKategoriFilter(val || "all");
+                      setCabangFilter(val || "all");
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-full text-xs">
-                      <span className="truncate">
-                        {kategoriFilter === "all"
-                          ? "Semua Kategori"
-                          : categories.find((c) => c.id === kategoriFilter)?.nama_kategori || "Kategori"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56">
-                      <SelectGroup>
-                        <SelectItem value="all">Semua Kategori</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nama_kategori} ({c.tipe})
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* 3. Filter Pembayaran */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
-                    Pembayaran:
-                  </label>
-                  <Select
-                    value={pembayaranFilter}
-                    onValueChange={(val) => {
-                      setPembayaranFilter(val || "all");
-                      setPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full text-xs">
-                      <span>
-                        {pembayaranFilter === "all"
-                          ? "Semua Metode"
-                          : pembayaranFilter === "transfer"
-                          ? "Transfer"
-                          : pembayaranFilter === "cash"
-                          ? "Tunai"
-                          : "Kasbon"}
-                      </span>
+                    <SelectTrigger className="w-full text-xs font-medium">
+                      <span>{cabangFilter === "all" ? "Semua Cabang" : cabangFilter}</span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="all">Semua Metode</SelectItem>
-                        <SelectItem value="transfer">Transfer Bank</SelectItem>
-                        <SelectItem value="cash">Cash / Tunai</SelectItem>
-                        <SelectItem value="kasbon">Kasbon</SelectItem>
+                        <SelectItem value="all">Semua Cabang</SelectItem>
+                        <SelectItem value="Workshop Pusat Kediri">Workshop Pusat Kediri</SelectItem>
+                        <SelectItem value="Operasional Lapangan / Proyek">Operasional Lapangan</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* 4. Filter Proyek */}
+                {/* Dari Tanggal */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
-                    Filter Proyek:
-                  </label>
-                  <Select
-                    value={orderFilter}
-                    onValueChange={(val) => {
-                      setOrderFilter(val || "all");
-                      setPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full text-xs">
-                      <span className="truncate">
-                        {orderFilter === "all"
-                          ? "Semua Proyek"
-                          : orders.find((o) => o.id === orderFilter)?.invoice_no || "Proyek"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56">
-                      <SelectGroup>
-                        <SelectItem value="all">Semua Proyek</SelectItem>
-                        {orders.map((o) => (
-                          <SelectItem key={o.id} value={o.id}>
-                            {o.invoice_no} · {o.initial_service}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* 5. Filter Tanggal Mulai */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
                     Dari Tanggal:
                   </label>
                   <Input
@@ -543,101 +513,115 @@ export function KeuanganWorkspace() {
                   />
                 </div>
 
-                {/* 6. Urutan Sort */}
+                {/* Sampai Tanggal */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 mb-1 block">
-                    Urutan (Sort):
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    Sampai Tanggal:
+                  </label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setPage(1);
+                    }}
+                    className="text-xs"
+                  />
+                </div>
+
+                {/* Urutan Sort */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    Urutan:
                   </label>
                   <Select
                     value={sortOption}
                     onValueChange={(val) => {
-                      setSortOption(
-                        (val as "desc" | "asc" | "nominal_desc" | "nominal_asc") || "desc"
-                      );
+                      setSortOption((val as any) || "desc");
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-full text-xs">
+                    <SelectTrigger className="w-full text-xs font-medium">
                       <span>
                         {sortOption === "desc"
-                          ? "Tanggal Terbaru"
+                          ? "Terbaru (WIB)"
                           : sortOption === "asc"
-                          ? "Tanggal Terlama"
+                          ? "Terlama"
                           : sortOption === "nominal_desc"
-                          ? "Nominal Tertinggi"
-                          : "Nominal Terendah"}
+                          ? "Saldo Tertinggi"
+                          : "Saldo Terendah"}
                       </span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="desc">Tanggal Terbaru</SelectItem>
-                        <SelectItem value="asc">Tanggal Terlama</SelectItem>
-                        <SelectItem value="nominal_desc">Nominal Tertinggi</SelectItem>
-                        <SelectItem value="nominal_asc">Nominal Terendah</SelectItem>
+                        <SelectItem value="desc">Terbaru (WIB)</SelectItem>
+                        <SelectItem value="asc">Terlama</SelectItem>
+                        <SelectItem value="nominal_desc">Saldo Tertinggi</SelectItem>
+                        <SelectItem value="nominal_asc">Saldo Terendah</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Tabel Transaksi Kas */}
-          <JurnalTable
-            data={data}
-            loading={loading}
-            onEdit={async (item) => {
-              try {
-                const full = await getJurnalDetail(item.id);
-                setEditingJurnal(full);
-              } catch {
-                setEditingJurnal(item);
-              }
-              setDialogOpen(true);
-            }}
-            onDelete={(item) => {
-              setDeletingJurnal(item);
-            }}
-          />
+            {/* Tabel Transaksi */}
+            <JurnalTable
+              data={data}
+              loading={loading}
+              onOpenNote={handleOpenNote}
+              onDelete={(item) => setDeletingJurnal(item)}
+            />
 
-          {/* Pagination */}
-          <DataTablePagination
-            page={page}
-            pageCount={totalPages}
-            pageStart={pageStart}
-            pageEnd={pageEnd}
-            total={totalCount}
-            pageSize={pageSize}
-            pageSizeOptions={[10, 20, 50, 100]}
-            loading={loading}
-            onPageChange={setPage}
-            onPageSizeChange={(newSize) => {
-              setPageSize(newSize);
-              setPage(1);
-            }}
-          />
-        </DataTableShell>
+            {/* Pagination */}
+            <DataTablePagination
+              page={page}
+              pageCount={totalPages}
+              pageStart={pageStart}
+              pageEnd={pageEnd}
+              total={totalCount}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              loading={loading}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </DataTableShell>
+        </div>
       )}
 
-      {/* TAB 2: MASTER KATEGORI KEUANGAN */}
-      {activeWorkspaceTab === "kategori" && (
+      {/* 3. KONTEN TAB: KATEGORI AKUN */}
+      {activeTab === "kategori" && (
         <KategoriManager onCategoriesChanged={loadReferenceData} />
       )}
 
-      {/* Modal Dialog Buat / Edit Jurnal */}
-      <JurnalDialog
-        open={dialogOpen}
-        onOpenChange={(isOpen) => {
-          setDialogOpen(isOpen);
-          if (!isOpen) setEditingJurnal(null);
-        }}
-        jurnal={editingJurnal}
-        categories={categories}
-        orders={orders}
-        gajiList={gajiList}
-        onSubmitCreate={handleCreateJurnal}
-        onSubmitUpdate={handleUpdateJurnal}
-      />
+      {/* 4. KONTEN TAB BARU: + CATAT BARU */}
+      {activeTab === "new" && (
+        <CatatFinansialEditor
+          jurnal={null}
+          categories={categories}
+          orders={orders}
+          gajiList={gajiList}
+          onBackToHistory={() => setActiveTab("jurnal")}
+          onSave={handleSaveNew}
+        />
+      )}
+
+      {/* 5. KONTEN TAB NOTA EKSISTING (JRN-XXXX) */}
+      {activeTab !== "jurnal" && activeTab !== "kategori" && activeTab !== "new" && openedNotes[activeTab] && (
+        <CatatFinansialEditor
+          jurnal={openedNotes[activeTab]}
+          categories={categories}
+          orders={orders}
+          gajiList={gajiList}
+          onBackToHistory={() => setActiveTab("jurnal")}
+          onSave={handleSaveNew}
+          onUpdate={handleUpdateExisting}
+        />
+      )}
 
       {/* Modal Dialog Konfirmasi Hapus */}
       <JurnalDeleteDialog

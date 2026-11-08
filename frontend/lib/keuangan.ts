@@ -10,24 +10,41 @@ export type KategoriKeuangan = {
   updated_at: string;
 };
 
-export type JurnalKeuangan = {
+export type JurnalItem = {
   id: string;
-  kode_jurnal: string;
+  jurnal_id: string;
   tipe: "pemasukan" | "pengeluaran";
-  judul: string;
+  deskripsi: string;
   kategori_id?: string;
   nama_kategori: string;
-  metode_pembayaran: "cash" | "transfer" | "kasbon";
+  metode_pembayaran: "transfer" | "cash" | "kasbon" | "qris";
   nominal: string;
   amount_numeric: number;
-  status: "lunas" | "pending" | "batal";
-  tanggal: string; // YYYY-MM-DD
   sumber: "manual" | "proyek" | "gaji";
   order_id?: string;
   invoice_no?: string;
   gaji_id?: string;
   kode_gaji?: string;
   catatan: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type JurnalKeuangan = {
+  id: string;
+  kode_jurnal: string;
+  judul: string;
+  waktu_transaksi: string; // ISO 8601
+  cabang: string;
+  status: "draft" | "lunas" | "batal";
+  total_pemasukan: string;
+  total_pengeluaran: string;
+  saldo_bersih: string;
+  numeric_pemasukan: number;
+  numeric_pengeluaran: number;
+  numeric_saldo: number;
+  catatan: string;
+  items: JurnalItem[];
   created_at: string;
   updated_at: string;
 };
@@ -63,38 +80,40 @@ export type UpdateKategoriPayload = {
   deskripsi?: string;
 };
 
-export type CreateJurnalPayload = {
+export type CreateJurnalItemPayload = {
   tipe: "pemasukan" | "pengeluaran";
-  judul: string;
+  deskripsi: string;
   kategori_id?: string;
   metode_pembayaran?: string;
   nominal: string;
-  status?: string;
-  tanggal?: string;
   sumber?: string;
   order_id?: string;
   gaji_id?: string;
   catatan?: string;
 };
 
-export type UpdateJurnalPayload = {
-  tipe?: "pemasukan" | "pengeluaran";
+export type CreateJurnalPayload = {
   judul?: string;
-  kategori_id?: string;
-  metode_pembayaran?: string;
-  nominal?: string;
+  waktu_transaksi?: string;
+  cabang?: string;
   status?: string;
-  tanggal?: string;
-  sumber?: string;
-  order_id?: string;
-  gaji_id?: string;
   catatan?: string;
+  items: CreateJurnalItemPayload[];
+};
+
+export type UpdateJurnalPayload = {
+  judul?: string;
+  waktu_transaksi?: string;
+  cabang?: string;
+  status?: string;
+  catatan?: string;
+  items?: CreateJurnalItemPayload[];
 };
 
 // ---------- API CALLS ----------
 
 /**
- * Mengambil daftar kategori keuangan (pemasukan/pengeluaran).
+ * Mengambil daftar master kategori akun keuangan.
  */
 export async function listKategoriAdmin(tipe?: string): Promise<KategoriKeuangan[]> {
   const q = new URLSearchParams();
@@ -147,18 +166,14 @@ export async function deleteKategoriAdmin(id: string): Promise<void> {
 }
 
 /**
- * Mengambil daftar jurnal transaksi kas lengkap dengan filter, search, sort, pagination & summary real-time.
+ * Mengambil daftar nota jurnal kas dengan summary & pagination.
  */
 export async function listJurnalAdmin(params?: {
   search?: string;
-  tipe?: string;
-  kategori_id?: string;
-  order_id?: string;
-  gaji_id?: string;
+  status?: string;
+  cabang?: string;
   date_from?: string;
   date_to?: string;
-  pembayaran?: string;
-  status?: string;
   sort_by?: string;
   sort_dir?: string;
   page?: number;
@@ -166,14 +181,10 @@ export async function listJurnalAdmin(params?: {
 }): Promise<ListJurnalResponse> {
   const q = new URLSearchParams();
   if (params?.search) q.set("search", params.search);
-  if (params?.tipe && params.tipe !== "all") q.set("tipe", params.tipe);
-  if (params?.kategori_id && params.kategori_id !== "all") q.set("kategori_id", params.kategori_id);
-  if (params?.order_id && params.order_id !== "all") q.set("order_id", params.order_id);
-  if (params?.gaji_id && params.gaji_id !== "all") q.set("gaji_id", params.gaji_id);
+  if (params?.status && params.status !== "all") q.set("status", params.status);
+  if (params?.cabang && params.cabang !== "all") q.set("cabang", params.cabang);
   if (params?.date_from) q.set("date_from", params.date_from);
   if (params?.date_to) q.set("date_to", params.date_to);
-  if (params?.pembayaran && params.pembayaran !== "all") q.set("pembayaran", params.pembayaran);
-  if (params?.status && params.status !== "all") q.set("status", params.status);
   if (params?.sort_by) q.set("sort_by", params.sort_by);
   if (params?.sort_dir) q.set("sort_dir", params.sort_dir);
   if (params?.page) q.set("page", String(params.page));
@@ -188,7 +199,7 @@ export async function listJurnalAdmin(params?: {
 }
 
 /**
- * Mengambil detail 1 transaksi jurnal kas.
+ * Mengambil detail lengkap 1 nota kas beserta seluruh baris rinciannya.
  */
 export async function getJurnalDetail(id: string): Promise<JurnalKeuangan> {
   const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/jurnal/${id}`, {
@@ -200,7 +211,7 @@ export async function getJurnalDetail(id: string): Promise<JurnalKeuangan> {
 }
 
 /**
- * Membuat transaksi jurnal kas baru.
+ * Membuat nota kas baru beserta baris-baris rinciannya.
  */
 export async function createJurnalAdmin(payload: CreateJurnalPayload): Promise<JurnalKeuangan> {
   const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/jurnal`, {
@@ -214,7 +225,7 @@ export async function createJurnalAdmin(payload: CreateJurnalPayload): Promise<J
 }
 
 /**
- * Memperbarui transaksi jurnal kas.
+ * Memperbarui nota kas beserta rincian barisnya (Simpan Sementara / Final).
  */
 export async function updateJurnalAdmin(id: string, payload: UpdateJurnalPayload): Promise<JurnalKeuangan> {
   const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/jurnal/${id}`, {
@@ -228,7 +239,7 @@ export async function updateJurnalAdmin(id: string, payload: UpdateJurnalPayload
 }
 
 /**
- * Menghapus transaksi jurnal kas (soft delete).
+ * Menghapus nota kas (soft delete).
  */
 export async function deleteJurnalAdmin(id: string): Promise<void> {
   const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/jurnal/${id}`, {
