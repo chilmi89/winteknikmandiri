@@ -166,6 +166,22 @@ export async function deleteKategoriAdmin(id: string): Promise<void> {
 }
 
 /**
+ * Mengambil nomor kode jurnal berikutnya untuk catatan baru (mis. JRN-2611-0005).
+ */
+export async function getNextKodeJurnal(): Promise<string> {
+  try {
+    const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/jurnal/next-code`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return "JRN-BARU";
+    const json = await res.json();
+    return json.data?.next_code || "JRN-BARU";
+  } catch {
+    return "JRN-BARU";
+  }
+}
+
+/**
  * Mengambil daftar nota jurnal kas dengan summary & pagination.
  */
 export async function listJurnalAdmin(params?: {

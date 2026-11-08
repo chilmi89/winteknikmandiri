@@ -31,6 +31,7 @@ func RegisterKeuanganRoutes(rg *gin.RouterGroup, db *sql.DB) {
 		jurnalGroup := keuanganGroup.Group("/jurnal")
 		{
 			jurnalGroup.GET("", ctrl.ListJurnal)
+			jurnalGroup.GET("/next-code", ctrl.GetNextKodeJurnal)
 			jurnalGroup.GET("/:id", ctrl.GetJurnalByID)
 			jurnalGroup.POST("", ctrl.CreateJurnal)
 			jurnalGroup.PUT("/:id", ctrl.UpdateJurnal)

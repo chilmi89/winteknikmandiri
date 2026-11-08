@@ -2581,6 +2581,19 @@ paths:
       summary: Perbarui transaksi jurnal kas
       tags:
       - keuangan
+  /api/v1/keuangan/jurnal/next-code:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Ambil kode nota jurnal berikutnya
+      tags:
+      - keuangan
   /api/v1/keuangan/kategori:
     get:
       parameters:

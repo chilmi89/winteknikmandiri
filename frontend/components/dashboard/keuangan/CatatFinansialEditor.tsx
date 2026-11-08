@@ -9,21 +9,17 @@ import {
   Check,
   ChevronDown,
   Clock,
-  CreditCard,
   FileText,
   Info,
   Plus,
   Receipt,
   Save,
   Search,
-  Store,
   Trash2,
   Users,
-  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,12 +28,12 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import type {
-  JurnalKeuangan,
-  KategoriKeuangan,
-  CreateJurnalPayload,
-  UpdateJurnalPayload,
-  CreateJurnalItemPayload,
+import {
+  getNextKodeJurnal,
+  type JurnalKeuangan,
+  type KategoriKeuangan,
+  type CreateJurnalPayload,
+  type UpdateJurnalPayload,
 } from "@/lib/keuangan";
 import type { Order } from "@/lib/orders";
 import type { Gaji } from "@/lib/gaji";
@@ -91,9 +87,9 @@ export function CatatFinansialEditor({
   const isEdit = Boolean(jurnal);
 
   // Metadata Header Nota
+  const [kodeJurnal, setKodeJurnal] = useState(jurnal ? jurnal.kode_jurnal : "");
   const [judul, setJudul] = useState("");
   const [waktuTransaksi, setWaktuTransaksi] = useState("");
-  const [cabang, setCabang] = useState("Workshop Pusat Kediri");
   const [status, setStatus] = useState<"draft" | "lunas">("draft");
   const [catatan, setCatatan] = useState("");
   const [saving, setSaving] = useState(false);
@@ -101,7 +97,7 @@ export function CatatFinansialEditor({
   // Baris-baris Rincian Transaksi
   const [rows, setRows] = useState<RowItem[]>([]);
 
-  // Modal / Popover Selector Proyek & Gaji per baris
+  // Popover Picker Proyek / Gaji
   const [activePickerRowIndex, setActivePickerRowIndex] = useState<number | null>(null);
   const [pickerType, setPickerType] = useState<"proyek" | "gaji" | null>(null);
   const [pickerQuery, setPickerQuery] = useState("");
@@ -126,6 +122,17 @@ export function CatatFinansialEditor({
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch real next code on create mode
+  useEffect(() => {
+    if (!jurnal) {
+      getNextKodeJurnal().then((code) => {
+        setKodeJurnal(code);
+      });
+    } else {
+      setKodeJurnal(jurnal.kode_jurnal);
+    }
+  }, [jurnal]);
+
   // Close picker on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -142,7 +149,6 @@ export function CatatFinansialEditor({
   useEffect(() => {
     if (jurnal) {
       setJudul(jurnal.judul);
-      // Format datetime-local YYYY-MM-DDTHH:mm
       try {
         const d = new Date(jurnal.waktu_transaksi);
         const pad = (n: number) => String(n).padStart(2, "0");
@@ -151,7 +157,6 @@ export function CatatFinansialEditor({
       } catch {
         setWaktuTransaksi("");
       }
-      setCabang(jurnal.cabang || "Workshop Pusat Kediri");
       setStatus((jurnal.status as "draft" | "lunas") || "draft");
       setCatatan(jurnal.catatan || "");
       setRows(
@@ -176,21 +181,22 @@ export function CatatFinansialEditor({
       const pad = (n: number) => String(n).padStart(2, "0");
       const dtLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
       setWaktuTransaksi(dtLocal);
-      setCabang("Workshop Pusat Kediri");
       setStatus("draft");
       setCatatan("");
-      // Mulai dengan 1 baris kosong
+      // Mulai dengan 1 baris pemasukan kosong
+      const firstIncome = categories.find((c) => c.tipe === "pemasukan");
       setRows([
         {
           tipe: "pemasukan",
           deskripsi: "",
+          kategori_id: firstIncome?.id,
           metode_pembayaran: "transfer",
           nominal: "",
           sumber: "manual",
         },
       ]);
     }
-  }, [jurnal]);
+  }, [jurnal, categories]);
 
   // Tambah baris Pemasukan
   const handleAddPemasukan = () => {
@@ -242,13 +248,13 @@ export function CatatFinansialEditor({
     );
   };
 
-  // Tarik dari Proyek untuk baris tertentu
+  // Tarik dari Proyek
   const handlePickOrder = (index: number, ord: Order) => {
     setRows((prev) =>
       prev.map((r, i) => {
         if (i !== index) return r;
         const cust = ord.customer_name ? ` (${ord.customer_name})` : "";
-        const desc = `Pelunasan Invoice ${ord.invoice_no} - ${ord.initial_service}${cust}`;
+        const desc = `Pelunasan ${ord.invoice_no} - ${ord.initial_service}${cust}`;
         const autoKat = categories.find(
           (c) => c.tipe === "pemasukan" && (c.nama_kategori.toLowerCase().includes("proyek") || c.nama_kategori.toLowerCase().includes("instalasi"))
         ) || categories.find((c) => c.tipe === "pemasukan");
@@ -269,7 +275,7 @@ export function CatatFinansialEditor({
     setPickerType(null);
   };
 
-  // Tarik dari Slip Gaji untuk baris tertentu
+  // Tarik dari Slip Gaji
   const handlePickGaji = (index: number, g: Gaji) => {
     setRows((prev) =>
       prev.map((r, i) => {
@@ -367,7 +373,6 @@ export function CatatFinansialEditor({
       const payload: CreateJurnalPayload = {
         judul: judul.trim() || undefined,
         waktu_transaksi: waktuTransaksi || undefined,
-        cabang,
         status,
         catatan: catatan.trim(),
         items: rows.map((r) => ({
@@ -410,7 +415,7 @@ export function CatatFinansialEditor({
             <button
               type="button"
               onClick={onBackToHistory}
-              className="text-slate-400 hover:text-slate-800 transition"
+              className="text-slate-400 hover:text-slate-800 transition text-lg font-bold"
               title="Kembali ke Jurnal Transaksi"
             >
               ‹
@@ -451,68 +456,57 @@ export function CatatFinansialEditor({
         </div>
       </div>
 
-      {/* 2. Top Card Metadata (3 Kolom Bersih Sejajar) */}
+      {/* 2. Top Card Metadata (2/3 Kolom Bersih, Workshop Dihapus Total, Kode Riil Tanpa Kata Otomatis) */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
         <div className="grid gap-4 sm:grid-cols-3">
           {/* Tanggal & Waktu Entry */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Tanggal & Waktu Entry
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <Calendar className="size-3.5 text-slate-400" />
+              Tanggal & Waktu Entry (WIB)
             </label>
-            <div className="relative">
-              <Input
-                type="datetime-local"
-                value={waktuTransaksi}
-                onChange={(e) => setWaktuTransaksi(e.target.value)}
-                className="text-xs font-semibold text-slate-800 bg-slate-50/50"
-              />
-            </div>
+            <Input
+              type="datetime-local"
+              value={waktuTransaksi}
+              onChange={(e) => setWaktuTransaksi(e.target.value)}
+              className="text-xs font-semibold text-slate-800 bg-slate-50/50"
+            />
           </div>
 
-          {/* No. Referensi / Nota */}
+          {/* No. Referensi / Nota (Kode Riil e.g. JRN-2611-0005) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <Receipt className="size-3.5 text-slate-400" />
               No. Referensi / Nota
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <Receipt className="size-4" />
-              </span>
-              <Input
-                type="text"
-                readOnly
-                value={jurnal ? jurnal.kode_jurnal : "JRN-OTOMATIS"}
-                className="pl-9 text-xs font-mono font-bold text-slate-800 bg-slate-50/80 cursor-default"
-              />
-            </div>
+            <Input
+              type="text"
+              readOnly
+              value={kodeJurnal || "Memuat kode..."}
+              className="text-xs font-mono font-bold text-slate-900 bg-slate-50/80 cursor-default"
+            />
           </div>
 
-          {/* Cabang Operasional */}
+          {/* Judul Lembar Kas */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Cabang Operasional
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <FileText className="size-3.5 text-slate-400" />
+              Judul Lembar Kas
             </label>
-            <Select value={cabang} onValueChange={(val) => setCabang(val || "Workshop Pusat Kediri")}>
-              <SelectTrigger className="w-full text-xs font-semibold text-slate-800 bg-slate-50/50">
-                <span className="flex items-center gap-1.5">
-                  <Store className="size-3.5 text-slate-400" />
-                  {cabang}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="Workshop Pusat Kediri">🏢 Workshop Pusat Kediri</SelectItem>
-                  <SelectItem value="Operasional Lapangan / Proyek">🚚 Operasional Lapangan / Proyek</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <Input
+              type="text"
+              placeholder="Contoh: Rekap Kas Harian Operasional"
+              value={judul}
+              onChange={(e) => setJudul(e.target.value)}
+              className="text-xs font-medium text-slate-800 bg-slate-50/50"
+            />
           </div>
         </div>
       </div>
 
       {/* 3. Card Utama: Rincian Transaksi */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
-        {/* Header Bagian Rincian & 2 Tombol Utama */}
+        {/* Header Bagian Rincian & 2 Tombol Aksi (Tanpa Icon Ganda) */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">
             <Info className="size-4 text-[#2279cf]" />
@@ -522,7 +516,7 @@ export function CatatFinansialEditor({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Tombol Hijau: + PEMASUKAN */}
+            {/* Tombol Hijau: + PEMASUKAN (Tanpa Double Plus) */}
             <Button
               type="button"
               size="sm"
@@ -530,10 +524,10 @@ export function CatatFinansialEditor({
               className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition"
             >
               <Plus className="size-3.5" />
-              + PEMASUKAN
+              PEMASUKAN
             </Button>
 
-            {/* Tombol Merah: + PENGELUARAN */}
+            {/* Tombol Merah: + PENGELUARAN (Tanpa Double Plus) */}
             <Button
               type="button"
               size="sm"
@@ -541,13 +535,13 @@ export function CatatFinansialEditor({
               className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition"
             >
               <Plus className="size-3.5" />
-              + PENGELUARAN
+              PENGELUARAN
             </Button>
           </div>
         </div>
 
-        {/* Tabel / Baris-baris Rincian */}
-        <div className="space-y-3">
+        {/* Tabel Rincian: Format Single-Line Rapi & Sejajar */}
+        <div className="space-y-2.5">
           {/* Header Kolom Mini */}
           <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
             <div className="col-span-1 text-center">Tipe</div>
@@ -564,16 +558,27 @@ export function CatatFinansialEditor({
           ) : (
             rows.map((row, index) => {
               const isIncome = row.tipe === "pemasukan";
-              const rowCategories = categories.filter((c) => c.tipe === row.tipe);
+
+              // Deduplikasi Kategori agar tidak muncul ganda di dropdown
+              const rowCategories = (() => {
+                const filtered = categories.filter((c) => c.tipe === row.tipe);
+                const seen = new Set<string>();
+                return filtered.filter((c) => {
+                  if (seen.has(c.nama_kategori)) return false;
+                  seen.add(c.nama_kategori);
+                  return true;
+                });
+              })();
+
               const selectedKat = categories.find((c) => c.id === row.kategori_id);
 
               return (
                 <div
                   key={index}
-                  className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs hover:border-slate-300 transition"
+                  className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs hover:border-slate-300 transition"
                 >
-                  <div className="grid gap-3 sm:grid-cols-12 items-center">
-                    {/* 1. Tipe Icon */}
+                  <div className="grid gap-2.5 sm:grid-cols-12 items-center">
+                    {/* 1. Tipe Icon: ↗ Panah Hijau (Pemasukan) atau ↘ Panah Merah (Pengeluaran) */}
                     <div className="sm:col-span-1 flex justify-center">
                       <div
                         className={`flex size-8 items-center justify-center rounded-lg border font-bold ${
@@ -583,64 +588,39 @@ export function CatatFinansialEditor({
                         }`}
                         title={isIncome ? "Pemasukan (Uang Masuk)" : "Pengeluaran (Uang Keluar)"}
                       >
-                        {isIncome ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}
+                        {isIncome ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
                       </div>
                     </div>
 
-                    {/* 2. Item / Keterangan + Tombol Tarik */}
-                    <div className="sm:col-span-5 space-y-1">
+                    {/* 2. Item / Keterangan dengan Tombol Tarik Rapi Terintegrasi di Dalam Input */}
+                    <div className="sm:col-span-5 relative flex items-center">
                       <Input
                         type="text"
-                        placeholder="Tulis uraian transaksi..."
+                        placeholder={isIncome ? "Uraian transaksi pemasukan..." : "Uraian transaksi pengeluaran..."}
                         value={row.deskripsi}
                         onChange={(e) => handleRowChange(index, "deskripsi", e.target.value)}
-                        className="text-xs font-medium text-slate-800"
+                        className="text-xs font-medium text-slate-800 pr-24"
                       />
-
-                      {/* Tombol Pintas Tarik Proyek / Gaji */}
-                      <div className="flex items-center gap-1.5 pt-0.5">
-                        {isIncome ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActivePickerRowIndex(index);
-                              setPickerType("proyek");
-                              setPickerQuery("");
-                            }}
-                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 transition"
-                          >
-                            <Building2 className="size-3" />
-                            {row.order_id ? "Ganti Proyek/Invoice" : "🏢 Tarik dari Proyek"}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActivePickerRowIndex(index);
-                              setPickerType("gaji");
-                              setPickerQuery("");
-                            }}
-                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 hover:bg-purple-100 transition"
-                          >
-                            <Users className="size-3" />
-                            {row.gaji_id ? "Ganti Slip Gaji" : "👷 Tarik dari Gaji"}
-                          </button>
-                        )}
-
-                        {row.sumber === "proyek" && row.invoice_no && (
-                          <span className="text-[10px] font-mono font-bold text-slate-500">
-                            Terhubung: {row.invoice_no}
-                          </span>
-                        )}
-                        {row.sumber === "gaji" && row.kode_gaji && (
-                          <span className="text-[10px] font-mono font-bold text-slate-500">
-                            Terhubung: {row.kode_gaji}
-                          </span>
-                        )}
-                      </div>
+                      {/* Tombol Tarik Proyek / Gaji yang Rapi & Sejajar (Tidak Membesarkan Baris) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActivePickerRowIndex(index);
+                          setPickerType(isIncome ? "proyek" : "gaji");
+                          setPickerQuery("");
+                        }}
+                        className={`absolute right-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                          isIncome
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                            : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                        }`}
+                        title={isIncome ? "Tarik dari invoice proyek closing" : "Tarik dari slip gaji teknisi"}
+                      >
+                        {isIncome ? "🏢 Proyek" : "👷 Gaji"}
+                      </button>
                     </div>
 
-                    {/* 3. Kategori Akun */}
+                    {/* 3. Kategori Akun (Dropdown Lebar Bersih, Tanpa Potongan Teks) */}
                     <div className="sm:col-span-2">
                       <Select
                         value={row.kategori_id || ""}
@@ -651,7 +631,7 @@ export function CatatFinansialEditor({
                             {selectedKat ? selectedKat.nama_kategori : "Pilih Kategori"}
                           </span>
                         </SelectTrigger>
-                        <SelectContent className="max-h-56">
+                        <SelectContent className="max-h-56 min-w-[240px] z-50">
                           <SelectGroup>
                             {rowCategories.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
@@ -682,7 +662,7 @@ export function CatatFinansialEditor({
                               : "📋 Kasbon"}
                           </span>
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="min-w-[150px] z-50">
                           <SelectGroup>
                             <SelectItem value="transfer">🏦 Transfer Bank</SelectItem>
                             <SelectItem value="cash">💵 Cash / Tunai</SelectItem>
@@ -693,7 +673,7 @@ export function CatatFinansialEditor({
                       </Select>
                     </div>
 
-                    {/* 5. Nominal (Rp) & Hapus */}
+                    {/* 5. Nominal (Rp) & Tombol Hapus */}
                     <div className="sm:col-span-2 flex items-center justify-end gap-1.5">
                       <Input
                         type="text"
@@ -724,7 +704,7 @@ export function CatatFinansialEditor({
         {/* Popover Pencarian Proyek / Gaji */}
         {activePickerRowIndex !== null && pickerType && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-2xs"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-2xs"
             ref={pickerRef}
           >
             <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl animate-in zoom-in-95">
@@ -802,7 +782,7 @@ export function CatatFinansialEditor({
         )}
 
         {/* 4. Tiga Kotak Ringkasan Saldo di Bawah Sesuai Gambar Referensi */}
-        <div className="grid gap-4 sm:grid-cols-3 pt-3">
+        <div className="grid gap-4 sm:grid-cols-3 pt-2">
           {/* Card 1: TOTAL PEMASUKAN */}
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs text-center">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
@@ -834,7 +814,7 @@ export function CatatFinansialEditor({
           </div>
         </div>
 
-        {/* 5. Footer Bawah Sesuai Gambar Referensi */}
+        {/* 5. Footer Bawah */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-4">
           <div className="flex-1 max-w-lg space-y-1">
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 italic">

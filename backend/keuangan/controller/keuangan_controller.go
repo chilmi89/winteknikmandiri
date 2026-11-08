@@ -116,6 +116,26 @@ func (ctrl *KeuanganController) DeleteKategori(c *gin.Context) {
 
 // ---------- 2. JURNAL KEUANGAN CONTROLLER ----------
 
+// GetNextKodeJurnal godoc
+// @Summary     Ambil kode nota jurnal berikutnya
+// @Tags        keuangan
+// @Produce     json
+// @Success     200 {object} map[string]any
+// @Router      /api/v1/keuangan/jurnal/next-code [get]
+func (ctrl *KeuanganController) GetNextKodeJurnal(c *gin.Context) {
+	code, err := ctrl.svc.GetNextKodeJurnal(c.Request.Context())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Kode jurnal berikutnya",
+		"data": gin.H{
+			"next_code": code,
+		},
+	})
+}
+
 // ListJurnal godoc
 // @Summary     Daftar buku kas & jurnal keuangan lengkap dengan summary saldo & pagination
 // @Tags        keuangan

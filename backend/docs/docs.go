@@ -1310,6 +1310,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/keuangan/jurnal/next-code": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Ambil kode nota jurnal berikutnya",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/keuangan/jurnal/{id}": {
             "get": {
                 "produces": [

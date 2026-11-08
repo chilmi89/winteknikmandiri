@@ -136,6 +136,10 @@ func (s *KeuanganService) DeleteKategori(ctx context.Context, idStr string) erro
 
 // ---------- 2. BUKU KAS & JURNAL TRANSAKSI SERVICE ----------
 
+func (s *KeuanganService) GetNextKodeJurnal(ctx context.Context) (string, error) {
+	return s.repo.GenerateKodeJurnal(ctx)
+}
+
 func (s *KeuanganService) ListJurnal(
 	ctx context.Context,
 	search string,

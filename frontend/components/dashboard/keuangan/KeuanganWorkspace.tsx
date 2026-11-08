@@ -31,6 +31,7 @@ import DataTablePagination from "@/components/dashboard/data-table/DataTablePagi
 import {
   listJurnalAdmin,
   getJurnalDetail,
+  getNextKodeJurnal,
   createJurnalAdmin,
   updateJurnalAdmin,
   deleteJurnalAdmin,
@@ -169,10 +170,11 @@ export function KeuanganWorkspace() {
     loadJurnal();
   }, [loadJurnal]);
 
-  // Buka Tab "+ Catat Baru"
-  const handleOpenNewTab = () => {
+  // Buka Tab Nota Baru
+  const handleOpenNewTab = async () => {
     if (!openTabs.find((t) => t.id === "new")) {
-      setOpenTabs((prev) => [...prev, { id: "new", title: "+ Catat Baru" }]);
+      const code = await getNextKodeJurnal();
+      setOpenTabs((prev) => [...prev, { id: "new", title: `${code} (Baru)` }]);
     }
     setActiveTab("new");
   };
@@ -439,8 +441,8 @@ export function KeuanganWorkspace() {
                 </div>
               </div>
 
-              {/* Baris Filter Bawah */}
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+              {/* Baris Filter Bawah: Status, Tanggal Dari & Sampai, Urutan Sort */}
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Filter Status */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-600 mb-1 block">
@@ -467,31 +469,6 @@ export function KeuanganWorkspace() {
                         <SelectItem value="all">Semua Status</SelectItem>
                         <SelectItem value="lunas">🟢 Lunas</SelectItem>
                         <SelectItem value="draft">🟡 Draft (Sementara)</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Filter Cabang */}
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
-                    Cabang Operasional:
-                  </label>
-                  <Select
-                    value={cabangFilter}
-                    onValueChange={(val) => {
-                      setCabangFilter(val || "all");
-                      setPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full text-xs font-medium">
-                      <span>{cabangFilter === "all" ? "Semua Cabang" : cabangFilter}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="all">Semua Cabang</SelectItem>
-                        <SelectItem value="Workshop Pusat Kediri">Workshop Pusat Kediri</SelectItem>
-                        <SelectItem value="Operasional Lapangan / Proyek">Operasional Lapangan</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>

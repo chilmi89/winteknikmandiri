@@ -23,6 +23,12 @@ ALTER TABLE jurnal_keuangan ALTER COLUMN sumber DROP NOT NULL;
 ALTER TABLE jurnal_keuangan ALTER COLUMN sumber SET DEFAULT 'multi';
 ALTER TABLE jurnal_keuangan ALTER COLUMN status SET DEFAULT 'draft';
 
+-- Bersihkan duplikasi kategori_keuangan jika ada dan buat unique constraint
+DELETE FROM kategori_keuangan WHERE id NOT IN (
+    SELECT (MIN(id::text))::uuid FROM kategori_keuangan WHERE deleted_at IS NULL GROUP BY nama_kategori, tipe
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_kategori_keuangan_unique_nama ON kategori_keuangan (nama_kategori, tipe) WHERE deleted_at IS NULL;
+
 -- 2. Buat tabel jurnal_items (Rincian Baris Transaksi di Dalam Nota)
 CREATE TABLE IF NOT EXISTS jurnal_items (
     id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
