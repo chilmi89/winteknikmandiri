@@ -265,6 +265,7 @@ export function GajiDialog({
       setTeamId(teamList.length > 0 ? teamList[0].id : "");
       setStatus("draft");
       setCatatan("");
+      // Cari proyek pertama yang tersedia
       setProyekRows([
         {
           order_id: orderList.length > 0 ? orderList[0].id : "",
@@ -277,12 +278,18 @@ export function GajiDialog({
     setError(null);
   }, [gaji, open, teamList, orderList]);
 
-  // Tambah baris proyek baru
+  // Tambah baris proyek baru: pilih otomatis proyek berikutnya yang belum diambil
   const handleAddRow = () => {
-    const defaultOrderId = orderList.length > 0 ? orderList[0].id : "";
+    const selectedOrderIds = proyekRows.map((r) => r.order_id).filter(Boolean);
+    const nextAvailable = orderList.find((o) => !selectedOrderIds.includes(o.id));
+
     setProyekRows((prev) => [
       ...prev,
-      { order_id: defaultOrderId, nominal: "", keterangan: "" },
+      {
+        order_id: nextAvailable ? nextAvailable.id : "",
+        nominal: "",
+        keterangan: "",
+      },
     ]);
   };
 
@@ -381,6 +388,37 @@ export function GajiDialog({
     if (!teamId) {
       setError("Silakan pilih Tim Teknisi terlebih dahulu.");
       return;
+    }
+
+    if (proyekRows.length === 0) {
+      setError("Silakan tempelkan minimal satu proyek ke slip gaji.");
+      return;
+    }
+
+    // Validasi setiap baris proyek
+    for (let i = 0; i < proyekRows.length; i++) {
+      const r = proyekRows[i];
+      if (!r.order_id) {
+        setError(`Harap pilih invoice untuk Proyek #${i + 1}.`);
+        return;
+      }
+      const rawNominal = parseInt(r.nominal.replace(/\D/g, ""), 10) || 0;
+      if (rawNominal <= 0) {
+        setError(`Harap isi nominal upah tim untuk Proyek #${i + 1}.`);
+        return;
+      }
+    }
+
+    // Validasi anti-duplikasi: tidak boleh ada proyek yang sama
+    const seenOrders = new Set<string>();
+    for (const r of proyekRows) {
+      if (seenOrders.has(r.order_id)) {
+        const dupOrder = orderList.find((o) => o.id === r.order_id);
+        const inv = dupOrder?.invoice_no || "tersebut";
+        setError(`Proyek ${inv} dipilih lebih dari satu kali. Setiap proyek dalam satu slip gaji harus berbeda.`);
+        return;
+      }
+      seenOrders.add(r.order_id);
     }
 
     setBusy(true);
@@ -527,15 +565,21 @@ export function GajiDialog({
                 Proyek Selesai & Pekerjaan Layanan
               </h4>
               <p className="text-xs text-slate-500">
-                Hanya menampilkan proyek berstatus <strong>Selesai</strong> (closing). Bisa dicari via kode INV.
+                Hanya menampilkan proyek berstatus <strong>Selesai</strong> (closing). Bebas duplikasi antar baris.
               </p>
             </div>
-            {/* Tombol Tambah Proyek: Berwarna Hitam */}
+            {/* Tombol Tambah Proyek: Berwarna Hitam, disable jika semua proyek selesai sudah terpasang */}
             <Button
               type="button"
               size="sm"
               onClick={handleAddRow}
-              className="gap-1.5 text-xs bg-slate-900 text-white hover:bg-slate-800 shadow-2xs transition"
+              disabled={proyekRows.length >= orderList.length}
+              title={
+                proyekRows.length >= orderList.length
+                  ? "Semua proyek selesai sudah terpasang di slip ini"
+                  : "Tambah proyek lain"
+              }
+              className="gap-1.5 text-xs bg-slate-900 text-white hover:bg-slate-800 shadow-2xs transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="size-3.5" />
               Tambah Proyek
@@ -550,72 +594,84 @@ export function GajiDialog({
             </div>
           ) : (
             <div className="space-y-3">
-              {proyekRows.map((row, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-[11px] font-bold text-slate-500">
-                      Proyek #{index + 1}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveRow(index)}
-                      className="size-7 p-0 text-slate-400 hover:text-rose-600"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
+              {proyekRows.map((row, index) => {
+                // Filter opsi: kecualikan order yang sudah dipilih oleh baris lainnya
+                const otherSelectedOrderIds = proyekRows
+                  .filter((_, i) => i !== index)
+                  .map((r) => r.order_id)
+                  .filter(Boolean);
 
-                  <div className="grid gap-3 sm:grid-cols-12">
-                    {/* Pilih Order Proyek: Searchable Dropdown */}
-                    <div className="sm:col-span-7">
-                      <label className="text-[11px] font-medium text-slate-600 block mb-1">
-                        Pilih Invoice Proyek (Selesai)
-                      </label>
-                      <SearchableProjectSelect
-                        value={row.order_id}
-                        onChange={(val) =>
-                          handleRowChange(index, "order_id", val)
-                        }
-                        orders={orderList}
-                      />
+                const availableOrdersForRow = orderList.filter(
+                  (o) => !otherSelectedOrderIds.includes(o.id)
+                );
+
+                return (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[11px] font-bold text-slate-500">
+                        Proyek #{index + 1}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveRow(index)}
+                        className="size-7 p-0 text-slate-400 hover:text-rose-600"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </div>
 
-                    {/* Nominal Upah Borongan */}
-                    <div className="sm:col-span-5">
-                      <label className="text-[11px] font-medium text-slate-600 block mb-1">
-                        Nominal Upah Tim
-                      </label>
+                    <div className="grid gap-3 sm:grid-cols-12">
+                      {/* Pilih Order Proyek: Searchable Dropdown dengan filter anti-duplikasi */}
+                      <div className="sm:col-span-7">
+                        <label className="text-[11px] font-medium text-slate-600 block mb-1">
+                          Pilih Invoice Proyek (Selesai)
+                        </label>
+                        <SearchableProjectSelect
+                          value={row.order_id}
+                          onChange={(val) =>
+                            handleRowChange(index, "order_id", val)
+                          }
+                          orders={availableOrdersForRow}
+                        />
+                      </div>
+
+                      {/* Nominal Upah Borongan */}
+                      <div className="sm:col-span-5">
+                        <label className="text-[11px] font-medium text-slate-600 block mb-1">
+                          Nominal Upah Tim
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Contoh: 1.500.000"
+                          value={row.nominal}
+                          onChange={(e) =>
+                            handleRowChange(index, "nominal", e.target.value)
+                          }
+                          className="text-xs font-semibold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Keterangan Proyek */}
+                    <div>
                       <Input
                         type="text"
-                        placeholder="Rp 1.500.000"
-                        value={row.nominal}
+                        placeholder="Catatan / keterangan (mis: Upah pasang ducting lantai 2)"
+                        value={row.keterangan}
                         onChange={(e) =>
-                          handleRowChange(index, "nominal", e.target.value)
+                          handleRowChange(index, "keterangan", e.target.value)
                         }
-                        className="text-xs font-semibold text-slate-900"
+                        className="text-xs text-slate-600 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
-
-                  {/* Keterangan Proyek */}
-                  <div>
-                    <Input
-                      type="text"
-                      placeholder="Catatan / keterangan (mis: Upah pasang ducting lantai 2)"
-                      value={row.keterangan}
-                      onChange={(e) =>
-                        handleRowChange(index, "keterangan", e.target.value)
-                      }
-                      className="text-xs text-slate-600 placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

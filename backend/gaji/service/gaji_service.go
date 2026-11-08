@@ -92,6 +92,18 @@ func (s *GajiService) CreateGaji(ctx context.Context, req dto.CreateGajiRequest)
 		return nil, apperr.Validation("Format TeamID tidak valid", err.Error())
 	}
 
+	// Validasi anti-duplikasi order dalam satu slip
+	seenOrders := make(map[string]bool)
+	for _, p := range req.Proyek {
+		if p.OrderID == "" {
+			continue
+		}
+		if seenOrders[p.OrderID] {
+			return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu slip gaji")
+		}
+		seenOrders[p.OrderID] = true
+	}
+
 	kodeGaji, err := s.repo.GenerateKodeGaji(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("generate kode gaji: %w", err)
@@ -154,6 +166,20 @@ func (s *GajiService) AttachProyek(ctx context.Context, gajiIDStr string, req dt
 	orderUUID, err := uuid.Parse(req.OrderID)
 	if err != nil {
 		return nil, apperr.Validation("Format Order ID tidak valid", err.Error())
+	}
+
+	// Cek apakah proyek ini sudah terdaftar di slip gaji ini
+	existing, err := s.repo.GetGajiDetail(ctx, gajiUUID)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, apperr.NotFound("Slip gaji tidak ditemukan")
+	}
+	for _, p := range existing.Proyek {
+		if p.OrderID == orderUUID {
+			return nil, apperr.Validation("Proyek duplikat", "Invoice proyek ini sudah terdaftar dalam slip gaji ini")
+		}
 	}
 
 	_, err = s.repo.AttachProyek(ctx, gajiUUID, orderUUID, req.Nominal, req.Keterangan)

@@ -30,3 +30,4 @@ CREATE TABLE IF NOT EXISTS gaji_proyek (
 
 CREATE INDEX IF NOT EXISTS idx_gaji_proyek_gaji_id ON gaji_proyek (gaji_id);
 CREATE INDEX IF NOT EXISTS idx_gaji_proyek_order_id ON gaji_proyek (order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_gaji_proyek_unique_order ON gaji_proyek (gaji_id, order_id);
