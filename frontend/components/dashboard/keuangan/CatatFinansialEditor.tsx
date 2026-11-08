@@ -324,29 +324,45 @@ export function CatatFinansialEditor({
       ? `-Rp ${Math.abs(saldoBersihNum).toLocaleString("id-ID")}`
       : `Rp ${saldoBersihNum.toLocaleString("id-ID")}`;
 
-  // Filter Orders in Picker
+  // Filter Orders in Picker (Anti-Duplikasi Antar-Baris)
   const filteredOrders = useMemo(() => {
-    if (!pickerQuery.trim()) return orders;
+    // Kumpulkan order_id yang sudah dipilih di baris LAINNYA dalam nota ini
+    const otherSelectedOrderIds = rows
+      .filter((_, i) => i !== activePickerRowIndex)
+      .map((r) => r.order_id)
+      .filter(Boolean);
+
+    const available = orders.filter((o) => !otherSelectedOrderIds.includes(o.id));
+
+    if (!pickerQuery.trim()) return available;
     const q = pickerQuery.toLowerCase();
-    return orders.filter(
+    return available.filter(
       (o) =>
         o.invoice_no?.toLowerCase().includes(q) ||
         o.initial_service?.toLowerCase().includes(q) ||
         o.customer_name?.toLowerCase().includes(q)
     );
-  }, [orders, pickerQuery]);
+  }, [orders, rows, activePickerRowIndex, pickerQuery]);
 
-  // Filter Gaji in Picker
+  // Filter Gaji in Picker (Anti-Duplikasi Antar-Baris)
   const filteredGaji = useMemo(() => {
-    if (!pickerQuery.trim()) return gajiList;
+    // Kumpulkan gaji_id yang sudah dipilih di baris LAINNYA dalam nota ini
+    const otherSelectedGajiIds = rows
+      .filter((_, i) => i !== activePickerRowIndex)
+      .map((r) => r.gaji_id)
+      .filter(Boolean);
+
+    const available = gajiList.filter((g) => !otherSelectedGajiIds.includes(g.id));
+
+    if (!pickerQuery.trim()) return available;
     const q = pickerQuery.toLowerCase();
-    return gajiList.filter(
+    return available.filter(
       (g) =>
         g.kode_gaji?.toLowerCase().includes(q) ||
         g.team_name?.toLowerCase().includes(q) ||
         g.team_skill?.toLowerCase().includes(q)
     );
-  }, [gajiList, pickerQuery]);
+  }, [gajiList, rows, activePickerRowIndex, pickerQuery]);
 
   // Submit Handler
   const handleSaveReport = async () => {
@@ -365,6 +381,34 @@ export function CatatFinansialEditor({
       if (parseNumeric(r.nominal) <= 0) {
         toast.add({ title: "Validasi gagal", description: `Nominal pada baris #${i + 1} harus lebih dari 0.`, type: "error" });
         return;
+      }
+    }
+
+    // Validasi anti-duplikasi proyek dan gaji
+    const seenOrders = new Set<string>();
+    const seenGaji = new Set<string>();
+    for (const r of rows) {
+      if (r.order_id) {
+        if (seenOrders.has(r.order_id)) {
+          toast.add({
+            title: "Proyek Duplikat",
+            description: `Invoice ${r.invoice_no || "proyek"} dipilih lebih dari satu kali. Setiap proyek dalam satu nota harus berbeda.`,
+            type: "error",
+          });
+          return;
+        }
+        seenOrders.add(r.order_id);
+      }
+      if (r.gaji_id) {
+        if (seenGaji.has(r.gaji_id)) {
+          toast.add({
+            title: "Slip Gaji Duplikat",
+            description: `Slip gaji ${r.kode_gaji || "tim"} dipilih lebih dari satu kali dalam satu nota.`,
+            type: "error",
+          });
+          return;
+        }
+        seenGaji.add(r.gaji_id);
       }
     }
 

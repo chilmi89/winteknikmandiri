@@ -216,6 +216,24 @@ func (s *KeuanganService) CreateJurnal(ctx context.Context, req dto.CreateJurnal
 		waktu = parseWaktu(*req.WaktuTransaksi)
 	}
 
+	// Validasi anti-duplikasi order_id dan gaji_id
+	seenOrders := make(map[string]bool)
+	seenGaji := make(map[string]bool)
+	for _, itemReq := range req.Items {
+		if itemReq.OrderID != nil && *itemReq.OrderID != "" {
+			if seenOrders[*itemReq.OrderID] {
+				return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
+			}
+			seenOrders[*itemReq.OrderID] = true
+		}
+		if itemReq.GajiID != nil && *itemReq.GajiID != "" {
+			if seenGaji[*itemReq.GajiID] {
+				return nil, apperr.Validation("Slip gaji duplikat", "Satu slip gaji tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
+			}
+			seenGaji[*itemReq.GajiID] = true
+		}
+	}
+
 	kodeJurnal, err := s.repo.GenerateKodeJurnal(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("generate kode jurnal: %w", err)
@@ -350,6 +368,24 @@ func (s *KeuanganService) UpdateJurnal(ctx context.Context, idStr string, req dt
 	numSaldo := current.NumericSaldo
 
 	if req.Items != nil {
+		// Validasi anti-duplikasi order_id dan gaji_id
+		seenOrders := make(map[string]bool)
+		seenGaji := make(map[string]bool)
+		for _, itemReq := range *req.Items {
+			if itemReq.OrderID != nil && *itemReq.OrderID != "" {
+				if seenOrders[*itemReq.OrderID] {
+					return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
+				}
+				seenOrders[*itemReq.OrderID] = true
+			}
+			if itemReq.GajiID != nil && *itemReq.GajiID != "" {
+				if seenGaji[*itemReq.GajiID] {
+					return nil, apperr.Validation("Slip gaji duplikat", "Satu slip gaji tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
+				}
+				seenGaji[*itemReq.GajiID] = true
+			}
+		}
+
 		itemsArr := make([]model.JurnalItem, 0, len(*req.Items))
 		var sumIn int64
 		var sumOut int64
