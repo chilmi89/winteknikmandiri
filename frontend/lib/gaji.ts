@@ -52,6 +52,7 @@ export type UpdateGajiPayload = {
   team_id?: string;
   status?: string;
   catatan?: string;
+  proyek?: AttachProyekPayload[];
 };
 
 // ---------- API CALLS ----------

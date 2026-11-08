@@ -48,9 +48,10 @@ type CreateGajiRequest struct {
 
 // UpdateGajiRequest payload edit slip gaji.
 type UpdateGajiRequest struct {
-	TeamID  *string `json:"team_id"`
-	Status  *string `json:"status"`
-	Catatan *string `json:"catatan"`
+	TeamID  *string                `json:"team_id"`
+	Status  *string                `json:"status"`
+	Catatan *string                `json:"catatan"`
+	Proyek  *[]AttachProyekRequest `json:"proyek"`
 }
 
 // GajiEnvelope membungkus single response gaji.

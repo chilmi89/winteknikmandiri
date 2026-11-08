@@ -129,7 +129,7 @@ func (s *GajiService) CreateGaji(ctx context.Context, req dto.CreateGajiRequest)
 	return &res, nil
 }
 
-// UpdateGaji memperbarui data header slip gaji.
+// UpdateGaji memperbarui data header slip gaji beserta rincian proyeknya secara atomik.
 func (s *GajiService) UpdateGaji(ctx context.Context, idStr string, req dto.UpdateGajiRequest) (*dto.GajiResponse, error) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -143,17 +143,39 @@ func (s *GajiService) UpdateGaji(ctx context.Context, idStr string, req dto.Upda
 		return nil, apperr.NotFound("Slip gaji tidak ditemukan")
 	}
 
+	// Validasi anti-duplikasi proyek jika proyek disertakan
+	if req.Proyek != nil {
+		seenOrders := make(map[string]bool)
+		for _, p := range *req.Proyek {
+			if p.OrderID == "" {
+				continue
+			}
+			if seenOrders[p.OrderID] {
+				return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu slip gaji")
+			}
+			seenOrders[p.OrderID] = true
+		}
+	}
+
 	updated, err := s.repo.UpdateGaji(ctx, current, req)
 	if err != nil {
 		return nil, err
 	}
 
 	full, _ := s.repo.GetGajiDetail(ctx, updated.ID)
-	if full != nil {
-		res := toGajiDTO(full)
+	if full == nil {
+		res := toGajiDTO(updated)
 		return &res, nil
 	}
-	res := toGajiDTO(updated)
+
+	// Hitung ulang total gaji jika ada perubahan proyek
+	if req.Proyek != nil {
+		totalSum := calculateTotal(full.Proyek)
+		_ = s.repo.UpdateTotalGaji(ctx, full.ID, totalSum)
+		full.TotalGaji = totalSum
+	}
+
+	res := toGajiDTO(full)
 	return &res, nil
 }
 

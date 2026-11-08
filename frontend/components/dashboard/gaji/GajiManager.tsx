@@ -32,11 +32,9 @@ import DataTableToolbar, {
 import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
 import {
   listGajiAdmin,
+  getGajiDetail,
   createGaji,
   updateGaji,
-  attachProyekGaji,
-  updateProyekNominal,
-  deleteProyekFromGaji,
   deleteGaji,
   type Gaji,
   type CreateGajiPayload,
@@ -164,39 +162,12 @@ export function GajiManager() {
     loadGajiData(true);
   };
 
-  // Update handler
+  // Update handler (atomik dan menyeluruh)
   const handleUpdateGaji = async (
     id: string,
-    header: UpdateGajiPayload,
-    proyekList: {
-      id?: string;
-      order_id: string;
-      nominal: string;
-      keterangan: string;
-    }[],
-    deletedProyekIds: string[]
+    payload: UpdateGajiPayload
   ) => {
-    // 1. Update header
-    await updateGaji(id, header);
-
-    // 2. Hapus proyek yang ditandai delete
-    for (const dId of deletedProyekIds) {
-      await deleteProyekFromGaji(dId);
-    }
-
-    // 3. Update atau tambahkan proyek baru
-    for (const p of proyekList) {
-      if (p.id) {
-        await updateProyekNominal(p.id, p.nominal, p.keterangan);
-      } else if (p.order_id) {
-        await attachProyekGaji(id, {
-          order_id: p.order_id,
-          nominal: p.nominal,
-          keterangan: p.keterangan,
-        });
-      }
-    }
-
+    await updateGaji(id, payload);
     toast.add({
       title: "Slip Gaji Diperbarui",
       description: "Perubahan rincian proyek & upah berhasil disimpan.",
@@ -491,8 +462,13 @@ export function GajiManager() {
         <GajiTable
           data={data}
           loading={loading}
-          onEdit={(item) => {
-            setEditingGaji(item);
+          onEdit={async (item) => {
+            try {
+              const full = await getGajiDetail(item.id);
+              setEditingGaji(full);
+            } catch {
+              setEditingGaji(item);
+            }
             setShowDialog(true);
           }}
           onDelete={(item) => {

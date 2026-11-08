@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,7 +36,7 @@ func (r *GajiRepository) GenerateKodeGaji(ctx context.Context) (string, error) {
 	return fmt.Sprintf("GAJI-%s-%04d", prefix, count+1), nil
 }
 
-// ListGaji mengambil daftar gaji dengan filter & pagination.
+
 func (r *GajiRepository) ListGaji(
 	ctx context.Context,
 	teamID string,
@@ -78,7 +79,6 @@ func (r *GajiRepository) ListGaji(
 		argIdx++
 	}
 
-	// Filter by Proyek (order_id)
 	if orderID != "" {
 		if parsed, err := uuid.Parse(orderID); err == nil {
 			whereClause += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM gaji_proyek gp WHERE gp.gaji_id = g.id AND gp.order_id = $%d::uuid)", argIdx)
@@ -107,7 +107,7 @@ func (r *GajiRepository) ListGaji(
 		return nil, 0, fmt.Errorf("count gaji: %w", err)
 	}
 
-	// Query Data
+	// query Data
 	dataQuery := fmt.Sprintf(`
 		SELECT
 			g.id, g.kode_gaji, g.team_id, t.name as team_name, t.skill as team_skill,
@@ -137,6 +137,48 @@ func (r *GajiRepository) ListGaji(
 			return nil, 0, err
 		}
 		items = append(items, it)
+	}
+
+	if len(items) > 0 {
+		gajiIDs := make([]any, len(items))
+		placeholders := make([]string, len(items))
+		for i, it := range items {
+			gajiIDs[i] = it.ID
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+		}
+
+		pQuery := fmt.Sprintf(`
+			SELECT
+				gp.id, gp.gaji_id, gp.order_id,
+				o.invoice_no, o.initial_service, COALESCE(o.customer_name, ''),
+				gp.nominal, gp.keterangan, gp.created_at, gp.updated_at
+			FROM gaji_proyek gp
+			JOIN orders o ON gp.order_id = o.id
+			WHERE gp.gaji_id IN (%s)
+			ORDER BY gp.created_at ASC
+		`, strings.Join(placeholders, ","))
+
+		pRows, err := r.db.QueryContext(ctx, pQuery, gajiIDs...)
+		if err == nil {
+			defer pRows.Close()
+			proyekMap := make(map[uuid.UUID][]model.GajiProyek)
+			for pRows.Next() {
+				var p model.GajiProyek
+				if err := pRows.Scan(
+					&p.ID, &p.GajiID, &p.OrderID,
+					&p.InvoiceNo, &p.NamaLayanan, &p.NamaCustomer,
+					&p.Nominal, &p.Keterangan, &p.CreatedAt, &p.UpdatedAt,
+				); err == nil {
+					proyekMap[p.GajiID] = append(proyekMap[p.GajiID], p)
+				}
+			}
+			for i := range items {
+				items[i].Proyek = proyekMap[items[i].ID]
+				if items[i].Proyek == nil {
+					items[i].Proyek = make([]model.GajiProyek, 0)
+				}
+			}
+		}
 	}
 
 	return items, total, rows.Err()
@@ -246,7 +288,7 @@ func (r *GajiRepository) CreateGaji(ctx context.Context, kodeGaji string, teamUU
 	return &it, nil
 }
 
-// UpdateGaji mengubah status atau catatan slip gaji.
+// UpdateGaji mengubah status atau catatan slip gaji, serta menyinkronkan proyek jika disediakan.
 func (r *GajiRepository) UpdateGaji(ctx context.Context, current *model.Gaji, req dto.UpdateGajiRequest) (*model.Gaji, error) {
 	status := current.Status
 	if req.Status != nil {
@@ -263,6 +305,12 @@ func (r *GajiRepository) UpdateGaji(ctx context.Context, current *model.Gaji, re
 		}
 	}
 
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	query := `
 		UPDATE gaji
 		SET team_id = $1, status = $2, catatan = $3, updated_at = NOW()
@@ -270,12 +318,42 @@ func (r *GajiRepository) UpdateGaji(ctx context.Context, current *model.Gaji, re
 		RETURNING id, kode_gaji, team_id, total_gaji, status, catatan, created_at, updated_at
 	`
 	var it model.Gaji
-	err := r.db.QueryRowContext(ctx, query, teamID, status, catatan, current.ID).Scan(
+	err = tx.QueryRowContext(ctx, query, teamID, status, catatan, current.ID).Scan(
 		&it.ID, &it.KodeGaji, &it.TeamID, &it.TotalGaji, &it.Status, &it.Catatan, &it.CreatedAt, &it.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	// Jika req.Proyek disertakan, perbarui daftar proyek secara atomik
+	if req.Proyek != nil {
+		// Hapus proyek lama
+		_, err = tx.ExecContext(ctx, `DELETE FROM gaji_proyek WHERE gaji_id = $1::uuid`, current.ID)
+		if err != nil {
+			return nil, fmt.Errorf("delete old gaji_proyek: %w", err)
+		}
+
+		// Masukkan proyek baru
+		for _, pReq := range *req.Proyek {
+			orderUUID, err := uuid.Parse(pReq.OrderID)
+			if err != nil {
+				continue
+			}
+			pQuery := `
+				INSERT INTO gaji_proyek (gaji_id, order_id, nominal, keterangan)
+				VALUES ($1, $2, $3, $4)
+			`
+			_, err = tx.ExecContext(ctx, pQuery, current.ID, orderUUID, pReq.Nominal, pReq.Keterangan)
+			if err != nil {
+				return nil, fmt.Errorf("insert gaji_proyek: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	return &it, nil
 }
 

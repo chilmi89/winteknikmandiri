@@ -47,9 +47,7 @@ type GajiDialogProps = {
   onSubmitCreate: (payload: CreateGajiPayload) => Promise<void>;
   onSubmitUpdate: (
     id: string,
-    header: UpdateGajiPayload,
-    proyekList: ProjectRow[],
-    deletedProyekIds: string[]
+    payload: UpdateGajiPayload
   ) => Promise<void>;
 };
 
@@ -246,42 +244,79 @@ export function GajiDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Gabungkan orderList dengan proyek yang sudah terpasang di slip gaji (saat mode edit)
+  const allAvailableOrders = useMemo(() => {
+    const map = new Map<string, Order>();
+    for (const ord of orderList) {
+      map.set(ord.id, ord);
+    }
+    if (gaji && gaji.proyek) {
+      for (const p of gaji.proyek) {
+        if (!map.has(p.order_id)) {
+          map.set(p.order_id, {
+            id: p.order_id,
+            invoice_no: p.invoice_no || "INV-PROYEK",
+            initial_service: p.nama_layanan || "Layanan Proyek",
+            customer_name: p.nama_customer || "",
+            status: "selesai",
+            initial_category: "",
+            initial_price: "",
+            total_amount: p.nominal,
+            items: [],
+            created_at: p.created_at || "",
+            updated_at: p.updated_at || "",
+          });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [orderList, gaji]);
+
   // Inisialisasi state saat dialog dibuka
   useEffect(() => {
     if (gaji) {
       setTeamId(gaji.team_id);
       setStatus(gaji.status);
       setCatatan(gaji.catatan || "");
-      setProyekRows(
-        (gaji.proyek || []).map((p) => ({
-          id: p.id,
-          order_id: p.order_id,
-          nominal: p.nominal,
-          keterangan: p.keterangan || "",
-        }))
-      );
-      setDeletedProyekIds([]);
+      if (gaji.proyek && gaji.proyek.length > 0) {
+        setProyekRows(
+          gaji.proyek.map((p) => ({
+            id: p.id,
+            order_id: p.order_id,
+            nominal: p.nominal,
+            keterangan: p.keterangan || "",
+          }))
+        );
+      } else {
+        setProyekRows([
+          {
+            order_id: "",
+            nominal: "",
+            keterangan: "",
+          },
+        ]);
+      }
     } else {
       setTeamId(teamList.length > 0 ? teamList[0].id : "");
       setStatus("draft");
       setCatatan("");
-      // Cari proyek pertama yang tersedia
       setProyekRows([
         {
-          order_id: orderList.length > 0 ? orderList[0].id : "",
+          order_id: allAvailableOrders.length > 0 ? allAvailableOrders[0].id : "",
           nominal: "",
           keterangan: "",
         },
       ]);
-      setDeletedProyekIds([]);
     }
     setError(null);
-  }, [gaji, open, teamList, orderList]);
+  }, [gaji, open, teamList, allAvailableOrders]);
 
   // Tambah baris proyek baru: pilih otomatis proyek berikutnya yang belum diambil
   const handleAddRow = () => {
     const selectedOrderIds = proyekRows.map((r) => r.order_id).filter(Boolean);
-    const nextAvailable = orderList.find((o) => !selectedOrderIds.includes(o.id));
+    const nextAvailable = allAvailableOrders.find(
+      (o) => !selectedOrderIds.includes(o.id)
+    );
 
     setProyekRows((prev) => [
       ...prev,
@@ -426,16 +461,18 @@ export function GajiDialog({
 
     try {
       if (isEdit && gaji) {
-        await onSubmitUpdate(
-          gaji.id,
-          {
-            team_id: teamId,
-            status,
-            catatan,
-          },
-          proyekRows,
-          deletedProyekIds
-        );
+        await onSubmitUpdate(gaji.id, {
+          team_id: teamId,
+          status,
+          catatan,
+          proyek: proyekRows
+            .filter((r) => r.order_id)
+            .map((r) => ({
+              order_id: r.order_id,
+              nominal: r.nominal || "Rp 0",
+              keterangan: r.keterangan || "",
+            })),
+        });
       } else {
         const payload: CreateGajiPayload = {
           team_id: teamId,
@@ -573,9 +610,9 @@ export function GajiDialog({
               type="button"
               size="sm"
               onClick={handleAddRow}
-              disabled={proyekRows.length >= orderList.length}
+              disabled={proyekRows.length >= allAvailableOrders.length}
               title={
-                proyekRows.length >= orderList.length
+                proyekRows.length >= allAvailableOrders.length
                   ? "Semua proyek selesai sudah terpasang di slip ini"
                   : "Tambah proyek lain"
               }
@@ -601,7 +638,7 @@ export function GajiDialog({
                   .map((r) => r.order_id)
                   .filter(Boolean);
 
-                const availableOrdersForRow = orderList.filter(
+                const availableOrdersForRow = allAvailableOrders.filter(
                   (o) => !otherSelectedOrderIds.includes(o.id)
                 );
 
