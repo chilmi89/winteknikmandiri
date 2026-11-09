@@ -32,13 +32,13 @@ export default function ServiceCard({
         <div
           className={`lg:col-span-5 ${reversed ? "lg:order-2" : "lg:order-1"}`}
         >
-          <div className="relative aspect-[4/3] overflow-hidden border border-[#0A2540]/10 bg-[#0A2540] shadow-sm">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[#0A2540]/10 bg-[#0A2540] shadow-sm">
             <Image
               src={item.image_url || "/images/ac-split-clean.jpg"}
               alt={item.title}
               fill
               sizes="(max-width: 1024px) 100vw, 460px"
-              className="object-cover"
+              className="object-cover transition-transform duration-700 ease-out hover:scale-105"
             />
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function ServiceCard({
               price={item.price ? `${item.price} ${item.unit}` : "Penawaran"}
               serviceId={item.id}
               categoryId={item.category_id}
-              className={`bg-[#A82020] px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#8e1919] sm:px-5 sm:py-3 sm:text-[11px] ${focusRing}`}
+              className={`rounded-lg bg-[#A82020] px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white shadow-xs transition-all duration-200 hover:bg-[#8e1919] hover:shadow-md active:scale-95 sm:px-5 sm:py-3 sm:text-[11px] ${focusRing}`}
             />
 
             <a

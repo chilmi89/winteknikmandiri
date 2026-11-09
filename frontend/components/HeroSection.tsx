@@ -276,9 +276,10 @@ export default function HeroSection() {
             <Link
               href={
                 hero?.cta_secondary_url &&
-                hero.cta_secondary_url !== "#sosial-media"
+                hero.cta_secondary_url !== "#sosial-media" &&
+                hero.cta_secondary_url !== "#layanan"
                   ? hero.cta_secondary_url
-                  : "#layanan"
+                  : "/layanan#katalog"
               }
               className={`inline-flex items-center justify-center gap-2 border border-white/25 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:border-white hover:bg-white hover:text-[#0A2540] ${focusRing}`}
             >
