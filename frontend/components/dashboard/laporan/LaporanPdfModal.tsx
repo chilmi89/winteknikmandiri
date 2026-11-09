@@ -188,11 +188,11 @@ export function LaporanPdfModal({
                         <td className="border border-slate-300 px-2.5 py-1.5 text-slate-600">
                           {it.nama_kategori}
                         </td>
-                        <td className="border border-slate-300 px-3 py-1.5 text-right font-bold text-emerald-700">
-                          {isIncome ? it.nominal : "-"}
+                        <td className="border border-slate-300 px-3 py-1.5 text-right font-bold tabular-nums text-emerald-700">
+                          {isIncome ? it.nominal : "–"}
                         </td>
-                        <td className="border border-slate-300 px-3 py-1.5 text-right font-bold text-rose-700">
-                          {!isIncome ? it.nominal : "-"}
+                        <td className="border border-slate-300 px-3 py-1.5 text-right font-bold tabular-nums text-rose-700">
+                          {!isIncome ? it.nominal : "–"}
                         </td>
                       </tr>
                     );

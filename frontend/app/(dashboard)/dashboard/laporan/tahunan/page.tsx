@@ -11,7 +11,7 @@ export default function LaporanTahunanPage() {
     <LaporanPageView
       periode="tahunan"
       pageTitle="Laporan Keuangan Tahunan"
-      pageSubtitle="Evaluasi performa 12 bulan (Januari–Desember), pertumbuhan omzet tahunan, dan pembukuan resmi."
+      pageSubtitle="Performa 12 bulan."
     />
   );
 }

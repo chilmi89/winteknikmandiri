@@ -11,7 +11,7 @@ export default function LaporanMingguanPage() {
     <LaporanPageView
       periode="mingguan"
       pageTitle="Laporan Keuangan Mingguan"
-      pageSubtitle="Evaluasi tren arus kas mingguan (Senin–Minggu) sebelum jadwal pengeluaran & pencairan gaji teknisi."
+      pageSubtitle="Arus kas mingguan."
     />
   );
 }

@@ -11,7 +11,7 @@ export default function LaporanBulananPage() {
     <LaporanPageView
       periode="bulanan"
       pageTitle="Laporan Keuangan Bulanan"
-      pageSubtitle="Laporan laba rugi operasional bulanan (P&L), komparasi performa minggu I s/d V, dan rekapitulasi kas."
+      pageSubtitle="Laba rugi bulanan."
     />
   );
 }

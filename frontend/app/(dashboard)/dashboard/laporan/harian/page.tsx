@@ -11,7 +11,7 @@ export default function LaporanHarianPage() {
     <LaporanPageView
       periode="harian"
       pageTitle="Laporan Keuangan Harian"
-      pageSubtitle="Pantau mutasi kas masuk, kas keluar, dan penutupan kas harian (Daily Cash Closing)."
+      pageSubtitle="Mutasi kas per hari."
     />
   );
 }

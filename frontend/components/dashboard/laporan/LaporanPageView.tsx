@@ -4,15 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Calendar,
-  Download,
-  Filter,
   Percent,
   Printer,
+  Download,
   RefreshCw,
-  RotateCcw,
-  Search,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +36,6 @@ import {
   fetchLaporanKeuangan,
   exportLaporanToExcel,
   type LaporanResponse,
-  type LaporanSummary,
 } from "@/lib/laporan";
 import { listOrdersAdmin, type Order } from "@/lib/orders";
 import { AnimatedBarChart } from "./AnimatedBarChart";
@@ -260,141 +254,119 @@ export function LaporanPageView({
   const pageEnd = Math.min(page * pageSize, totalCount);
 
   return (
-    <div className="space-y-6">
-      {/* 1. Navigasi 4 Halaman Laporan (Pill Bar) */}
+    <div className="space-y-5">
       <LaporanNavigation />
 
-      {/* 2. Header Halaman & 2 Tombol Ekspor (Excel & PDF Resmi) */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header Halaman & Aksi Ekspor */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">{pageTitle}</h1>
-          <p className="mt-1 text-xs text-slate-500">{pageSubtitle}</p>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">{pageTitle}</h1>
+          <p className="mt-0.5 text-xs text-slate-500">{pageSubtitle}</p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Tombol Ekspor Excel */}
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={handleExportExcel}
             disabled={loading || items.length === 0}
-            className="gap-2 border-slate-300 text-slate-800 hover:bg-slate-50 font-bold text-xs px-4 py-2 rounded-xl shadow-2xs transition"
+            className="gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-50 font-medium text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-2xs transition disabled:opacity-40"
           >
-            <Download className="size-4 text-emerald-600" />
-            Export Excel {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
+            <Download className="size-3.5 text-slate-600" />
+            Excel {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
           </Button>
 
-          {/* Tombol Cetak PDF Ber-Kop Surat Resmi WTM */}
           <Button
             type="button"
             onClick={() => setShowPdfModal(true)}
             disabled={loading || items.length === 0}
-            className="gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
+            className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-xs transition disabled:opacity-40"
           >
-            <Printer className="size-4 text-emerald-400" />
-            Cetak PDF Resmi {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
+            <Printer className="size-3.5" />
+            Cetak PDF {selectedRowIds.length > 0 ? `(${selectedRowIds.length})` : ""}
           </Button>
         </div>
       </div>
 
-      {/* 3. Empat Kartu Metrik Ringkasan Eksekutif */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total Pemasukan */}
-        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-            <ArrowDownRight className="size-6" />
+      {/* Kartu Metrik Ringkasan */}
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+            <ArrowDownRight className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Total Pemasukan
+            <p className="text-xs font-medium text-slate-500">Total Pemasukan</p>
+            <p className="text-lg font-bold text-emerald-600 tabular-nums truncate">
+              {summary.total_pemasukan}
             </p>
-            <p className="text-xl font-black text-emerald-600 truncate">{summary.total_pemasukan}</p>
           </div>
         </div>
 
-        {/* Total Pengeluaran */}
-        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-            <ArrowUpRight className="size-6" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+            <ArrowUpRight className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Total Pengeluaran
+            <p className="text-xs font-medium text-slate-500">Total Pengeluaran</p>
+            <p className="text-lg font-bold text-rose-600 tabular-nums truncate">
+              {summary.total_pengeluaran}
             </p>
-            <p className="text-xl font-black text-rose-600 truncate">{summary.total_pengeluaran}</p>
           </div>
         </div>
 
-        {/* Saldo Kas Bersih */}
-        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-900 bg-[#060b1c] p-5 shadow-md text-white">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-slate-800 text-emerald-400">
-            <Wallet className="size-6" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+            <Wallet className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Saldo Kas Bersih
-            </p>
-            <p className="text-xl font-black text-emerald-400 tracking-tight truncate">
+            <p className="text-xs font-medium text-slate-500">Saldo Kas Bersih</p>
+            <p className="text-lg font-bold text-slate-900 tabular-nums truncate">
               {summary.saldo_bersih}
             </p>
           </div>
         </div>
 
-        {/* Profit Margin (%) */}
-        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-blue-50 text-[#2279cf]">
-            <Percent className="size-5" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <Percent className="size-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Profit Margin
-            </p>
-            <p className="text-xl font-black text-slate-900 truncate">
-              {summary.profit_margin_pct}%{" "}
-              <span className="text-xs font-normal text-slate-400">
-                ({summary.total_transaksi} trx)
+            <p className="text-xs font-medium text-slate-500">Profit Margin</p>
+            <p className="text-lg font-bold text-slate-900 tabular-nums truncate">
+              {summary.profit_margin_pct}%
+              <span className="ml-1 text-xs font-normal text-slate-400">
+                · {summary.total_transaksi} trx
               </span>
             </p>
           </div>
         </div>
       </div>
 
-      {/* 4. Grafik Batang Beranimasi (Animated Bar Chart) */}
+      {/* Grafik Arus Kas */}
       <AnimatedBarChart
         data={chartData}
-        title={`Grafik Arus Kas - ${data?.periode_label || pageTitle}`}
-        subtitle="Batang hijau menunjukkan uang masuk, batang merah menunjukkan uang keluar. Arahkan kursor untuk melihat angka detail."
+        title={`Arus Kas · ${data?.periode_label || pageTitle}`}
       />
 
-      {/* 5. Toolbar Filter & Tabel Rincian Data */}
+      {/* Toolbar Filter & Tabel Rincian Data */}
       <DataTableShell>
-        <div className="border-b border-slate-200/80 bg-white p-4 space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Filter Periode Harian: Date Picker */}
+        <div className="border-b border-slate-200/80 bg-white p-3">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               {periode === "harian" && (
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                    Pilih Tanggal:
-                  </label>
-                  <Input
-                    type="date"
-                    value={tanggalHarian}
-                    onChange={(e) => {
-                      setTanggalHarian(e.target.value);
-                      setPage(1);
-                    }}
-                    className="text-xs w-[160px]"
-                  />
-                </div>
+                <Input
+                  type="date"
+                  value={tanggalHarian}
+                  onChange={(e) => {
+                    setTanggalHarian(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-8 w-[150px] text-xs"
+                />
               )}
 
-              {/* Filter Periode Mingguan: Rentang Tanggal */}
               {periode === "mingguan" && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                    Minggu:
-                  </label>
+                <div className="flex items-center gap-1.5">
                   <Input
                     type="date"
                     value={startDateMingguan}
@@ -402,9 +374,9 @@ export function LaporanPageView({
                       setStartDateMingguan(e.target.value);
                       setPage(1);
                     }}
-                    className="text-xs w-[145px]"
+                    className="h-8 w-[140px] text-xs"
                   />
-                  <span className="text-xs text-slate-400">s/d</span>
+                  <span className="text-xs text-slate-400">–</span>
                   <Input
                     type="date"
                     value={endDateMingguan}
@@ -412,17 +384,13 @@ export function LaporanPageView({
                       setEndDateMingguan(e.target.value);
                       setPage(1);
                     }}
-                    className="text-xs w-[145px]"
+                    className="h-8 w-[140px] text-xs"
                   />
                 </div>
               )}
 
-              {/* Filter Periode Bulanan: Month & Year */}
               {periode === "bulanan" && (
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                    Bulan & Tahun:
-                  </label>
                   <Select
                     value={String(selectedMonth)}
                     onValueChange={(val) => {
@@ -430,7 +398,7 @@ export function LaporanPageView({
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-[140px] text-xs">
+                    <SelectTrigger className="h-8 w-[130px] text-xs">
                       <span>
                         {[
                           "",
@@ -480,7 +448,7 @@ export function LaporanPageView({
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-[100px] text-xs">
+                    <SelectTrigger className="h-8 w-[90px] text-xs">
                       <span>{selectedYear}</span>
                     </SelectTrigger>
                     <SelectContent>
@@ -496,90 +464,72 @@ export function LaporanPageView({
                 </div>
               )}
 
-              {/* Filter Periode Tahunan: Year */}
               {periode === "tahunan" && (
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                    Pilih Tahun:
-                  </label>
-                  <Select
-                    value={String(selectedYear)}
-                    onValueChange={(val) => {
-                      setSelectedYear(parseInt(val || "2026", 10));
-                      setPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-[120px] text-xs">
-                      <span>{selectedYear}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                          <SelectItem key={y} value={String(y)}>
-                            Tahun {y}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Filter by Proyek */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                  Proyek:
-                </label>
                 <Select
-                  value={selectedOrderId}
+                  value={String(selectedYear)}
                   onValueChange={(val) => {
-                    setSelectedOrderId(val || "all");
+                    setSelectedYear(parseInt(val || "2026", 10));
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-[180px] text-xs">
-                    <span className="truncate">
-                      {selectedOrderId === "all"
-                        ? "Semua Proyek"
-                        : orders.find((o) => o.id === selectedOrderId)?.invoice_no || "Proyek"}
-                    </span>
+                  <SelectTrigger className="h-8 w-[110px] text-xs">
+                    <span>{selectedYear}</span>
                   </SelectTrigger>
-                  <SelectContent className="max-h-56 min-w-[280px]">
+                  <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="all">Semua Proyek (Closing)</SelectItem>
-                      {orders.map((ord) => (
-                        <SelectItem key={ord.id} value={ord.id}>
-                          {ord.invoice_no} · {ord.initial_service}
+                      {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                        <SelectItem key={y} value={String(y)}>
+                          Tahun {y}
                         </SelectItem>
                       ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-              </div>
+              )}
 
-              {/* Urutan Sort */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                  Urutan:
-                </label>
-                <Select
-                  value={sortDir}
-                  onValueChange={(val) => {
-                    setSortDir((val as "desc" | "asc") || "desc");
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-[130px] text-xs">
-                    <span>{sortDir === "desc" ? "Terbaru (WIB)" : "Terlama"}</span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="desc">Terbaru (WIB)</SelectItem>
-                      <SelectItem value="asc">Terlama</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={selectedOrderId}
+                onValueChange={(val) => {
+                  setSelectedOrderId(val || "all");
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[170px] text-xs">
+                  <span className="truncate">
+                    {selectedOrderId === "all"
+                      ? "Semua Proyek"
+                      : orders.find((o) => o.id === selectedOrderId)?.invoice_no || "Proyek"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent className="max-h-56 min-w-[280px]">
+                  <SelectGroup>
+                    <SelectItem value="all">Semua Proyek</SelectItem>
+                    {orders.map((ord) => (
+                      <SelectItem key={ord.id} value={ord.id}>
+                        {ord.invoice_no} · {ord.initial_service}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={sortDir}
+                onValueChange={(val) => {
+                  setSortDir((val as "desc" | "asc") || "desc");
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[120px] text-xs">
+                  <span>{sortDir === "desc" ? "Terbaru" : "Terlama"}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="desc">Terbaru</SelectItem>
+                    <SelectItem value="asc">Terlama</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button
@@ -587,7 +537,7 @@ export function LaporanPageView({
               variant="outline"
               size="sm"
               onClick={() => loadReport()}
-              className="gap-1.5 text-xs text-slate-600 hover:bg-slate-50"
+              className="h-8 gap-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
             >
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
               Segarkan
@@ -600,22 +550,21 @@ export function LaporanPageView({
           <Table>
             <TableHeader>
               <TableRow className="border-b border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/50">
-                {/* Checkbox Pilih Data Sebelum Kolom No */}
-                <TableHead className="w-10 text-center px-2">
+                <TableHead className="w-10 px-2 text-center">
                   <Checkbox
                     checked={items.length > 0 && items.every((it) => selectedRowIds.includes(it.id))}
                     onCheckedChange={handleToggleSelectAll}
                     aria-label="Pilih semua baris"
                   />
                 </TableHead>
-                <TableHead className="w-12 text-center text-xs font-bold text-slate-700">No</TableHead>
-                <TableHead className="min-w-[150px] text-xs font-bold text-slate-700">Waktu (WIB)</TableHead>
-                <TableHead className="w-28 text-xs font-bold text-slate-700">No. Nota</TableHead>
-                <TableHead className="min-w-[260px] text-xs font-bold text-slate-700">Uraian / Keterangan</TableHead>
-                <TableHead className="min-w-[140px] text-xs font-bold text-slate-700">Kategori</TableHead>
-                <TableHead className="w-24 text-center text-xs font-bold text-slate-700">Metode</TableHead>
-                <TableHead className="min-w-[130px] text-right text-xs font-bold text-slate-700">Pemasukan</TableHead>
-                <TableHead className="min-w-[130px] text-right text-xs font-bold text-slate-700">Pengeluaran</TableHead>
+                <TableHead className="w-12 text-center text-xs font-semibold text-slate-600">No</TableHead>
+                <TableHead className="min-w-[150px] text-xs font-semibold text-slate-600">Waktu</TableHead>
+                <TableHead className="w-28 text-xs font-semibold text-slate-600">No. Nota</TableHead>
+                <TableHead className="min-w-[260px] text-xs font-semibold text-slate-600">Uraian</TableHead>
+                <TableHead className="min-w-[140px] text-xs font-semibold text-slate-600">Kategori</TableHead>
+                <TableHead className="w-24 text-center text-xs font-semibold text-slate-600">Metode</TableHead>
+                <TableHead className="min-w-[120px] text-right text-xs font-semibold text-slate-600">Pemasukan</TableHead>
+                <TableHead className="min-w-[120px] text-right text-xs font-semibold text-slate-600">Pengeluaran</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -625,13 +574,13 @@ export function LaporanPageView({
                   <TableCell colSpan={9} className="h-40 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <span className="size-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
-                      <span className="text-xs">Memuat rincian laporan keuangan...</span>
+                      <span className="text-xs">Memuat rincian laporan...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-40 text-center text-slate-400 text-xs">
+                  <TableCell colSpan={9} className="h-40 text-center text-xs text-slate-400">
                     Tidak ada transaksi pada periode ini.
                   </TableCell>
                 </TableRow>
@@ -648,43 +597,41 @@ export function LaporanPageView({
                         isChecked ? "bg-blue-50/40 hover:bg-blue-50/70" : "hover:bg-slate-50/70"
                       }`}
                     >
-                      {/* Checkbox Sebelum Kolom No */}
-                      <TableCell className="text-center px-2" onClick={(e) => e.stopPropagation()}>
+                      <TableCell className="px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           checked={isChecked}
                           onCheckedChange={() => handleToggleSelect(row.id)}
                           aria-label={"Pilih baris " + realIndex}
                         />
                       </TableCell>
-                      <TableCell className="text-center text-xs text-slate-500 font-medium">{realIndex}</TableCell>
-                      <TableCell className="text-xs text-slate-700 whitespace-nowrap">
+                      <TableCell className="text-center text-xs text-slate-400">{realIndex}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-slate-600">
                         {formatDateTime(row.waktu_transaksi)}
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-bold text-slate-900">{row.kode_jurnal}</TableCell>
-                      <TableCell className="text-xs font-medium text-slate-900">
-                        <div>
+                      <TableCell className="font-mono text-xs font-medium text-slate-900">
+                        {row.kode_jurnal}
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-800">
+                        <div className="flex flex-col gap-0.5">
                           <span>{row.deskripsi}</span>
-                          {row.invoice_no && (
-                            <span className="inline-block text-[10px] text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 mt-0.5 ml-1">
-                              Proyek: {row.invoice_no}
-                            </span>
-                          )}
-                          {row.kode_gaji && (
-                            <span className="inline-block text-[10px] text-purple-700 font-semibold bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 mt-0.5 ml-1">
-                              Gaji: {row.kode_gaji}
+                          {(row.invoice_no || row.kode_gaji) && (
+                            <span className="text-[11px] text-slate-400">
+                              {row.invoice_no && `INV ${row.invoice_no}`}
+                              {row.invoice_no && row.kode_gaji && " · "}
+                              {row.kode_gaji && `Gaji ${row.kode_gaji}`}
                             </span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-slate-600">{row.nama_kategori}</TableCell>
-                      <TableCell className="text-center text-xs text-slate-600 capitalize">
+                      <TableCell className="text-xs text-slate-500">{row.nama_kategori}</TableCell>
+                      <TableCell className="text-center text-xs capitalize text-slate-500">
                         {row.metode_pembayaran}
                       </TableCell>
-                      <TableCell className="text-right text-xs font-bold text-emerald-700 whitespace-nowrap">
-                        {isIncome ? row.nominal : "-"}
+                      <TableCell className="whitespace-nowrap text-right text-xs font-semibold text-emerald-600 tabular-nums">
+                        {isIncome ? row.nominal : "–"}
                       </TableCell>
-                      <TableCell className="text-right text-xs font-bold text-rose-700 whitespace-nowrap">
-                        {!isIncome ? row.nominal : "-"}
+                      <TableCell className="whitespace-nowrap text-right text-xs font-semibold text-rose-600 tabular-nums">
+                        {!isIncome ? row.nominal : "–"}
                       </TableCell>
                     </TableRow>
                   );
@@ -712,7 +659,7 @@ export function LaporanPageView({
         />
       </DataTableShell>
 
-      {/* 6. Modal Print PDF Ber-Kop Surat Resmi WTM */}
+      {/* Modal Print PDF Ber-Kop Surat Resmi WTM */}
       <LaporanPdfModal
         open={showPdfModal}
         onOpenChange={setShowPdfModal}
