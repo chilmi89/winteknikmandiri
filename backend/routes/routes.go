@@ -18,6 +18,7 @@ import (
 	faqservice "winteknikmandiri-backend/faqs/service"
 	gajirouter "winteknikmandiri-backend/gaji/router"
 	galleryrouter "winteknikmandiri-backend/gallery/router"
+	companystatsrouter "winteknikmandiri-backend/company_stats/router"
 	healthcontroller "winteknikmandiri-backend/health/controller"
 	healthrouter "winteknikmandiri-backend/health/router"
 	homeherocontroller "winteknikmandiri-backend/home_hero/controller"
@@ -84,6 +85,7 @@ func SetupRouter() *gin.Engine {
 	registerOrderRoutes(v1)
 	registerGajiRoutes(v1)
 	registerKeuanganRoutes(v1)
+	registerCompanyStatRoutes(v1)
 	userrouter.RegisterUserRoutes(v1, database.DB)
 
 	r.NoRoute(func(c *gin.Context) {
@@ -173,6 +175,11 @@ func registerGajiRoutes(rg *gin.RouterGroup) {
 // registerKeuanganRoutes merakit layer fitur Manajemen Keuangan & Jurnal Kas.
 func registerKeuanganRoutes(rg *gin.RouterGroup) {
 	keuanganrouter.RegisterKeuanganRoutes(rg, database.DB)
+}
+
+// registerCompanyStatRoutes merakit layer fitur Statistik Pencapaian Perusahaan.
+func registerCompanyStatRoutes(rg *gin.RouterGroup) {
+	companystatsrouter.RegisterCompanyStatRoutes(rg, database.DB)
 }
 
 // swaggerEnabled membaca SWAGGER_ENABLED; default aktif bila tidak diset.

@@ -70,6 +70,41 @@ definitions:
       wa_url:
         type: string
     type: object
+  dto.CompanyStatEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/dto.CompanyStatResponse'
+      message:
+        type: string
+    type: object
+  dto.CompanyStatMessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.CompanyStatResponse:
+    properties:
+      created_at:
+        type: string
+      has_plus:
+        type: boolean
+      id:
+        type: string
+      is_active:
+        type: boolean
+      keterangan:
+        type: string
+      label:
+        type: string
+      sort_order:
+        type: integer
+      target_number:
+        type: integer
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
   dto.CreateCategoryRequest:
     properties:
       code:
@@ -86,6 +121,26 @@ definitions:
     required:
     - code
     - name
+    type: object
+  dto.CreateCompanyStatRequest:
+    properties:
+      has_plus:
+        type: boolean
+      is_active:
+        type: boolean
+      keterangan:
+        type: string
+      label:
+        type: string
+      sort_order:
+        type: integer
+      target_number:
+        type: integer
+      value:
+        type: string
+    required:
+    - label
+    - value
     type: object
   dto.CreateFAQRequest:
     properties:
@@ -849,9 +904,37 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.KeuanganGajiOptionResponse:
+    properties:
+      id:
+        type: string
+      kode_gaji:
+        type: string
+      team_name:
+        type: string
+      total_gaji:
+        type: string
+    type: object
   dto.KeuanganMessageResponse:
     properties:
       message:
+        type: string
+    type: object
+  dto.KeuanganOrderOptionResponse:
+    properties:
+      customer_name:
+        type: string
+      id:
+        type: string
+      initial_category:
+        type: string
+      initial_service:
+        type: string
+      invoice_no:
+        type: string
+      status:
+        type: string
+      total_amount:
         type: string
     type: object
   dto.KeuanganSummary:
@@ -955,11 +1038,11 @@ definitions:
       total_transaksi:
         type: integer
     type: object
-  dto.ListAvailableOrdersEnvelope:
+  dto.ListAvailableGajiEnvelope:
     properties:
       data:
         items:
-          $ref: '#/definitions/dto.GajiOrderOptionResponse'
+          $ref: '#/definitions/dto.KeuanganGajiOptionResponse'
         type: array
       message:
         type: string
@@ -969,6 +1052,15 @@ definitions:
       data:
         items:
           $ref: '#/definitions/dto.ServiceCategoryResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  dto.ListCompanyStatEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.CompanyStatResponse'
         type: array
       message:
         type: string
@@ -1098,6 +1190,16 @@ definitions:
         type: array
       message:
         type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
     type: object
   dto.MisiEnvelope:
     properties:
@@ -1430,6 +1532,23 @@ definitions:
       name:
         maxLength: 100
         minLength: 2
+        type: string
+    type: object
+  dto.UpdateCompanyStatRequest:
+    properties:
+      has_plus:
+        type: boolean
+      is_active:
+        type: boolean
+      keterangan:
+        type: string
+      label:
+        type: string
+      sort_order:
+        type: integer
+      target_number:
+        type: integer
+      value:
         type: string
     type: object
   dto.UpdateFAQRequest:
@@ -1794,6 +1913,24 @@ definitions:
         example: "2026-11-01T08:00:00+07:00"
         type: string
     type: object
+  winteknikmandiri-backend_gaji_dto.ListAvailableOrdersEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.GajiOrderOptionResponse'
+        type: array
+      message:
+        type: string
+    type: object
+  winteknikmandiri-backend_keuangan_dto.ListAvailableOrdersEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.KeuanganOrderOptionResponse'
+        type: array
+      message:
+        type: string
+    type: object
 info:
   contact: {}
   description: |-
@@ -1802,6 +1939,167 @@ info:
   title: CV Win Teknik Mandiri API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Memvalidasi username/email dan kata sandi terhadap database PostgreSQL.
+      parameters:
+      - description: Kredensial login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login akun admin
+      tags:
+      - auth
+  /api/v1/company-stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCompanyStatEnvelope'
+      summary: Daftar statistik pencapaian aktif untuk publik (Beranda, Tentang Kami,
+        Galeri)
+      tags:
+      - company-stats
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data statistik
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCompanyStatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CompanyStatEnvelope'
+      summary: Tambah item statistik pencapaian baru
+      tags:
+      - company-stats
+  /api/v1/company-stats/{id}:
+    delete:
+      parameters:
+      - description: ID Statistik (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyStatMessageResponse'
+      summary: Hapus data statistik
+      tags:
+      - company-stats
+    get:
+      parameters:
+      - description: ID Statistik (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyStatEnvelope'
+      summary: Detail satu item statistik
+      tags:
+      - company-stats
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Statistik (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCompanyStatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyStatEnvelope'
+      summary: Perbarui data statistik pencapaian
+      tags:
+      - company-stats
+  /api/v1/company-stats/{id}/toggle:
+    put:
+      parameters:
+      - description: ID Statistik (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyStatEnvelope'
+      summary: Toggle status aktif/nonaktif statistik
+      tags:
+      - company-stats
+  /api/v1/company-stats/admin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCompanyStatEnvelope'
+      summary: Daftar statistik pencapaian untuk dashboard admin (semua status)
+      tags:
+      - company-stats
   /api/v1/faqs:
     get:
       description: Endpoint publik. Secara default hanya mengembalikan FAQ aktif,
@@ -2138,7 +2436,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ListAvailableOrdersEnvelope'
+            $ref: '#/definitions/winteknikmandiri-backend_gaji_dto.ListAvailableOrdersEnvelope'
       summary: Daftar proyek closing yang belum pernah digajikan di slip lain
       tags:
       - gaji
@@ -2608,6 +2906,40 @@ paths:
       summary: Perbarui pengaturan kartu jam operasional
       tags:
       - jam_operasional
+  /api/v1/keuangan/available-gaji:
+    get:
+      parameters:
+      - description: ID Jurnal yang dikecualikan (untuk mode edit)
+        in: query
+        name: exclude_jurnal_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListAvailableGajiEnvelope'
+      summary: Daftar slip gaji yang belum dicairkan di nota kas aktif
+      tags:
+      - keuangan
+  /api/v1/keuangan/available-orders:
+    get:
+      parameters:
+      - description: ID Jurnal yang dikecualikan (untuk mode edit)
+        in: query
+        name: exclude_jurnal_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/winteknikmandiri-backend_keuangan_dto.ListAvailableOrdersEnvelope'
+      summary: Daftar invoice proyek deal/selesai yang belum dicatat di nota kas aktif
+      tags:
+      - keuangan
   /api/v1/keuangan/jurnal:
     get:
       parameters:

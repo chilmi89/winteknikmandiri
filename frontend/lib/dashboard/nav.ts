@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Award,
   Banknote,
   Calendar,
   CalendarDays,
@@ -123,6 +124,11 @@ export const dashboardNav: DashboardNavGroup[] = [
             label: "Galeri",
             href: "/dashboard/publik/galeri",
             icon: Images,
+          },
+          {
+            label: "Statistik",
+            href: "/dashboard/publik/statistik",
+            icon: Award,
           },
         ],
       },

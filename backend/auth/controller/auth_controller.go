@@ -25,10 +25,10 @@ func NewAuthController(svc *service.AuthService) *AuthController {
 // @Accept      json
 // @Produce     json
 // @Param       request body dto.LoginRequest true "Kredensial login"
-// @Success     200 {object} gin.H
-// @Failure     400 {object} gin.H
-// @Failure     401 {object} gin.H
-// @Failure     403 {object} gin.H
+// @Success     200 {object} map[string]interface{}
+// @Failure     400 {object} map[string]interface{}
+// @Failure     401 {object} map[string]interface{}
+// @Failure     403 {object} map[string]interface{}
 // @Router      /api/v1/auth/login [post]
 func (ctrl *AuthController) Login(c *gin.Context) {
 	var req dto.LoginRequest

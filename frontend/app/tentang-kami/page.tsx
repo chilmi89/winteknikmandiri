@@ -15,6 +15,8 @@ import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
+import StatsBar from "@/components/StatsBar";
+import CompanyFactsList from "@/components/CompanyFactsList";
 import TeamSection from "@/components/TeamSection";
 import VisiMisiSection from "@/components/VisiMisiSection";
 import { waLink } from "@/lib/site";
@@ -255,20 +257,12 @@ export default function TentangKamiPage() {
               </div>
             </div>
 
-            <dl className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-4 border-t border-[#0A2540]/10 pt-5">
-              {facts.map((fact) => (
-                <div key={fact.label} className="flex items-baseline gap-2">
-                  <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#0A2540]/40 sm:text-[10px]">
-                    {fact.label}
-                  </dt>
-                  <dd className="text-[12px] font-medium text-[#0A2540] sm:text-[13px]">
-                    {fact.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <CompanyFactsList extraFactLabel="Pengesahan" extraFactValue="Kemenkumham RI 2026" />
           </div>
         </section>
+
+        {/* STATS BAR — Real-time dynamic company stats [Image 1] */}
+        <StatsBar />
 
         {/* QUICK-NAV BAR — Sticky seperti di /layanan */}
         <div className="sticky top-20 z-30 transform-gpu border-b border-[#0A2540]/10 bg-white/98 shadow-[0_1px_3px_rgba(10,37,64,0.03)]">

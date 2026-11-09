@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { fetchCompanyStats } from "@/lib/companyStats";
 
 export type StatItem = {
   raw: string;
@@ -199,7 +200,8 @@ function StatCell({
   );
 }
 
-export default function StatsBar({ items = stats, className = "" }: StatsBarProps) {
+export default function StatsBar({ items, className = "" }: StatsBarProps) {
+  const [statItems, setStatItems] = useState<StatItem[]>(items || stats);
   const sectionRef = useRef<HTMLElement>(null);
   const mounted = useSyncExternalStore(
     emptySubscribe,
@@ -213,6 +215,26 @@ export default function StatsBar({ items = stats, className = "" }: StatsBarProp
     getReducedMotionSnapshot,
     getServerReducedMotionSnapshot,
   );
+
+  useEffect(() => {
+    if (items && items.length > 0) {
+      setStatItems(items);
+      return;
+    }
+    fetchCompanyStats().then((data) => {
+      if (data && data.length > 0) {
+        setStatItems(
+          data.map((s, idx) => ({
+            raw: s.value,
+            target: s.target_number || parseInt(s.value.replace(/\D/g, ""), 10) || 0,
+            hasPlus: s.has_plus,
+            label: s.label,
+            duration: Math.max(750 - idx * 80, 400),
+          }))
+        );
+      }
+    });
+  }, [items]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -253,7 +275,7 @@ export default function StatsBar({ items = stats, className = "" }: StatsBarProp
         }`}
       >
         <dl className="grid grid-cols-2 border-x border-[#0A2540]/10 sm:grid-cols-4">
-          {items.map((stat, index) => (
+          {statItems.map((stat, index) => (
             <StatCell
               key={stat.label}
               stat={stat}

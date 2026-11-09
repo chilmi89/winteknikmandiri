@@ -120,7 +120,7 @@ func (ctrl *KeuanganController) DeleteKategori(c *gin.Context) {
 // @Summary     Ambil kode nota jurnal berikutnya
 // @Tags        keuangan
 // @Produce     json
-// @Success     200 {object} map[string]any
+// @Success     200 {object} map[string]interface{}
 // @Router      /api/v1/keuangan/jurnal/next-code [get]
 func (ctrl *KeuanganController) GetNextKodeJurnal(c *gin.Context) {
 	code, err := ctrl.svc.GetNextKodeJurnal(c.Request.Context())

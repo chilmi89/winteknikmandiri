@@ -15,6 +15,251 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "description": "Memvalidasi username/email dan kata sandi terhadap database PostgreSQL.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login akun admin",
+                "parameters": [
+                    {
+                        "description": "Kredensial login",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/company-stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Daftar statistik pencapaian aktif untuk publik (Beranda, Tentang Kami, Galeri)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCompanyStatEnvelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Tambah item statistik pencapaian baru",
+                "parameters": [
+                    {
+                        "description": "Data statistik",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCompanyStatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyStatEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/company-stats/admin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Daftar statistik pencapaian untuk dashboard admin (semua status)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCompanyStatEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/company-stats/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Detail satu item statistik",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Statistik (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyStatEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Perbarui data statistik pencapaian",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Statistik (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCompanyStatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyStatEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Hapus data statistik",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Statistik (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyStatMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/company-stats/{id}/toggle": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "company-stats"
+                ],
+                "summary": "Toggle status aktif/nonaktif statistik",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Statistik (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyStatEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/faqs": {
             "get": {
                 "description": "Endpoint publik. Secara default hanya mengembalikan FAQ aktif, urut sort_order.",
@@ -391,7 +636,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListAvailableOrdersEnvelope"
+                            "$ref": "#/definitions/winteknikmandiri-backend_gaji_dto.ListAvailableOrdersEnvelope"
                         }
                     }
                 }
@@ -1224,6 +1469,60 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keuangan/available-gaji": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Daftar slip gaji yang belum dicairkan di nota kas aktif",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Jurnal yang dikecualikan (untuk mode edit)",
+                        "name": "exclude_jurnal_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListAvailableGajiEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keuangan/available-orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "keuangan"
+                ],
+                "summary": "Daftar invoice proyek deal/selesai yang belum dicatat di nota kas aktif",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Jurnal yang dikecualikan (untuk mode edit)",
+                        "name": "exclude_jurnal_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/winteknikmandiri-backend_keuangan_dto.ListAvailableOrdersEnvelope"
                         }
                     }
                 }
@@ -3436,6 +3735,60 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CompanyStatEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.CompanyStatResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanyStatMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanyStatResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "has_plus": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "target_number": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateCategoryRequest": {
             "type": "object",
             "required": [
@@ -3456,6 +3809,36 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 2,
                     "example": "Perawatan \u0026 Cuci AC"
+                }
+            }
+        },
+        "dto.CreateCompanyStatRequest": {
+            "type": "object",
+            "required": [
+                "label",
+                "value"
+            ],
+            "properties": {
+                "has_plus": {
+                    "type": "boolean"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "target_number": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },
@@ -4568,10 +4951,53 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.KeuanganGajiOptionResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "kode_gaji": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                },
+                "total_gaji": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.KeuanganMessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.KeuanganOrderOptionResponse": {
+            "type": "object",
+            "properties": {
+                "customer_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "initial_category": {
+                    "type": "string"
+                },
+                "initial_service": {
+                    "type": "string"
+                },
+                "invoice_no": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_amount": {
                     "type": "string"
                 }
             }
@@ -4730,13 +5156,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListAvailableOrdersEnvelope": {
+        "dto.ListAvailableGajiEnvelope": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.GajiOrderOptionResponse"
+                        "$ref": "#/definitions/dto.KeuanganGajiOptionResponse"
                     }
                 },
                 "message": {
@@ -4751,6 +5177,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ServiceCategoryResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListCompanyStatEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CompanyStatResponse"
                     }
                 },
                 "message": {
@@ -4949,6 +5389,21 @@ const docTemplate = `{
                     }
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -5434,6 +5889,32 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateCompanyStatRequest": {
+            "type": "object",
+            "properties": {
+                "has_plus": {
+                    "type": "boolean"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "target_number": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },
@@ -5961,6 +6442,34 @@ const docTemplate = `{
                 "timestamp": {
                     "type": "string",
                     "example": "2026-11-01T08:00:00+07:00"
+                }
+            }
+        },
+        "winteknikmandiri-backend_gaji_dto.ListAvailableOrdersEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GajiOrderOptionResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "winteknikmandiri-backend_keuangan_dto.ListAvailableOrdersEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.KeuanganOrderOptionResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         }

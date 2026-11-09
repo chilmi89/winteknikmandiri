@@ -6,9 +6,11 @@ import ContactCta from "@/components/ContactCta";
 import FloatingTechnicianBadge from "@/components/FloatingTechnicianBadge";
 import GalleryClient from "@/components/GalleryClient";
 import Navbar from "@/components/Navbar";
-import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
+import StatsBar from "@/components/StatsBar";
+import CompanyFactsList from "@/components/CompanyFactsList";
+import CompanyStatsCards from "@/components/CompanyStatsCards";
 import { waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -145,20 +147,12 @@ export default function GaleriPage() {
               </div>
             </div>
 
-            <dl className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-4 border-t border-[#0A2540]/10 pt-5">
-              {facts.map((fact) => (
-                <div key={fact.label} className="flex items-baseline gap-2">
-                  <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#0A2540]/40 sm:text-[10px]">
-                    {fact.label}
-                  </dt>
-                  <dd className="text-[12px] font-medium text-[#0A2540] sm:text-[13px]">
-                    {fact.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <CompanyFactsList extraFactLabel="Garansi Resmi" extraFactValue="30 Hari Tertulis" />
           </div>
         </section>
+
+        {/* STATS BAR — Real-time dynamic company stats [Image 1] */}
+        <StatsBar />
 
         {/* SECTION 01 — BANNER REKAM JEJAK PROYEK (bg-white, Task 5.2 task.md) */}
         <section
@@ -175,52 +169,7 @@ export default function GaleriPage() {
               titleId="statistik-title"
             />
 
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {statistics.map((stat, index) => (
-                <ScrollReveal
-                  key={stat.label}
-                  delay={index * 100}
-                  direction="up"
-                  className="h-full"
-                >
-                  <div className="group relative flex h-full flex-col justify-between overflow-hidden border border-[#0A2540]/10 bg-white p-7 transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1.5 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)]">
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                    />
-
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="bg-[#0A2540]/5 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[#0A2540]/70 transition-colors group-hover:bg-[#A82020] group-hover:text-white">
-                          {stat.badge}
-                        </span>
-                      </div>
-
-                      <p className="mt-4 text-4xl font-bold tracking-tight text-[#0A2540] tabular-nums transition-colors duration-300 group-hover:text-[#A82020] sm:text-5xl">
-                        {stat.number}
-                      </p>
-
-                      <h3 className="mt-2 text-base font-semibold text-[#0A2540]">
-                        {stat.label}
-                      </h3>
-
-                      <p className="mt-2 text-[13px] leading-6 text-[#0A2540]/65 sm:text-sm">
-                        {stat.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 flex items-center gap-2 border-t border-[#0A2540]/10 pt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#0A2540]/45 transition-colors group-hover:text-[#A82020]">
-                      <span className="size-1.5 bg-[#A82020]" />
-                      Data Resmi CV WTM
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+            <CompanyStatsCards className="mt-10" />
           </div>
         </section>
 
