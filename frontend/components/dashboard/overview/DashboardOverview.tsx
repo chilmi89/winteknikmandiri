@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FolderKanban,
-  Inbox,
+  FolderCheck,
   RefreshCw,
   Users,
+  Users2,
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,12 @@ import { fetchInquiries } from "@/lib/dashboard/api";
 import type { Inquiry } from "@/lib/dashboard/types";
 import { listOrdersAdmin, type Order } from "@/lib/orders";
 import { fetchServiceItems, type ServiceItem } from "@/lib/katalogLayanan";
+import { fetchTeamMembers, type TeamMemberItem } from "@/lib/teamMembers";
 import {
   fetchLaporanKeuangan,
   type LaporanResponse,
 } from "@/lib/laporan";
-import { AnimatedBarChart } from "@/components/dashboard/laporan/AnimatedBarChart";
+import { AnimatedWaveChart } from "./AnimatedWaveChart";
 import { StatCard } from "./StatCard";
 import { FinanceStrip } from "./FinanceStrip";
 import { RecentOrders } from "./RecentOrders";
@@ -25,9 +26,9 @@ import { RecentInquiries } from "./RecentInquiries";
 
 export function DashboardOverview() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [inquiryTotal, setInquiryTotal] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [teams, setTeams] = useState<TeamMemberItem[]>([]);
   const [report, setReport] = useState<LaporanResponse | null>(null);
   const [offline, setOffline] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,7 @@ export function DashboardOverview() {
       fetchInquiries(100),
       listOrdersAdmin(),
       fetchServiceItems(),
+      fetchTeamMembers(),
       fetchLaporanKeuangan({
         periode: "bulanan",
         month: now.getMonth() + 1,
@@ -49,11 +51,10 @@ export function DashboardOverview() {
       }),
     ]);
 
-    const [inquiryResult, orderResult, serviceResult, reportResult] = results;
+    const [inquiryResult, orderResult, serviceResult, teamResult, reportResult] = results;
 
     if (inquiryResult.status === "fulfilled") {
       setInquiries(inquiryResult.value.data);
-      setInquiryTotal(inquiryResult.value.total);
       setOffline(inquiryResult.value.offline);
     }
     if (orderResult.status === "fulfilled") {
@@ -61,6 +62,9 @@ export function DashboardOverview() {
     }
     if (serviceResult.status === "fulfilled") {
       setServices(serviceResult.value);
+    }
+    if (teamResult.status === "fulfilled") {
+      setTeams(teamResult.value);
     }
     if (reportResult.status === "fulfilled") {
       setReport(reportResult.value);
@@ -77,11 +81,6 @@ export function DashboardOverview() {
 
     return () => window.clearTimeout(timer);
   }, [loadAll]);
-
-  const pendingInquiries = useMemo(
-    () => inquiries.filter((item) => item.status === "pending").length,
-    [inquiries]
-  );
 
   const activeProjects = useMemo(
     () =>
@@ -179,19 +178,19 @@ export function DashboardOverview() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Permohonan Masuk"
-          value={pendingInquiries}
-          sublabel={`${inquiryTotal} permohonan terdata`}
-          href="/dashboard/inquiries"
-          icon={Inbox}
+          label="Tim Teknisi"
+          value={teams.length}
+          sublabel={`${teams.length} teknisi aktif`}
+          href="/dashboard/publik/tim"
+          icon={Users2}
           loading={loading}
         />
         <StatCard
-          label="Proyek Aktif"
-          value={activeProjects}
-          sublabel={`${finishedProjects} proyek selesai`}
+          label="Proyek Selesai"
+          value={finishedProjects}
+          sublabel={`${activeProjects} proyek sedang dikerjakan`}
           href="/dashboard/orders"
-          icon={FolderKanban}
+          icon={FolderCheck}
           loading={loading}
         />
         <StatCard
@@ -215,14 +214,14 @@ export function DashboardOverview() {
       {/* Keuangan Bulan Ini */}
       <FinanceStrip summary={report?.summary} loading={loading} />
 
-      {/* Grafik Arus Kas */}
+      {/* Grafik Arus Kas Wave Beranimasi */}
       {loading && !report ? (
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
           <div className="h-4 w-40 animate-pulse rounded bg-slate-100" />
           <div className="mt-4 h-60 animate-pulse rounded-lg bg-slate-50" />
         </div>
       ) : report ? (
-        <AnimatedBarChart
+        <AnimatedWaveChart
           data={report.chart}
           title={`Arus Kas · ${report.periode_label}`}
         />
