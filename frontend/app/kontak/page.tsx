@@ -21,9 +21,18 @@ import SosialMediaCards from "@/components/SosialMediaCards";
 import { site, waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Hubungi Kami — CV Win Teknik Mandiri Kediri",
+  title: "Hubungi Kami — Service AC & Kontraktor AC Kediri",
   description:
-    "Hubungi CV Win Teknik Mandiri di Ngadiluwih, Kediri. Layanan service AC, instalasi VRF, fabrikasi ducting, konsultasi teknis, dan survei lokasi bergaransi resmi.",
+    "Hubungi teknisi CV Win Teknik Mandiri di Kediri. Layanan konsultasi service AC rumah, instalasi VRF, survei lokasi, dan penawaran kontraktor AC komersial.",
+  keywords: [
+    "kontak service ac kediri",
+    "service ac kediri panggilan",
+    "nomor wa teknisi ac kediri",
+    "kontraktor ac kediri",
+  ],
+  alternates: {
+    canonical: "/kontak",
+  },
 };
 
 const focusRing =

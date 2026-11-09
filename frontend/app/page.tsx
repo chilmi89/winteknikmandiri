@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, MessageCircle } from "lucide-react";
@@ -13,6 +14,26 @@ import PricingTable from "@/components/PricingTable";
 import ContactCta from "@/components/ContactCta";
 import SectionHeading from "@/components/SectionHeading";
 import { site, waLink } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Service AC Kediri & Kontraktor AC Komersial Terpercaya | CV Win Teknik Mandiri",
+  description:
+    "Jasa service AC Kediri profesional, cuci AC rumah higienis, bongkar pasang AC standar vakum pipa, isi freon murni, dan kontraktor AC komersial gedung bergaransi 30 hari.",
+  keywords: [
+    "service ac kediri",
+    "ac kediri",
+    "jasa ac kediri",
+    "jasa ac",
+    "ac rumah",
+    "ac komersial",
+    "kontraktor ac",
+    "cuci ac kediri",
+    "pasang ac kediri",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+};
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A82020]";

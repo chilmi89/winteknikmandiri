@@ -12,9 +12,22 @@ import { serviceDetails } from "@/lib/services";
 import { waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Layanan AC & Ducting Kediri | CV Win Teknik Mandiri",
+  title: "Jasa AC Kediri: Service AC Rumah, Pemasangan & AC Komersial",
   description:
-    "Enam layanan AC di Kediri Raya: cuci AC, pemasangan standar vakum, relokasi, perbaikan, isi freon, dan kontrak maintenance gedung. Harga transparan, garansi tertulis 30 hari.",
+    "Pilihan jasa AC Kediri terlengkap: service AC rumah split, cuci higienis, bongkar pasang standar vakum, tambah freon, dan kontraktor AC komersial bergaransi tertulis 30 hari.",
+  keywords: [
+    "jasa ac kediri",
+    "service ac kediri",
+    "ac kediri",
+    "ac rumah",
+    "ac komersial",
+    "kontraktor ac",
+    "cuci ac kediri",
+    "pasang ac kediri",
+  ],
+  alternates: {
+    canonical: "/layanan",
+  },
 };
 
 const focusRing =

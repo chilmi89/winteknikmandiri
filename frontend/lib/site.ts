@@ -3,6 +3,7 @@ const envPhone = process.env.NEXT_PUBLIC_WA_PHONE || "6283136830913";
 export const site = {
   name: "CV Win Teknik Mandiri",
   legalName: "CV WIN TEKNIK MANDIRI",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://winteknikmandiri.com",
   tagline: "Fresh Air, Fresh Mind, Your AC Solutions",
   description:
     "Kontraktor AC, ducting, dan tata udara untuk hunian, komersial, dan industri di Kediri Raya.",
