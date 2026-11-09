@@ -14,8 +14,16 @@ export default function LoginPage() {
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-[#F4FAFE] pt-28 pb-16">
-        <LoginForm />
+      <main className="relative min-h-screen overflow-hidden bg-[#F4FAFE] pt-28 pb-16">
+        {/* Glow biru dekoratif */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -left-24 size-72 rounded-full bg-[#2279CF]/10 blur-3xl" />
+          <div className="absolute -right-24 bottom-0 size-80 rounded-full bg-[#8ACFF8]/25 blur-3xl" />
+        </div>
+
+        <div className="relative">
+          <LoginForm />
+        </div>
       </main>
 
       <SiteFooter />
