@@ -11,6 +11,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	authrouter "winteknikmandiri-backend/auth/router"
 	faqcontroller "winteknikmandiri-backend/faqs/controller"
 	faqrepository "winteknikmandiri-backend/faqs/repository"
 	faqrouter "winteknikmandiri-backend/faqs/router"
@@ -68,6 +69,7 @@ func SetupRouter() *gin.Engine {
 	healthrouter.RegisterRoutes(r, healthCtrl)
 
 	v1 := r.Group("/api/v1")
+	authrouter.RegisterAuthRoutes(v1, database.DB)
 	registerInquiryRoutes(v1)
 	registerFAQRoutes(v1)
 	registerServiceRoutes(v1)

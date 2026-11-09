@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
@@ -22,7 +23,9 @@ export default function LoginPage() {
         </div>
 
         <div className="relative">
-          <LoginForm />
+          <Suspense fallback={<div className="min-h-[400px]" />}>
+            <LoginForm />
+          </Suspense>
         </div>
       </main>
 

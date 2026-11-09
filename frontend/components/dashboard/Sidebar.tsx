@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashboardNav, type DashboardNavItem } from "@/lib/dashboard/nav";
+import { logoutAdmin } from "@/lib/auth";
 
 type SidebarProps = {
   collapsed?: boolean;
@@ -21,6 +22,7 @@ export function Sidebar({
   onNavigate,
   className,
 }: SidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [closedParents, setClosedParents] = useState<Set<string>>(new Set());
 
@@ -243,17 +245,22 @@ export function Sidebar({
 
       {/* ---------- Bottom / Logout ---------- */}
       <div className="shrink-0 border-t border-white/10 p-3">
-        <Link
-          href="/login"
+        <button
+          type="button"
+          onClick={() => {
+            logoutAdmin();
+            router.push("/login");
+            router.refresh();
+          }}
           title={collapsed ? "Keluar" : undefined}
           className={cn(
-            "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white",
+            "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white",
             collapsed && "justify-center px-0"
           )}
         >
           <LogOut className="size-4 shrink-0 text-white/60" />
           {!collapsed && <span>Keluar</span>}
-        </Link>
+        </button>
       </div>
     </div>
   );

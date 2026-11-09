@@ -1,16 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Lock,
   Mail,
+  User,
 } from "lucide-react";
 import { waLink } from "@/lib/site";
+import { loginAdmin } from "@/lib/auth";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2279CF]";
@@ -23,6 +27,41 @@ const brandPoints = [
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const trimmedId = identifier.trim();
+    const trimmedPass = password.trim();
+
+    if (!trimmedId || !trimmedPass) {
+      setError("Username / email dan kata sandi wajib diisi.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await loginAdmin(trimmedId, trimmedPass);
+      if (res.success) {
+        router.push(redirectTarget);
+        router.refresh();
+      } else {
+        setError(res.error || "Username atau kata sandi tidak cocok.");
+      }
+    } catch {
+      setError("Terjadi kesalahan jaringan. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6">
@@ -131,24 +170,39 @@ export default function LoginForm() {
             </p>
           </div>
 
-          <form className="mt-7 space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
+            {/* Pesan Error Login */}
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 animate-in fade-in duration-200">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div>
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="block text-xs font-medium text-[#0A2540]"
               >
-                Email / Username
+                Username atau Email
               </label>
               <div className="relative mt-1.5">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#0A2540]/40">
-                  <Mail className="size-4" />
+                  <User className="size-4" />
                 </div>
                 <input
                   type="text"
-                  id="email"
-                  name="email"
-                  placeholder="nama@perusahaan.com"
+                  id="identifier"
+                  name="identifier"
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="admin atau nama@perusahaan.com"
                   required
+                  disabled={loading}
+                  autoComplete="username"
                   className={`block w-full rounded-lg border border-[#0A2540]/10 bg-white py-2.5 pr-3 pl-10 text-sm text-[#0A2540] transition placeholder:text-[#0A2540]/35 focus:border-[#2279CF] focus:ring-2 focus:ring-[#2279CF]/20 focus:outline-none ${focusRing}`}
                 />
               </div>
@@ -181,34 +235,36 @@ export default function LoginForm() {
                   type="password"
                   id="password"
                   name="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
                   placeholder="••••••••"
                   required
+                  disabled={loading}
+                  autoComplete="current-password"
                   className={`block w-full rounded-lg border border-[#0A2540]/10 bg-white py-2.5 pr-3 pl-10 text-sm text-[#0A2540] transition placeholder:text-[#0A2540]/35 focus:border-[#2279CF] focus:ring-2 focus:ring-[#2279CF]/20 focus:outline-none ${focusRing}`}
                 />
               </div>
             </div>
 
-            <label
-              htmlFor="remember"
-              className="flex items-center gap-2 pt-1 text-xs text-[#0A2540]/70"
-            >
-              <input
-                id="remember"
-                type="checkbox"
-                className="size-4 rounded border-[#0A2540]/20 accent-[#2279CF] focus:ring-[#2279CF]"
-              />
-              Ingat saya di perangkat ini
-            </label>
-
             <button
               type="submit"
-              onClick={() => {
-                router.push("/dashboard");
-              }}
-              className={`mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[#2279CF] px-4 py-3 text-sm font-semibold tracking-wide text-white shadow-[0_10px_24px_-10px_rgba(34,121,207,0.8)] transition hover:bg-[#1a63ab] active:scale-[0.99] ${focusRing}`}
+              disabled={loading}
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#2279CF] px-4 py-3 text-sm font-semibold tracking-wide text-white shadow-[0_10px_24px_-10px_rgba(34,121,207,0.8)] transition hover:bg-[#1a63ab] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed ${focusRing}`}
             >
-              Masuk ke Akun
-              <ArrowRight className="size-4" />
+              {loading ? (
+                <>
+                  <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Memverifikasi akun...</span>
+                </>
+              ) : (
+                <>
+                  <span>Masuk ke Akun</span>
+                  <ArrowRight className="size-4" />
+                </>
+              )}
             </button>
           </form>
 
