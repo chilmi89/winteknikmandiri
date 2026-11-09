@@ -85,19 +85,10 @@ export default function Home() {
 
                   <div className="grid gap-1 border-b border-[#0A2540]/10 py-3.5 sm:grid-cols-[9rem_1fr] sm:items-baseline">
                     <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0A2540]/45">
-                      Pengesahan
+                      Status Legalitas
                     </dt>
-                    <dd className="text-sm text-[#0A2540]">
-                      {site.legal.ahu} ({site.legal.year})
-                    </dd>
-                  </div>
-
-                  <div className="grid gap-1 border-b border-[#0A2540]/10 py-3.5 sm:grid-cols-[9rem_1fr] sm:items-baseline">
-                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0A2540]/45">
-                      NIB / NPWP
-                    </dt>
-                    <dd className="font-mono text-xs text-[#0A2540]/80">
-                      {site.legal.nib} / {site.legal.npwp}
+                    <dd className="text-sm font-medium text-[#0A2540]">
+                      Badan Usaha Resmi Terdaftar & Terverifikasi
                     </dd>
                   </div>
 

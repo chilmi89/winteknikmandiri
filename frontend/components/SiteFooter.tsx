@@ -226,7 +226,7 @@ export default function SiteFooter({ activeHref }: SiteFooterProps) {
             © 2026 {site.name}. Seluruh hak cipta dilindungi.
           </p>
           <p className="font-mono tracking-[0.06em]">
-            {site.legal.ahu} · NIB {site.legal.nib}
+            Badan Usaha Resmi Terdaftar · Kediri, Jawa Timur
           </p>
         </div>
       </div>

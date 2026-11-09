@@ -22,7 +22,7 @@ import { waLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Tentang Kami — CV Win Teknik Mandiri Kediri",
   description:
-    "Profil CV Win Teknik Mandiri: kontraktor AC dan tata udara di Kediri sejak 2014. Pengadaan, instalasi VRF, fabrikasi ducting, maintenance, dan legalitas usaha AHU Kemenkumham 2026.",
+    "Profil CV Win Teknik Mandiri: kontraktor AC dan tata udara di Kediri sejak 2014. Pengadaan, instalasi VRF, fabrikasi ducting, maintenance, dan legalitas badan usaha resmi terdaftar.",
 };
 
 const focusRing =
@@ -66,25 +66,23 @@ const milestones = [
   },
 ];
 
-const legalities = [
+const legalities: { label: string; value: string; note?: string; mono?: boolean }[] = [
   { label: "Nama Badan Usaha", value: "CV WIN TEKNIK MANDIRI" },
   { label: "Bentuk Usaha", value: "Persekutuan Komanditer (CV)" },
   {
     label: "Pengesahan Kemenkumham",
-    value: "AHU-0066756-AH.01.14 Tahun 2026",
-    mono: true,
+    value: "Terdaftar Resmi Kemenkumham RI",
+    note: "Dokumen legalitas lengkap",
   },
   {
     label: "NIB (Nomor Induk Berusaha)",
-    value: "1310260079829",
-    note: "Terdaftar OSS RBA",
-    mono: true,
+    value: "Terdaftar Sistem OSS RBA",
+    note: "Izin operasional aktif",
   },
   {
     label: "NPWP Badan Usaha",
-    value: "1000000011517477",
-    note: "KPP Pratama Kediri",
-    mono: true,
+    value: "Terdaftar KPP Pratama Kediri",
+    note: "Wajib pajak badan aktif",
   },
   {
     label: "Alamat Workshop",
@@ -460,11 +458,8 @@ export default function TentangKamiPage() {
                     <p className="text-sm font-semibold text-[#0A2540] group-hover:text-[#A82020] transition-colors">
                       Terverifikasi Resmi Kemenkumham RI
                     </p>
-                    <p className="mt-1 font-mono text-[11px] text-[#0A2540]/70">
-                      AHU-0066756-AH.01.14 Tahun 2026
-                    </p>
-                    <p className="mt-2 text-xs text-[#0A2540]/60">
-                      Tersedia kelengkapan berkas legalitas untuk proses verifikasi vendor & pengadaan LPSE / B2B.
+                    <p className="mt-1.5 text-xs leading-relaxed text-[#0A2540]/65">
+                      Tersedia kelengkapan berkas legalitas resmi untuk proses verifikasi vendor & pengadaan LPSE / B2B.
                     </p>
                   </div>
                 </div>
