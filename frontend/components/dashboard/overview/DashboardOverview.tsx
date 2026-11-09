@@ -183,6 +183,7 @@ export function DashboardOverview() {
           sublabel={`${teams.length} teknisi aktif`}
           href="/dashboard/publik/tim"
           icon={Users2}
+          iconTone="blue"
           loading={loading}
         />
         <StatCard
@@ -191,6 +192,7 @@ export function DashboardOverview() {
           sublabel={`${activeProjects} proyek sedang dikerjakan`}
           href="/dashboard/orders"
           icon={FolderCheck}
+          iconTone="emerald"
           loading={loading}
         />
         <StatCard
@@ -199,6 +201,7 @@ export function DashboardOverview() {
           sublabel="Dari data pesanan"
           href="/dashboard/orders"
           icon={Users}
+          iconTone="violet"
           loading={loading}
         />
         <StatCard
@@ -207,6 +210,7 @@ export function DashboardOverview() {
           sublabel="Katalog publik"
           href="/dashboard/publik/layanan"
           icon={Wrench}
+          iconTone="rose"
           loading={loading}
         />
       </div>

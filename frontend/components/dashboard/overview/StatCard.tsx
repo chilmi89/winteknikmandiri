@@ -10,6 +10,15 @@ type StatCardProps = {
   href: string;
   icon: LucideIcon;
   loading?: boolean;
+  iconTone?: "blue" | "emerald" | "violet" | "rose" | "amber";
+};
+
+const ICON_STYLES: Record<string, string> = {
+  blue: "bg-blue-50 text-blue-600 border border-blue-100 group-hover:bg-blue-100 group-hover:text-blue-700",
+  emerald: "bg-emerald-50 text-emerald-600 border border-emerald-100 group-hover:bg-emerald-100 group-hover:text-emerald-700",
+  violet: "bg-violet-50 text-violet-600 border border-violet-100 group-hover:bg-violet-100 group-hover:text-violet-700",
+  rose: "bg-rose-50 text-rose-600 border border-rose-100 group-hover:bg-rose-100 group-hover:text-rose-700",
+  amber: "bg-amber-50 text-amber-600 border border-amber-100 group-hover:bg-amber-100 group-hover:text-amber-700",
 };
 
 export function StatCard({
@@ -19,7 +28,10 @@ export function StatCard({
   href,
   icon: Icon,
   loading = false,
+  iconTone = "blue",
 }: StatCardProps) {
+  const iconStyle = ICON_STYLES[iconTone] || ICON_STYLES.blue;
+
   return (
     <Link
       href={href}
@@ -27,7 +39,7 @@ export function StatCard({
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-slate-500">{label}</span>
-        <div className="flex size-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition group-hover:bg-[#8A1515]/10 group-hover:text-[#8A1515]">
+        <div className={`flex size-8 items-center justify-center rounded-lg transition-colors ${iconStyle}`}>
           <Icon className="size-4" />
         </div>
       </div>

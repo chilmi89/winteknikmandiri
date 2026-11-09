@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Activity } from "lucide-react";
 import type { ChartBarPoint } from "@/lib/laporan";
 
@@ -9,7 +9,7 @@ type AnimatedWaveChartProps = {
   title?: string;
 };
 
-// Algoritma kurva spline kubik (Cubic Bezier) untuk menghasilkan gelombang halus
+// Algoritma kurva spline kubik (Cubic Bezier) edge-to-edge
 function generateSmoothPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
@@ -37,6 +37,7 @@ export function AnimatedWaveChart({
   title = "Arus Kas (Wave Tren)",
 }: AnimatedWaveChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Nilai maksimum untuk skala tinggi grafik
   const maxVal = useMemo(() => {
@@ -45,7 +46,7 @@ export function AnimatedWaveChart({
       if (d.pemasukan > max) max = d.pemasukan;
       if (d.pengeluaran > max) max = d.pengeluaran;
     }
-    return Math.ceil(max * 1.15); // Beri ruang 15% di bagian atas kurva
+    return Math.ceil(max * 1.15); // Ruang 15% di atas puncak kurva
   }, [data]);
 
   // Format label sumbu Y (Rupiah ringkas)
@@ -56,40 +57,36 @@ export function AnimatedWaveChart({
     return String(Math.round(val));
   };
 
-  const svgWidth = 800;
-  const svgHeight = 240;
-  const paddingLeft = 48;
-  const paddingRight = 24;
-  const paddingTop = 24;
-  const paddingBottom = 32;
-
-  const chartWidth = svgWidth - paddingLeft - paddingRight;
+  const svgWidth = 1000;
+  const svgHeight = 220;
+  const paddingTop = 20;
+  const paddingBottom = 16;
   const chartHeight = svgHeight - paddingTop - paddingBottom;
   const baselineY = paddingTop + chartHeight;
 
-  // Koordinat titik untuk setiap data point
-  const { pointsIncome, pointsExpense, columnWidth } = useMemo(() => {
-    const n = Math.max(1, data.length);
-    const colWidth = chartWidth / Math.max(1, n - 1 || 1);
+  // Koordinat Edge-to-Edge: Titik pertama di x = 0 (kiri penuh), titik terakhir di x = 1000 (kanan penuh)
+  const { pointsIncome, pointsExpense } = useMemo(() => {
+    const n = data.length;
+    if (n === 0) return { pointsIncome: [], pointsExpense: [] };
 
     const pIn = data.map((d, i) => {
-      const x = n === 1 ? paddingLeft + chartWidth / 2 : paddingLeft + i * colWidth;
+      const x = n <= 1 ? svgWidth / 2 : (i / (n - 1)) * svgWidth;
       const pct = maxVal > 0 ? d.pemasukan / maxVal : 0;
       const y = baselineY - pct * chartHeight;
       return { x, y, data: d };
     });
 
     const pOut = data.map((d, i) => {
-      const x = n === 1 ? paddingLeft + chartWidth / 2 : paddingLeft + i * colWidth;
+      const x = n <= 1 ? svgWidth / 2 : (i / (n - 1)) * svgWidth;
       const pct = maxVal > 0 ? d.pengeluaran / maxVal : 0;
       const y = baselineY - pct * chartHeight;
       return { x, y, data: d };
     });
 
-    return { pointsIncome: pIn, pointsExpense: pOut, columnWidth: colWidth };
-  }, [data, chartWidth, chartHeight, baselineY, maxVal]);
+    return { pointsIncome: pIn, pointsExpense: pOut };
+  }, [data, svgWidth, chartHeight, baselineY, maxVal]);
 
-  // Path SVG Gelombang Pemasukan
+  // Path Gelombang Pemasukan (Full edge-to-edge)
   const pathIncome = useMemo(() => generateSmoothPath(pointsIncome), [pointsIncome]);
   const areaIncome = useMemo(() => {
     if (pointsIncome.length === 0) return "";
@@ -98,7 +95,7 @@ export function AnimatedWaveChart({
     return `${pathIncome} L ${last.x} ${baselineY} L ${first.x} ${baselineY} Z`;
   }, [pathIncome, pointsIncome, baselineY]);
 
-  // Path SVG Gelombang Pengeluaran
+  // Path Gelombang Pengeluaran (Full edge-to-edge)
   const pathExpense = useMemo(() => generateSmoothPath(pointsExpense), [pointsExpense]);
   const areaExpense = useMemo(() => {
     if (pointsExpense.length === 0) return "";
@@ -109,7 +106,7 @@ export function AnimatedWaveChart({
 
   const gridSteps = [maxVal, maxVal * 0.66, maxVal * 0.33, 0];
 
-  // Titik aktif terbaru (ujung gelombang)
+  // Titik aktif terbaru (ujung gelombang paling kanan)
   const latestIncomePoint = pointsIncome[pointsIncome.length - 1];
   const latestExpensePoint = pointsExpense[pointsExpense.length - 1];
 
@@ -117,12 +114,22 @@ export function AnimatedWaveChart({
   const activeHoverPointIn = hoveredIdx !== null ? pointsIncome[hoveredIdx] : null;
   const activeHoverPointOut = hoveredIdx !== null ? pointsExpense[hoveredIdx] : null;
 
+  // Interaksi mouse move untuk menghitung index terdekat secara presisi
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || data.length === 0) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const relX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const pct = relX / rect.width;
+    const idx = Math.round(pct * (data.length - 1));
+    setHoveredIdx(idx);
+  };
+
   return (
-    <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
+    <div className="rounded-xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
       {/* Header Grafik Wave */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/80">
             <Activity className="size-4 animate-pulse" />
           </div>
           <div>
@@ -136,7 +143,7 @@ export function AnimatedWaveChart({
         {/* Legend & Indikator Aktif */}
         <div className="flex items-center gap-4 text-xs">
           {/* Indikator Live Pulse */}
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100">
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
@@ -144,70 +151,75 @@ export function AnimatedWaveChart({
             <span>Live Wave</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-slate-600 text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-700 text-xs font-medium">
             <span className="size-2 rounded-full bg-emerald-500 shadow-xs" />
             <span>Pemasukan</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-slate-600 text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-700 text-xs font-medium">
             <span className="size-2 rounded-full bg-rose-500 shadow-xs" />
             <span>Pengeluaran</span>
           </div>
         </div>
       </div>
 
-      {/* Area Kanvas Gelombang Interaktif */}
-      <div className="relative pt-2">
+      {/* Area Kanvas Gelombang Full Edge-to-Edge */}
+      <div
+        ref={containerRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredIdx(null)}
+        className="relative w-full cursor-crosshair overflow-hidden pt-1"
+      >
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-64 overflow-visible"
-          onMouseLeave={() => setHoveredIdx(null)}
+          preserveAspectRatio="none"
+          className="w-full h-60 overflow-visible"
         >
           <defs>
             {/* Gradien Area Pemasukan (Emerald ke Teal) */}
             <linearGradient id="waveIncomeGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10B981" stopOpacity="0.45" />
               <stop offset="50%" stopColor="#059669" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#047857" stopOpacity="0.01" />
+              <stop offset="100%" stopColor="#047857" stopOpacity="0.0" />
             </linearGradient>
 
             {/* Gradien Area Pengeluaran (Rose ke Pink) */}
             <linearGradient id="waveExpenseGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.32" />
               <stop offset="50%" stopColor="#E11D48" stopOpacity="0.1" />
               <stop offset="100%" stopColor="#BE123C" stopOpacity="0.0" />
             </linearGradient>
 
             {/* Glow Filter untuk Garis Gelombang */}
-            <filter id="glowIncome" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id="glowIncome" x="-10%" y="-10%" width="120%" height="120%">
               <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#10B981" floodOpacity="0.4" />
             </filter>
-            <filter id="glowExpense" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id="glowExpense" x="-10%" y="-10%" width="120%" height="120%">
               <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#F43F5E" floodOpacity="0.3" />
             </filter>
           </defs>
 
-          {/* Garis Grid Horisontal */}
+          {/* Garis Grid Horisontal Full Width */}
           {gridSteps.map((step, idx) => {
             const y = paddingTop + (idx / (gridSteps.length - 1)) * chartHeight;
             return (
               <g key={idx}>
                 <line
-                  x1={paddingLeft}
+                  x1={0}
                   y1={y}
-                  x2={svgWidth - paddingRight}
+                  x2={svgWidth}
                   y2={y}
                   stroke="#E2E8F0"
                   strokeDasharray="4 4"
                   strokeWidth="1"
                 />
                 <text
-                  x={paddingLeft - 8}
-                  y={y + 3.5}
-                  textAnchor="end"
+                  x={8}
+                  y={y - 6}
                   fill="#94A3B8"
-                  fontSize="10"
+                  fontSize="11"
                   fontFamily="monospace"
+                  className="select-none"
                 >
                   {formatAxis(step)}
                 </text>
@@ -215,7 +227,7 @@ export function AnimatedWaveChart({
             );
           })}
 
-          {/* Area Gelombang Pemasukan (Gradient Fill) */}
+          {/* Area Gelombang Pemasukan (Full Width Fill) */}
           {areaIncome && (
             <path
               d={areaIncome}
@@ -224,7 +236,7 @@ export function AnimatedWaveChart({
             />
           )}
 
-          {/* Area Gelombang Pengeluaran (Gradient Fill) */}
+          {/* Area Gelombang Pengeluaran (Full Width Fill) */}
           {areaExpense && (
             <path
               d={areaExpense}
@@ -253,7 +265,7 @@ export function AnimatedWaveChart({
               d={pathIncome}
               fill="none"
               stroke="#10B981"
-              strokeWidth="3"
+              strokeWidth="3.2"
               strokeLinecap="round"
               strokeLinejoin="round"
               filter="url(#glowIncome)"
@@ -261,35 +273,20 @@ export function AnimatedWaveChart({
             />
           )}
 
-          {/* Sinyal Radar / Live Ping Dot pada Titik Ujung Pemasukan */}
+          {/* Sinyal Radar / Live Ping Dot pada Ujung Pemasukan */}
           {latestIncomePoint && (
             <g transform={`translate(${latestIncomePoint.x}, ${latestIncomePoint.y})`}>
-              <circle r="7" fill="#10B981" opacity="0.3" className="animate-ping" />
+              <circle r="8" fill="#10B981" opacity="0.35" className="animate-ping" />
               <circle r="4.5" fill="#10B981" stroke="#FFFFFF" strokeWidth="2" />
             </g>
           )}
 
-          {/* Sinyal Radar pada Titik Ujung Pengeluaran */}
+          {/* Sinyal Ujung Pengeluaran */}
           {latestExpensePoint && (
             <g transform={`translate(${latestExpensePoint.x}, ${latestExpensePoint.y})`}>
-              <circle r="3.5" fill="#F43F5E" stroke="#FFFFFF" strokeWidth="1.5" />
+              <circle r="4" fill="#F43F5E" stroke="#FFFFFF" strokeWidth="1.5" />
             </g>
           )}
-
-          {/* Label Sumbu X (Waktu/Minggu) */}
-          {pointsIncome.map((p, idx) => (
-            <text
-              key={idx}
-              x={p.x}
-              y={baselineY + 20}
-              textAnchor="middle"
-              fill={hoveredIdx === idx ? "#0F172A" : "#64748B"}
-              fontWeight={hoveredIdx === idx ? "600" : "500"}
-              fontSize="11"
-            >
-              {p.data.label}
-            </text>
-          ))}
 
           {/* Garis Crosshair Interaktif Saat Hover */}
           {hoveredIdx !== null && activeHoverPointIn && (
@@ -302,14 +299,14 @@ export function AnimatedWaveChart({
                 stroke="#0F172A"
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
-                opacity="0.4"
+                opacity="0.45"
               />
 
               {/* Titik Sorot Pemasukan */}
               <circle
                 cx={activeHoverPointIn.x}
                 cy={activeHoverPointIn.y}
-                r="6"
+                r="6.5"
                 fill="#10B981"
                 stroke="#FFFFFF"
                 strokeWidth="2.5"
@@ -321,7 +318,7 @@ export function AnimatedWaveChart({
                 <circle
                   cx={activeHoverPointOut.x}
                   cy={activeHoverPointOut.y}
-                  r="5"
+                  r="5.5"
                   fill="#F43F5E"
                   stroke="#FFFFFF"
                   strokeWidth="2"
@@ -330,24 +327,6 @@ export function AnimatedWaveChart({
               )}
             </g>
           )}
-
-          {/* Zone Interaktif Hover per Kolom */}
-          {pointsIncome.map((p, idx) => {
-            const xStart = p.x - columnWidth / 2;
-            const width = columnWidth;
-            return (
-              <rect
-                key={idx}
-                x={Math.max(paddingLeft, xStart)}
-                y={paddingTop}
-                width={width}
-                height={chartHeight}
-                fill="transparent"
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredIdx(idx)}
-              />
-            );
-          })}
         </svg>
 
         {/* Floating Executive Tooltip */}
@@ -356,14 +335,14 @@ export function AnimatedWaveChart({
             className="pointer-events-none absolute z-30 animate-in fade-in zoom-in-95 duration-150"
             style={{
               left: `${Math.min(
-                Math.max(activeHoverPointIn.x * (100 / svgWidth), 18),
-                82
+                Math.max((activeHoverPointIn.x / svgWidth) * 100, 16),
+                84
               )}%`,
-              top: `${Math.max(activeHoverPointIn.y * (100 / svgHeight) - 35, 10)}%`,
+              top: `${Math.max((activeHoverPointIn.y / svgHeight) * 100 - 32, 10)}%`,
               transform: "translate(-50%, -100%)",
             }}
           >
-            <div className="min-w-[190px] space-y-1.5 rounded-lg border border-slate-800 bg-slate-900/95 p-3 text-xs text-white shadow-xl backdrop-blur-md">
+            <div className="min-w-[195px] space-y-1.5 rounded-lg border border-slate-800 bg-slate-900/95 p-3 text-xs text-white shadow-2xl backdrop-blur-md">
               <p className="border-b border-slate-700/80 pb-1 font-semibold text-slate-200">
                 {activeHoverItem.label}
               </p>
@@ -399,6 +378,24 @@ export function AnimatedWaveChart({
             <div className="mx-auto h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900" />
           </div>
         )}
+      </div>
+
+      {/* Label Sumbu X (Full Width Distributed Aligned) */}
+      <div className="flex items-center justify-between border-t border-slate-100 px-1 pt-2.5 text-[11px] font-medium text-slate-500">
+        {data.map((d, idx) => (
+          <span
+            key={idx}
+            className={`transition-colors cursor-pointer ${
+              hoveredIdx === idx
+                ? "font-bold text-slate-900"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+            onMouseEnter={() => setHoveredIdx(idx)}
+            onMouseLeave={() => setHoveredIdx(null)}
+          >
+            {d.label}
+          </span>
+        ))}
       </div>
     </div>
   );
