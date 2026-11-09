@@ -151,24 +151,25 @@ export default function HomeProducts() {
           </Link>
         </div>
 
-        {/* Filter Kategori Layanan (Chips/Pills) */}
+        {/* Filter Kategori Layanan (Chips/Pills Slider) */}
         {!loading && categoryFilters.length > 1 && (
-          <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar sm:flex-wrap">
+          <div className="mt-8 flex items-center gap-2.5 overflow-x-auto pb-2 no-scrollbar sm:flex-wrap">
             <button
               type="button"
+              aria-pressed={selectedCategory === "all"}
               onClick={() => handleCategoryChange("all")}
-              className={`group inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-all duration-200 ${focusRing} ${
+              className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${focusRing} ${
                 selectedCategory === "all"
-                  ? "bg-[#0A2540] text-white shadow-xs"
-                  : "border border-slate-200/90 bg-white text-slate-600 hover:border-[#A82020]/40 hover:text-[#A82020] hover:bg-slate-50"
+                  ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
+                  : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
               }`}
             >
               <span>Semua Layanan</span>
               <span
-                className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                   selectedCategory === "all"
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-100 text-slate-500 group-hover:bg-[#A82020]/10 group-hover:text-[#A82020]"
+                    ? "bg-white/25 text-white"
+                    : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
                 }`}
               >
                 {items.length}
@@ -184,19 +185,20 @@ export default function HomeProducts() {
                 <button
                   key={cat.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => handleCategoryChange(cat.name)}
-                  className={`group inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-all duration-200 ${focusRing} ${
+                  className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${focusRing} ${
                     isSelected
-                      ? "bg-[#0A2540] text-white shadow-xs"
-                      : "border border-slate-200/90 bg-white text-slate-600 hover:border-[#A82020]/40 hover:text-[#A82020] hover:bg-slate-50"
+                      ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
+                      : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
                   }`}
                 >
                   <span>{cat.name}</span>
                   <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
+                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                       isSelected
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-slate-500 group-hover:bg-[#A82020]/10 group-hover:text-[#A82020]"
+                        ? "bg-white/25 text-white"
+                        : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
                     }`}
                   >
                     {cat.count}
