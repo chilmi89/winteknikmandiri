@@ -40,6 +40,7 @@ import (
 	serviceservice "winteknikmandiri-backend/services/service"
 	sosmedrouter "winteknikmandiri-backend/sosial_media/router"
 	teamrouter "winteknikmandiri-backend/teams/router"
+	userrouter "winteknikmandiri-backend/users/router"
 	visimisirouter "winteknikmandiri-backend/visi_misi/router"
 )
 
@@ -81,6 +82,7 @@ func SetupRouter() *gin.Engine {
 	registerOrderRoutes(v1)
 	registerGajiRoutes(v1)
 	registerKeuanganRoutes(v1)
+	userrouter.RegisterUserRoutes(v1, database.DB)
 
 	r.NoRoute(func(c *gin.Context) {
 		httpx.JSON(c, http.StatusNotFound, httpx.ErrorResponse{Error: "Endpoint tidak ditemukan"})

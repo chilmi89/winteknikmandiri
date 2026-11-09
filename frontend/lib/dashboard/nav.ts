@@ -15,6 +15,7 @@ import {
   Settings,
   Share2,
   TrendingUp,
+  UserCog,
   Users,
   Wallet,
   Wrench,
@@ -134,7 +135,8 @@ export const dashboardNav: DashboardNavGroup[] = [
   {
     title: "Setting User",
     items: [
-      { label: "Pegawai", href: "/dashboard/pengaturan", icon: Settings }],
+      { label: "Pengguna", href: "/dashboard/pengguna", icon: UserCog },
+    ],
   },
 ];
 
