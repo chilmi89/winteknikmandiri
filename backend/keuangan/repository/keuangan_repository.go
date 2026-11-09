@@ -997,3 +997,111 @@ func formatSaldo(n int64) string {
 	}
 	return fmt.Sprintf("Rp %s", formatRupiah(n))
 }
+
+// ListAvailableOrders mengambil order (proyek) selesai / deal yang belum pernah dicatat di nota kas aktif.
+// Jika excludeJurnalID tidak nil, order yang terikat ke jurnal tersebut tetap ditampilkan (untuk mode edit).
+func (r *KeuanganRepository) ListAvailableOrders(ctx context.Context, excludeJurnalID *uuid.UUID) ([]model.KeuanganOrderOption, error) {
+	query := `
+		SELECT
+			o.id, o.invoice_no, o.initial_category, o.initial_service,
+			COALESCE(o.customer_name, ''), o.total_amount, o.status, o.created_at
+		FROM orders o
+		WHERE o.deleted_at IS NULL
+		  AND o.status IN ('selesai', 'deal')
+		  AND NOT EXISTS (
+		      SELECT 1 FROM jurnal_items ji
+		      JOIN jurnal_keuangan jk ON ji.jurnal_id = jk.id
+		      WHERE ji.order_id = o.id
+		        AND jk.deleted_at IS NULL
+		        AND ($1::uuid IS NULL OR jk.id != $1::uuid)
+		  )
+		ORDER BY o.created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, excludeJurnalID)
+	if err != nil {
+		return nil, fmt.Errorf("query available orders for keuangan: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]model.KeuanganOrderOption, 0)
+	for rows.Next() {
+		var it model.KeuanganOrderOption
+		if err := rows.Scan(
+			&it.ID, &it.InvoiceNo, &it.InitialCategory, &it.InitialService,
+			&it.CustomerName, &it.TotalAmount, &it.Status, &it.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan available order: %w", err)
+		}
+		items = append(items, it)
+	}
+	return items, nil
+}
+
+// ListAvailableGaji mengambil slip gaji yang belum pernah dicairkan di nota kas aktif.
+// Jika excludeJurnalID tidak nil, gaji yang terikat ke jurnal tersebut tetap ditampilkan (untuk mode edit).
+func (r *KeuanganRepository) ListAvailableGaji(ctx context.Context, excludeJurnalID *uuid.UUID) ([]model.KeuanganGajiOption, error) {
+	query := `
+		SELECT
+			g.id, g.kode_gaji, COALESCE(t.name, ''), g.total_gaji, g.created_at
+		FROM gaji g
+		LEFT JOIN team_members t ON g.team_id = t.id
+		WHERE g.deleted_at IS NULL
+		  AND NOT EXISTS (
+		      SELECT 1 FROM jurnal_items ji
+		      JOIN jurnal_keuangan jk ON ji.jurnal_id = jk.id
+		      WHERE ji.gaji_id = g.id
+		        AND jk.deleted_at IS NULL
+		        AND ($1::uuid IS NULL OR jk.id != $1::uuid)
+		  )
+		ORDER BY g.created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, excludeJurnalID)
+	if err != nil {
+		return nil, fmt.Errorf("query available gaji for keuangan: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]model.KeuanganGajiOption, 0)
+	for rows.Next() {
+		var it model.KeuanganGajiOption
+		if err := rows.Scan(
+			&it.ID, &it.KodeGaji, &it.TeamName, &it.TotalGaji, &it.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan available gaji: %w", err)
+		}
+		items = append(items, it)
+	}
+	return items, nil
+}
+
+// IsOrderUsedInOtherJurnal memeriksa apakah invoice order sudah pernah dicatat di nota kas aktif lain.
+func (r *KeuanganRepository) IsOrderUsedInOtherJurnal(ctx context.Context, orderID uuid.UUID, excludeJurnalID *uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM jurnal_items ji
+			JOIN jurnal_keuangan jk ON ji.jurnal_id = jk.id
+			WHERE ji.order_id = $1
+			  AND jk.deleted_at IS NULL
+			  AND ($2::uuid IS NULL OR jk.id != $2::uuid)
+		)
+	`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, orderID, excludeJurnalID).Scan(&exists)
+	return exists, err
+}
+
+// IsGajiUsedInOtherJurnal memeriksa apakah slip gaji sudah pernah dicatat di nota kas aktif lain.
+func (r *KeuanganRepository) IsGajiUsedInOtherJurnal(ctx context.Context, gajiID uuid.UUID, excludeJurnalID *uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM jurnal_items ji
+			JOIN jurnal_keuangan jk ON ji.jurnal_id = jk.id
+			WHERE ji.gaji_id = $1
+			  AND jk.deleted_at IS NULL
+			  AND ($2::uuid IS NULL OR jk.id != $2::uuid)
+		)
+	`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, gajiID, excludeJurnalID).Scan(&exists)
+	return exists, err
+}

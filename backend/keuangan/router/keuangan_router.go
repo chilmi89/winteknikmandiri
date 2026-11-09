@@ -40,5 +40,9 @@ func RegisterKeuanganRoutes(rg *gin.RouterGroup, db *sql.DB) {
 			jurnalGroup.PUT("/:id", ctrl.UpdateJurnal)
 			jurnalGroup.DELETE("/:id", ctrl.DeleteJurnal)
 		}
+
+		// 3. Opsi Referensi Terintegrasi (Anti-Duplikasi)
+		keuanganGroup.GET("/available-orders", ctrl.ListAvailableOrders)
+		keuanganGroup.GET("/available-gaji", ctrl.ListAvailableGaji)
 	}
 }

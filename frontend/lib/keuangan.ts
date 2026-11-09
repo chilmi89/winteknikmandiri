@@ -263,3 +263,52 @@ export async function deleteJurnalAdmin(id: string): Promise<void> {
   });
   if (!res.ok) throw new Error("Gagal menghapus transaksi jurnal");
 }
+
+// ---------- OPSI TERSEDIA (ANTI-DUPLIKASI) ----------
+
+export type KeuanganAvailableOrder = {
+  id: string;
+  invoice_no: string;
+  initial_category: string;
+  initial_service: string;
+  customer_name: string;
+  total_amount: string;
+  status: string;
+};
+
+export type KeuanganAvailableGaji = {
+  id: string;
+  kode_gaji: string;
+  team_name: string;
+  total_gaji: string;
+};
+
+/**
+ * Mengambil daftar invoice proyek deal/selesai yang belum pernah dicatat di nota kas aktif.
+ */
+export async function listAvailableOrdersForKeuangan(excludeJurnalId?: string): Promise<KeuanganAvailableOrder[]> {
+  const q = new URLSearchParams();
+  if (excludeJurnalId) q.set("exclude_jurnal_id", excludeJurnalId);
+
+  const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/available-orders?${q.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Gagal memuat invoice proyek yang tersedia");
+  const json = await res.json();
+  return json.data || [];
+}
+
+/**
+ * Mengambil daftar slip gaji yang belum pernah dicairkan di nota kas aktif.
+ */
+export async function listAvailableGajiForKeuangan(excludeJurnalId?: string): Promise<KeuanganAvailableGaji[]> {
+  const q = new URLSearchParams();
+  if (excludeJurnalId) q.set("exclude_jurnal_id", excludeJurnalId);
+
+  const res = await fetch(`${resolveApiBase()}/api/v1/keuangan/available-gaji?${q.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Gagal memuat slip gaji yang tersedia");
+  const json = await res.json();
+  return json.data || [];
+}

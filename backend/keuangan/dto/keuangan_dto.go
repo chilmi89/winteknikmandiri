@@ -147,6 +147,35 @@ type KeuanganMessageResponse struct {
 	Message string `json:"message"`
 }
 
+// ---------- DTO OPSI TERSEDIA (ANTI-DUPLIKASI) ----------
+
+type KeuanganOrderOptionResponse struct {
+	ID              string `json:"id"`
+	InvoiceNo       string `json:"invoice_no"`
+	InitialCategory string `json:"initial_category"`
+	InitialService  string `json:"initial_service"`
+	CustomerName    string `json:"customer_name"`
+	TotalAmount     string `json:"total_amount"`
+	Status          string `json:"status"`
+}
+
+type ListAvailableOrdersEnvelope struct {
+	Message string                        `json:"message,omitempty"`
+	Data    []KeuanganOrderOptionResponse `json:"data"`
+}
+
+type KeuanganGajiOptionResponse struct {
+	ID        string `json:"id"`
+	KodeGaji  string `json:"kode_gaji"`
+	TeamName  string `json:"team_name"`
+	TotalGaji string `json:"total_gaji"`
+}
+
+type ListAvailableGajiEnvelope struct {
+	Message string                       `json:"message,omitempty"`
+	Data    []KeuanganGajiOptionResponse `json:"data"`
+}
+
 // ---------- DTO LAPORAN & ANALITIK KEUANGAN (4 PERIODE) ----------
 
 type LaporanSummary struct {

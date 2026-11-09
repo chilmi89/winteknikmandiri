@@ -237,7 +237,7 @@ func (s *KeuanganService) CreateJurnal(ctx context.Context, req dto.CreateJurnal
 		waktu = parseWaktu(*req.WaktuTransaksi)
 	}
 
-	// Validasi anti-duplikasi order_id dan gaji_id
+	// Validasi anti-duplikasi order_id dan gaji_id (dalam 1 nota dan lintas-nota)
 	seenOrders := make(map[string]bool)
 	seenGaji := make(map[string]bool)
 	for _, itemReq := range req.Items {
@@ -246,12 +246,26 @@ func (s *KeuanganService) CreateJurnal(ctx context.Context, req dto.CreateJurnal
 				return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
 			}
 			seenOrders[*itemReq.OrderID] = true
+
+			if ordUUID, err := uuid.Parse(*itemReq.OrderID); err == nil {
+				used, err := s.repo.IsOrderUsedInOtherJurnal(ctx, ordUUID, nil)
+				if err == nil && used {
+					return nil, apperr.Validation("Proyek sudah dicatat", "Invoice proyek ini sudah pernah dicatat di nota kas lain")
+				}
+			}
 		}
 		if itemReq.GajiID != nil && *itemReq.GajiID != "" {
 			if seenGaji[*itemReq.GajiID] {
 				return nil, apperr.Validation("Slip gaji duplikat", "Satu slip gaji tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
 			}
 			seenGaji[*itemReq.GajiID] = true
+
+			if gjUUID, err := uuid.Parse(*itemReq.GajiID); err == nil {
+				used, err := s.repo.IsGajiUsedInOtherJurnal(ctx, gjUUID, nil)
+				if err == nil && used {
+					return nil, apperr.Validation("Slip gaji sudah dicatat", "Slip gaji ini sudah pernah dicatat di nota kas lain")
+				}
+			}
 		}
 	}
 
@@ -389,7 +403,7 @@ func (s *KeuanganService) UpdateJurnal(ctx context.Context, idStr string, req dt
 	numSaldo := current.NumericSaldo
 
 	if req.Items != nil {
-		// Validasi anti-duplikasi order_id dan gaji_id
+		// Validasi anti-duplikasi order_id dan gaji_id (dalam 1 nota dan lintas-nota)
 		seenOrders := make(map[string]bool)
 		seenGaji := make(map[string]bool)
 		for _, itemReq := range *req.Items {
@@ -398,12 +412,26 @@ func (s *KeuanganService) UpdateJurnal(ctx context.Context, idStr string, req dt
 					return nil, apperr.Validation("Proyek duplikat", "Satu invoice proyek tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
 				}
 				seenOrders[*itemReq.OrderID] = true
+
+				if ordUUID, err := uuid.Parse(*itemReq.OrderID); err == nil {
+					used, err := s.repo.IsOrderUsedInOtherJurnal(ctx, ordUUID, &current.ID)
+					if err == nil && used {
+						return nil, apperr.Validation("Proyek sudah dicatat", "Invoice proyek ini sudah pernah dicatat di nota kas lain")
+					}
+				}
 			}
 			if itemReq.GajiID != nil && *itemReq.GajiID != "" {
 				if seenGaji[*itemReq.GajiID] {
 					return nil, apperr.Validation("Slip gaji duplikat", "Satu slip gaji tidak boleh dipilih lebih dari satu kali dalam satu nota kas")
 				}
 				seenGaji[*itemReq.GajiID] = true
+
+				if gjUUID, err := uuid.Parse(*itemReq.GajiID); err == nil {
+					used, err := s.repo.IsGajiUsedInOtherJurnal(ctx, gjUUID, &current.ID)
+					if err == nil && used {
+						return nil, apperr.Validation("Slip gaji sudah dicatat", "Slip gaji ini sudah pernah dicatat di nota kas lain")
+					}
+				}
 			}
 		}
 
@@ -626,4 +654,55 @@ func toJurnalDTO(j *model.JurnalKeuangan) dto.JurnalResponse {
 		CreatedAt:          j.CreatedAt,
 		UpdatedAt:          j.UpdatedAt,
 	}
+}
+
+// ---------- 3. OPSI TERSEDIA (ANTI-DUPLIKASI) ----------
+
+func (s *KeuanganService) ListAvailableOrders(ctx context.Context, excludeJurnalIDStr string) ([]dto.KeuanganOrderOptionResponse, error) {
+	var excl *uuid.UUID
+	if strings.TrimSpace(excludeJurnalIDStr) != "" {
+		if parsed, err := uuid.Parse(excludeJurnalIDStr); err == nil {
+			excl = &parsed
+		}
+	}
+	items, err := s.repo.ListAvailableOrders(ctx, excl)
+	if err != nil {
+		return nil, fmt.Errorf("list available orders: %w", err)
+	}
+	res := make([]dto.KeuanganOrderOptionResponse, len(items))
+	for i, it := range items {
+		res[i] = dto.KeuanganOrderOptionResponse{
+			ID:              it.ID.String(),
+			InvoiceNo:       it.InvoiceNo,
+			InitialCategory: it.InitialCategory,
+			InitialService:  it.InitialService,
+			CustomerName:    it.CustomerName,
+			TotalAmount:     it.TotalAmount,
+			Status:          it.Status,
+		}
+	}
+	return res, nil
+}
+
+func (s *KeuanganService) ListAvailableGaji(ctx context.Context, excludeJurnalIDStr string) ([]dto.KeuanganGajiOptionResponse, error) {
+	var excl *uuid.UUID
+	if strings.TrimSpace(excludeJurnalIDStr) != "" {
+		if parsed, err := uuid.Parse(excludeJurnalIDStr); err == nil {
+			excl = &parsed
+		}
+	}
+	items, err := s.repo.ListAvailableGaji(ctx, excl)
+	if err != nil {
+		return nil, fmt.Errorf("list available gaji: %w", err)
+	}
+	res := make([]dto.KeuanganGajiOptionResponse, len(items))
+	for i, it := range items {
+		res[i] = dto.KeuanganGajiOptionResponse{
+			ID:        it.ID.String(),
+			KodeGaji:  it.KodeGaji,
+			TeamName:  it.TeamName,
+			TotalGaji: it.TotalGaji,
+		}
+	}
+	return res, nil
 }

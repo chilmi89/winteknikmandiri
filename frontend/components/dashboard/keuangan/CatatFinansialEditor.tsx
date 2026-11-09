@@ -4,19 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Building2,
   Calendar,
-  Check,
-  ChevronDown,
   Clock,
   FileText,
-  Info,
   Plus,
   Receipt,
   Save,
   Search,
   Trash2,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +25,14 @@ import {
 import { toast } from "@/components/ui/toast";
 import {
   getNextKodeJurnal,
+  listAvailableOrdersForKeuangan,
+  listAvailableGajiForKeuangan,
   type JurnalKeuangan,
   type KategoriKeuangan,
   type CreateJurnalPayload,
   type UpdateJurnalPayload,
+  type KeuanganAvailableOrder,
+  type KeuanganAvailableGaji,
 } from "@/lib/keuangan";
 import type { Order } from "@/lib/orders";
 import type { Gaji } from "@/lib/gaji";
@@ -41,8 +40,8 @@ import type { Gaji } from "@/lib/gaji";
 type CatatFinansialEditorProps = {
   jurnal: JurnalKeuangan | null; // null = catat baru
   categories: KategoriKeuangan[];
-  orders: Order[];
-  gajiList: Gaji[];
+  orders?: (Order | KeuanganAvailableOrder)[];
+  gajiList?: (Gaji | KeuanganAvailableGaji)[];
   onBackToHistory: () => void;
   onSave: (payload: CreateJurnalPayload) => Promise<void>;
   onUpdate?: (id: string, payload: UpdateJurnalPayload) => Promise<void>;
@@ -78,8 +77,8 @@ function parseNumeric(val: string): number {
 export function CatatFinansialEditor({
   jurnal,
   categories,
-  orders,
-  gajiList,
+  orders = [],
+  gajiList = [],
   onBackToHistory,
   onSave,
   onUpdate,
@@ -97,30 +96,15 @@ export function CatatFinansialEditor({
   // Baris-baris Rincian Transaksi
   const [rows, setRows] = useState<RowItem[]>([]);
 
+  // Referensi Tersedia (Anti-Duplikasi dengan Database)
+  const [availableOrders, setAvailableOrders] = useState<(Order | KeuanganAvailableOrder)[]>(orders);
+  const [availableGaji, setAvailableGaji] = useState<(Gaji | KeuanganAvailableGaji)[]>(gajiList);
+
   // Popover Picker Proyek / Gaji
   const [activePickerRowIndex, setActivePickerRowIndex] = useState<number | null>(null);
   const [pickerType, setPickerType] = useState<"proyek" | "gaji" | null>(null);
   const [pickerQuery, setPickerQuery] = useState("");
   const pickerRef = useRef<HTMLDivElement>(null);
-
-  // Live WIB Clock
-  const [liveTimeStr, setLiveTimeStr] = useState("");
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setLiveTimeStr(
-        now.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "Asia/Jakarta",
-        }) + " WIB"
-      );
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 30000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Fetch real next code on create mode
   useEffect(() => {
@@ -132,6 +116,29 @@ export function CatatFinansialEditor({
       setKodeJurnal(jurnal.kode_jurnal);
     }
   }, [jurnal]);
+
+  // Muat opsi proyek & gaji yang tersedia (mengecualikan yang sudah pernah dibukukan di kas lain)
+  useEffect(() => {
+    let active = true;
+    const fetchAvailableData = async () => {
+      try {
+        const [ords, gjs] = await Promise.all([
+          listAvailableOrdersForKeuangan(jurnal?.id),
+          listAvailableGajiForKeuangan(jurnal?.id),
+        ]);
+        if (active) {
+          setAvailableOrders(ords);
+          setAvailableGaji(gjs);
+        }
+      } catch (err) {
+        console.error("Gagal sinkron data referensi kas", err);
+      }
+    };
+    fetchAvailableData();
+    return () => {
+      active = false;
+    };
+  }, [jurnal?.id]);
 
   // Close picker on click outside
   useEffect(() => {
@@ -145,7 +152,7 @@ export function CatatFinansialEditor({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Inisialisasi data
+  // Inisialisasi data form
   useEffect(() => {
     if (jurnal) {
       setJudul(jurnal.judul);
@@ -248,15 +255,17 @@ export function CatatFinansialEditor({
     );
   };
 
-  // Tarik dari Proyek
-  const handlePickOrder = (index: number, ord: Order) => {
+  // Tarik dari Proyek (format minimalis tanpa nama klien)
+  const handlePickOrder = (index: number, ord: Order | KeuanganAvailableOrder) => {
     setRows((prev) =>
       prev.map((r, i) => {
         if (i !== index) return r;
-        const cust = ord.customer_name ? ` (${ord.customer_name})` : "";
-        const desc = `Pelunasan ${ord.invoice_no} - ${ord.initial_service}${cust}`;
+        const desc = `Pelunasan ${ord.invoice_no} - ${ord.initial_service}`;
         const autoKat = categories.find(
-          (c) => c.tipe === "pemasukan" && (c.nama_kategori.toLowerCase().includes("proyek") || c.nama_kategori.toLowerCase().includes("instalasi"))
+          (c) =>
+            c.tipe === "pemasukan" &&
+            (c.nama_kategori.toLowerCase().includes("proyek") ||
+              c.nama_kategori.toLowerCase().includes("instalasi"))
         ) || categories.find((c) => c.tipe === "pemasukan");
 
         return {
@@ -275,12 +284,12 @@ export function CatatFinansialEditor({
     setPickerType(null);
   };
 
-  // Tarik dari Slip Gaji
-  const handlePickGaji = (index: number, g: Gaji) => {
+  // Tarik dari Slip Gaji (format minimalis tanpa skill)
+  const handlePickGaji = (index: number, g: Gaji | KeuanganAvailableGaji) => {
     setRows((prev) =>
       prev.map((r, i) => {
         if (i !== index) return r;
-        const desc = `Pencairan Gaji ${g.kode_gaji} - ${g.team_name} (${g.team_skill})`;
+        const desc = `Pencairan Gaji ${g.kode_gaji} - ${g.team_name}`;
         const autoKat = categories.find(
           (c) => c.tipe === "pengeluaran" && c.nama_kategori.toLowerCase().includes("gaji")
         ) || categories.find((c) => c.tipe === "pengeluaran");
@@ -326,43 +335,39 @@ export function CatatFinansialEditor({
 
   // Filter Orders in Picker (Anti-Duplikasi Antar-Baris)
   const filteredOrders = useMemo(() => {
-    // Kumpulkan order_id yang sudah dipilih di baris LAINNYA dalam nota ini
     const otherSelectedOrderIds = rows
       .filter((_, i) => i !== activePickerRowIndex)
       .map((r) => r.order_id)
       .filter(Boolean);
 
-    const available = orders.filter((o) => !otherSelectedOrderIds.includes(o.id));
+    const available = availableOrders.filter((o) => !otherSelectedOrderIds.includes(o.id));
 
     if (!pickerQuery.trim()) return available;
     const q = pickerQuery.toLowerCase();
     return available.filter(
       (o) =>
         o.invoice_no?.toLowerCase().includes(q) ||
-        o.initial_service?.toLowerCase().includes(q) ||
-        o.customer_name?.toLowerCase().includes(q)
+        o.initial_service?.toLowerCase().includes(q)
     );
-  }, [orders, rows, activePickerRowIndex, pickerQuery]);
+  }, [availableOrders, rows, activePickerRowIndex, pickerQuery]);
 
   // Filter Gaji in Picker (Anti-Duplikasi Antar-Baris)
   const filteredGaji = useMemo(() => {
-    // Kumpulkan gaji_id yang sudah dipilih di baris LAINNYA dalam nota ini
     const otherSelectedGajiIds = rows
       .filter((_, i) => i !== activePickerRowIndex)
       .map((r) => r.gaji_id)
       .filter(Boolean);
 
-    const available = gajiList.filter((g) => !otherSelectedGajiIds.includes(g.id));
+    const available = availableGaji.filter((g) => !otherSelectedGajiIds.includes(g.id));
 
     if (!pickerQuery.trim()) return available;
     const q = pickerQuery.toLowerCase();
     return available.filter(
       (g) =>
         g.kode_gaji?.toLowerCase().includes(q) ||
-        g.team_name?.toLowerCase().includes(q) ||
-        g.team_skill?.toLowerCase().includes(q)
+        g.team_name?.toLowerCase().includes(q)
     );
-  }, [gajiList, rows, activePickerRowIndex, pickerQuery]);
+  }, [availableGaji, rows, activePickerRowIndex, pickerQuery]);
 
   // Submit Handler
   const handleSaveReport = async () => {
@@ -371,7 +376,6 @@ export function CatatFinansialEditor({
       return;
     }
 
-    // Validasi baris
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       if (!r.deskripsi.trim()) {
@@ -384,7 +388,7 @@ export function CatatFinansialEditor({
       }
     }
 
-    // Validasi anti-duplikasi proyek dan gaji
+    // Validasi anti-duplikasi proyek dan gaji dalam form
     const seenOrders = new Set<string>();
     const seenGaji = new Set<string>();
     for (const r of rows) {
@@ -392,7 +396,7 @@ export function CatatFinansialEditor({
         if (seenOrders.has(r.order_id)) {
           toast.add({
             title: "Proyek Duplikat",
-            description: `Invoice ${r.invoice_no || "proyek"} dipilih lebih dari satu kali. Setiap proyek dalam satu nota harus berbeda.`,
+            description: `Invoice ${r.invoice_no || "proyek"} dipilih lebih dari satu kali.`,
             type: "error",
           });
           return;
@@ -403,7 +407,7 @@ export function CatatFinansialEditor({
         if (seenGaji.has(r.gaji_id)) {
           toast.add({
             title: "Slip Gaji Duplikat",
-            description: `Slip gaji ${r.kode_gaji || "tim"} dipilih lebih dari satu kali dalam satu nota.`,
+            description: `Slip gaji ${r.kode_gaji || "tim"} dipilih lebih dari satu kali.`,
             type: "error",
           });
           return;
@@ -437,7 +441,7 @@ export function CatatFinansialEditor({
         toast.add({ title: "Laporan Diperbarui", description: `Nota ${jurnal.kode_jurnal} berhasil disimpan.`, type: "success" });
       } else {
         await onSave(payload);
-        toast.add({ title: "Laporan Dibukukan", description: "Laporan finansial baru berhasil dicatat.", type: "success" });
+        toast.add({ title: "Laporan Dibukukan", description: "Laporan kas baru berhasil dicatat.", type: "success" });
       }
       onBackToHistory();
     } catch (err: unknown) {
@@ -448,162 +452,139 @@ export function CatatFinansialEditor({
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header Atas Sesuai Gambar Referensi */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#2279cf]">
-            — {isEdit ? "EDIT TRANSAKSI" : "CATAT BARU"}
-          </span>
-          <div className="flex items-center gap-2 mt-0.5">
-            <button
-              type="button"
-              onClick={onBackToHistory}
-              className="text-slate-400 hover:text-slate-800 transition text-lg font-bold"
-              title="Kembali ke Jurnal Transaksi"
-            >
-              ‹
-            </button>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
-              Catat Transaksi <span className="text-[#2279cf]">Finansial</span>
+    <div className="space-y-5">
+      {/* 1. Header Bersih & Minimalis */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onBackToHistory}
+            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+            title="Kembali ke Jurnal Transaksi"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              {isEdit ? `Edit Nota ${kodeJurnal}` : "Catat Transaksi Kas"}
             </h1>
+            <p className="text-xs text-slate-500">
+              Kelola rincian kas masuk dan kas keluar operasional.
+            </p>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Kelola rincian kas masuk dan keluar secara akurat dan tersinkronisasi.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Badge Database Sync Online */}
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs">
-            <span className="text-[10px] text-slate-400">DATABASE SYNC</span>
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-emerald-700">ONLINE</span>
-            {liveTimeStr && (
-              <span className="text-slate-400 font-mono pl-1 border-l border-slate-200">
-                {liveTimeStr}
-              </span>
-            )}
-          </div>
-
-          {/* Tombol Kembali ke Jurnal Transaksi */}
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onBackToHistory}
-            className="gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+            className="gap-1.5 text-xs font-medium text-slate-700"
           >
             <Clock className="size-3.5 text-slate-400" />
-            Jurnal Transaksi
+            Riwayat Jurnal
           </Button>
         </div>
       </div>
 
-      {/* 2. Top Card Metadata (2/3 Kolom Bersih, Workshop Dihapus Total, Kode Riil Tanpa Kata Otomatis) */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {/* Tanggal & Waktu Entry */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+      {/* 2. Top Card Metadata Nota (3 Kolom Bersih & Ringkas) */}
+      <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {/* Tanggal & Waktu */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
               <Calendar className="size-3.5 text-slate-400" />
-              Tanggal & Waktu Entry (WIB)
+              Tanggal & Waktu
             </label>
             <Input
               type="datetime-local"
               value={waktuTransaksi}
               onChange={(e) => setWaktuTransaksi(e.target.value)}
-              className="text-xs font-semibold text-slate-800 bg-slate-50/50"
+              className="text-xs text-slate-800"
             />
           </div>
 
-          {/* No. Referensi / Nota (Kode Riil e.g. JRN-2611-0005) */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+          {/* No. Nota */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
               <Receipt className="size-3.5 text-slate-400" />
-              No. Referensi / Nota
+              No. Nota
             </label>
             <Input
               type="text"
               readOnly
-              value={kodeJurnal || "Memuat kode..."}
-              className="text-xs font-mono font-bold text-slate-900 bg-slate-50/80 cursor-default"
+              value={kodeJurnal || "Memuat..."}
+              className="text-xs font-mono font-semibold text-slate-900 bg-slate-50/80 cursor-default"
             />
           </div>
 
           {/* Judul Lembar Kas */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
               <FileText className="size-3.5 text-slate-400" />
-              Judul Lembar Kas
+              Judul Kas
             </label>
             <Input
               type="text"
               placeholder="Contoh: Rekap Kas Harian Operasional"
               value={judul}
               onChange={(e) => setJudul(e.target.value)}
-              className="text-xs font-medium text-slate-800 bg-slate-50/50"
+              className="text-xs text-slate-800"
             />
           </div>
         </div>
       </div>
 
       {/* 3. Card Utama: Rincian Transaksi */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
-        {/* Header Bagian Rincian & 2 Tombol Aksi (Tanpa Icon Ganda) */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2">
-            <Info className="size-4 text-[#2279cf]" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
-              Rincian Transaksi
-            </h3>
-          </div>
+      <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3.5">
+        {/* Sub-Header Baris & Tombol Tambah */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+            Rincian Transaksi ({rows.length})
+          </h3>
 
           <div className="flex items-center gap-2">
-            {/* Tombol Hijau: + PEMASUKAN (Tanpa Double Plus) */}
             <Button
               type="button"
               size="sm"
               onClick={handleAddPemasukan}
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition"
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 py-1.5 h-8 rounded-lg shadow-xs transition"
             >
               <Plus className="size-3.5" />
-              PEMASUKAN
+              Pemasukan
             </Button>
-
-            {/* Tombol Merah: + PENGELUARAN (Tanpa Double Plus) */}
             <Button
               type="button"
               size="sm"
               onClick={handleAddPengeluaran}
-              className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition"
+              className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs px-3 py-1.5 h-8 rounded-lg shadow-xs transition"
             >
               <Plus className="size-3.5" />
-              PENGELUARAN
+              Pengeluaran
             </Button>
           </div>
         </div>
 
-        {/* Tabel Rincian: Format Single-Line Rapi & Sejajar */}
-        <div className="space-y-2.5">
+        {/* Tabel Baris Transaksi */}
+        <div className="space-y-2">
           {/* Header Kolom Mini */}
-          <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="hidden sm:grid sm:grid-cols-12 gap-2.5 px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             <div className="col-span-1 text-center">Tipe</div>
-            <div className="col-span-5">Item / Keterangan</div>
+            <div className="col-span-5">Keterangan / Sumber</div>
             <div className="col-span-2">Kategori</div>
             <div className="col-span-2">Metode</div>
-            <div className="col-span-2 text-right pr-8">Nominal (Rp)</div>
+            <div className="col-span-2 text-right pr-8">Nominal</div>
           </div>
 
           {rows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center text-xs text-slate-400">
-              Belum ada baris transaksi. Klik <strong>+ PEMASUKAN</strong> atau <strong>+ PENGELUARAN</strong> di atas.
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-400">
+              Belum ada baris transaksi. Klik tombol <strong>+ Pemasukan</strong> atau <strong>+ Pengeluaran</strong>.
             </div>
           ) : (
             rows.map((row, index) => {
               const isIncome = row.tipe === "pemasukan";
 
-              // Deduplikasi Kategori agar tidak muncul ganda di dropdown
               const rowCategories = (() => {
                 const filtered = categories.filter((c) => c.tipe === row.tipe);
                 const seen = new Set<string>();
@@ -619,33 +600,32 @@ export function CatatFinansialEditor({
               return (
                 <div
                   key={index}
-                  className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs hover:border-slate-300 transition"
+                  className="rounded-lg border border-slate-200/80 bg-white p-2 hover:border-slate-300 transition"
                 >
-                  <div className="grid gap-2.5 sm:grid-cols-12 items-center">
-                    {/* 1. Tipe Icon: ↗ Panah Hijau (Pemasukan) atau ↘ Panah Merah (Pengeluaran) */}
+                  <div className="grid gap-2 sm:grid-cols-12 items-center">
+                    {/* 1. Tipe Icon */}
                     <div className="sm:col-span-1 flex justify-center">
                       <div
-                        className={`flex size-8 items-center justify-center rounded-lg border font-bold ${
+                        className={`flex size-7 items-center justify-center rounded-md border font-bold ${
                           isIncome
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : "bg-rose-50 text-rose-700 border-rose-200"
                         }`}
-                        title={isIncome ? "Pemasukan (Uang Masuk)" : "Pengeluaran (Uang Keluar)"}
+                        title={isIncome ? "Pemasukan" : "Pengeluaran"}
                       >
-                        {isIncome ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
+                        {isIncome ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
                       </div>
                     </div>
 
-                    {/* 2. Item / Keterangan dengan Tombol Tarik Rapi Terintegrasi di Dalam Input */}
+                    {/* 2. Keterangan + Tombol Tarik Ringkas */}
                     <div className="sm:col-span-5 relative flex items-center">
                       <Input
                         type="text"
-                        placeholder={isIncome ? "Uraian transaksi pemasukan..." : "Uraian transaksi pengeluaran..."}
+                        placeholder={isIncome ? "Keterangan pemasukan..." : "Keterangan pengeluaran..."}
                         value={row.deskripsi}
                         onChange={(e) => handleRowChange(index, "deskripsi", e.target.value)}
-                        className="text-xs font-medium text-slate-800 pr-24"
+                        className="text-xs font-medium text-slate-800 pr-24 h-8"
                       />
-                      {/* Tombol Tarik Proyek / Gaji yang Rapi & Sejajar (Tidak Membesarkan Baris) */}
                       <button
                         type="button"
                         onClick={() => {
@@ -653,29 +633,28 @@ export function CatatFinansialEditor({
                           setPickerType(isIncome ? "proyek" : "gaji");
                           setPickerQuery("");
                         }}
-                        className={`absolute right-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                        className={`absolute right-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition ${
                           isIncome
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                             : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
                         }`}
-                        title={isIncome ? "Tarik dari invoice proyek closing" : "Tarik dari slip gaji teknisi"}
                       >
-                        {isIncome ? "🏢 Proyek" : "👷 Gaji"}
+                        {isIncome ? "Tarik Proyek" : "Tarik Gaji"}
                       </button>
                     </div>
 
-                    {/* 3. Kategori Akun (Dropdown Lebar Bersih, Tanpa Potongan Teks) */}
+                    {/* 3. Kategori Akun */}
                     <div className="sm:col-span-2">
                       <Select
                         value={row.kategori_id || ""}
                         onValueChange={(val) => handleRowChange(index, "kategori_id", val || "")}
                       >
-                        <SelectTrigger className="w-full text-xs font-medium text-slate-800">
+                        <SelectTrigger className="w-full text-xs font-medium text-slate-800 h-8">
                           <span className="truncate">
                             {selectedKat ? selectedKat.nama_kategori : "Pilih Kategori"}
                           </span>
                         </SelectTrigger>
-                        <SelectContent className="max-h-56 min-w-[240px] z-50">
+                        <SelectContent className="max-h-56 min-w-[220px] z-50">
                           <SelectGroup>
                             {rowCategories.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
@@ -687,44 +666,44 @@ export function CatatFinansialEditor({
                       </Select>
                     </div>
 
-                    {/* 4. Metode Pembayaran */}
+                    {/* 4. Metode Pembayaran (Teks Bersih) */}
                     <div className="sm:col-span-2">
                       <Select
                         value={row.metode_pembayaran}
                         onValueChange={(val) =>
-                          handleRowChange(index, "metode_pembayaran", (val as any) || "transfer")
+                          handleRowChange(index, "metode_pembayaran", (val as RowItem["metode_pembayaran"]) || "transfer")
                         }
                       >
-                        <SelectTrigger className="w-full text-xs font-medium text-slate-800">
+                        <SelectTrigger className="w-full text-xs font-medium text-slate-800 h-8">
                           <span className="truncate">
                             {row.metode_pembayaran === "transfer"
-                              ? "🏦 Transfer"
+                              ? "Transfer Bank"
                               : row.metode_pembayaran === "cash"
-                              ? "💵 Cash"
+                              ? "Tunai / Cash"
                               : row.metode_pembayaran === "qris"
-                              ? "📱 QRIS"
-                              : "📋 Kasbon"}
+                              ? "QRIS"
+                              : "Kasbon"}
                           </span>
                         </SelectTrigger>
-                        <SelectContent className="min-w-[150px] z-50">
+                        <SelectContent className="min-w-[140px] z-50">
                           <SelectGroup>
-                            <SelectItem value="transfer">🏦 Transfer Bank</SelectItem>
-                            <SelectItem value="cash">💵 Cash / Tunai</SelectItem>
-                            <SelectItem value="qris">📱 QRIS</SelectItem>
-                            <SelectItem value="kasbon">📋 Kasbon</SelectItem>
+                            <SelectItem value="transfer">Transfer Bank</SelectItem>
+                            <SelectItem value="cash">Tunai / Cash</SelectItem>
+                            <SelectItem value="qris">QRIS</SelectItem>
+                            <SelectItem value="kasbon">Kasbon</SelectItem>
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {/* 5. Nominal (Rp) & Tombol Hapus */}
-                    <div className="sm:col-span-2 flex items-center justify-end gap-1.5">
+                    {/* 5. Nominal (Rp) & Hapus */}
+                    <div className="sm:col-span-2 flex items-center justify-end gap-1">
                       <Input
                         type="text"
                         placeholder="Rp 0"
                         value={row.nominal}
                         onChange={(e) => handleRowChange(index, "nominal", e.target.value)}
-                        className={`text-xs font-bold text-right ${
+                        className={`text-xs font-semibold text-right tabular-nums h-8 ${
                           isIncome ? "text-emerald-700" : "text-rose-700"
                         }`}
                       />
@@ -733,9 +712,9 @@ export function CatatFinansialEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveRow(index)}
-                        className="size-8 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
+                        className="size-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -745,15 +724,15 @@ export function CatatFinansialEditor({
           )}
         </div>
 
-        {/* Popover Pencarian Proyek / Gaji */}
+        {/* Modal Popover Minimalis: Pilih Proyek / Slip Gaji */}
         {activePickerRowIndex !== null && pickerType && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-2xs"
             ref={pickerRef}
           >
-            <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl animate-in zoom-in-95">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h4 className="text-sm font-bold text-slate-900">
+            <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-4 shadow-xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                   {pickerType === "proyek" ? "Pilih Invoice Proyek Selesai" : "Pilih Slip Gaji Tim"}
                 </h4>
                 <button
@@ -762,61 +741,69 @@ export function CatatFinansialEditor({
                     setActivePickerRowIndex(null);
                     setPickerType(null);
                   }}
-                  className="size-6 text-slate-400 hover:text-slate-700 font-bold"
+                  className="size-6 text-slate-400 hover:text-slate-700 text-xs font-bold"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="relative my-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <div className="relative my-2.5">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
                 <input
                   type="text"
                   autoFocus
-                  placeholder={pickerType === "proyek" ? "Cari nomor INV atau nama klien..." : "Cari kode slip gaji atau tim..."}
+                  placeholder={pickerType === "proyek" ? "Cari nomor invoice..." : "Cari kode slip gaji atau nama tim..."}
                   value={pickerQuery}
                   onChange={(e) => setPickerQuery(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none focus:border-slate-900 focus:bg-white"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-slate-800 focus:bg-white"
                 />
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
                 {pickerType === "proyek" ? (
                   filteredOrders.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-slate-400">Tidak ada invoice proyek yang cocok.</p>
+                    <p className="py-6 text-center text-xs text-slate-400">
+                      Tidak ada invoice proyek selesai yang tersedia.
+                    </p>
                   ) : (
                     filteredOrders.map((ord) => (
                       <button
                         key={ord.id}
                         type="button"
                         onClick={() => handlePickOrder(activePickerRowIndex, ord)}
-                        className="flex w-full items-start justify-between rounded-xl border border-slate-100 p-2.5 text-left text-xs hover:border-emerald-300 hover:bg-emerald-50/60 transition"
+                        className="flex w-full items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-left text-xs hover:border-emerald-300 hover:bg-emerald-50/50 transition"
                       >
-                        <div className="min-w-0 flex-1 pr-2">
-                          <span className="font-bold text-slate-900">{ord.invoice_no}</span>
-                          <span className="text-slate-600 ml-1">· {ord.initial_service}</span>
-                          {ord.customer_name && <p className="text-[11px] text-slate-400">Klien: {ord.customer_name}</p>}
+                        <div className="min-w-0 flex items-center gap-1.5 truncate pr-2">
+                          <span className="font-semibold text-slate-900">{ord.invoice_no}</span>
+                          <span className="text-slate-400">·</span>
+                          <span className="text-slate-600 truncate">{ord.initial_service}</span>
                         </div>
-                        <span className="font-bold text-emerald-700 shrink-0">{ord.total_amount}</span>
+                        <span className="font-bold text-emerald-600 tabular-nums shrink-0">
+                          {ord.total_amount}
+                        </span>
                       </button>
                     ))
                   )
                 ) : filteredGaji.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-slate-400">Tidak ada slip gaji yang cocok.</p>
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    Tidak ada slip gaji yang tersedia.
+                  </p>
                 ) : (
                   filteredGaji.map((g) => (
                     <button
                       key={g.id}
                       type="button"
                       onClick={() => handlePickGaji(activePickerRowIndex, g)}
-                      className="flex w-full items-start justify-between rounded-xl border border-slate-100 p-2.5 text-left text-xs hover:border-rose-300 hover:bg-rose-50/60 transition"
+                      className="flex w-full items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-left text-xs hover:border-rose-300 hover:bg-rose-50/50 transition"
                     >
-                      <div className="min-w-0 flex-1 pr-2">
-                        <span className="font-bold text-slate-900">{g.kode_gaji}</span>
-                        <span className="text-slate-600 ml-1">· {g.team_name}</span>
-                        <p className="text-[11px] text-slate-400">{g.team_skill}</p>
+                      <div className="min-w-0 flex items-center gap-1.5 truncate pr-2">
+                        <span className="font-semibold text-slate-900">{g.kode_gaji}</span>
+                        <span className="text-slate-400">·</span>
+                        <span className="text-slate-600 truncate">{g.team_name}</span>
                       </div>
-                      <span className="font-bold text-rose-700 shrink-0">{g.total_gaji}</span>
+                      <span className="font-bold text-rose-600 tabular-nums shrink-0">
+                        {g.total_gaji}
+                      </span>
                     </button>
                   ))
                 )}
@@ -825,64 +812,47 @@ export function CatatFinansialEditor({
           </div>
         )}
 
-        {/* 4. Tiga Kotak Ringkasan Saldo di Bawah Sesuai Gambar Referensi */}
-        <div className="grid gap-4 sm:grid-cols-3 pt-2">
-          {/* Card 1: TOTAL PEMASUKAN */}
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs text-center">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              TOTAL PEMASUKAN
-            </span>
-            <span className="mt-1 text-2xl font-black text-emerald-600">
-              {totalPemasukanStr}
-            </span>
+        {/* 4. Strip Ringkasan Akun Kas Ringkas & Elegan (Menggantikan 3 Card Raksasa) */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-5 rounded-lg border border-slate-200/80 bg-slate-50/70 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-500 font-medium">Pemasukan:</span>
+            <span className="font-bold text-emerald-600 tabular-nums">{totalPemasukanStr}</span>
           </div>
-
-          {/* Card 2: TOTAL PENGELUARAN */}
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs text-center">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              TOTAL PENGELUARAN
-            </span>
-            <span className="mt-1 text-2xl font-black text-rose-600">
-              {totalPengeluaranStr}
-            </span>
+          <div className="h-3.5 w-px bg-slate-200 hidden sm:block" />
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-500 font-medium">Pengeluaran:</span>
+            <span className="font-bold text-rose-600 tabular-nums">{totalPengeluaranStr}</span>
           </div>
-
-          {/* Card 3: SALDO BERSIH (SOLID DARK CARD SESUAI REFERENSI) */}
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-900 bg-[#060b1c] p-5 shadow-md text-center text-white">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-              SALDO BERSIH
-            </span>
-            <span className="mt-1 text-2xl font-black text-emerald-400 tracking-tight">
+          <div className="h-3.5 w-px bg-slate-200 hidden sm:block" />
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-700 font-semibold">Saldo Bersih:</span>
+            <span className={`font-bold tabular-nums ${saldoBersihNum >= 0 ? "text-slate-900" : "text-rose-600"}`}>
               {saldoBersihStr}
             </span>
           </div>
         </div>
 
         {/* 5. Footer Bawah */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-4">
-          <div className="flex-1 max-w-lg space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 italic">
-              <Info className="size-3.5 shrink-0" />
-              <span>Semua data terenkripsi dan disimpan otomatis. Tambahkan catatan laporan...</span>
-            </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-3">
+          <div className="flex-1 max-w-md">
             <Input
               type="text"
-              placeholder="Catatan tambahan laporan transaksi / rekening transfer..."
+              placeholder="Catatan tambahan nota kas..."
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              className="text-xs text-slate-600 bg-slate-50/50"
+              className="text-xs text-slate-700 h-8"
             />
           </div>
 
-          <div className="flex items-center gap-2.5 self-end">
-            <Select value={status} onValueChange={(val) => setStatus((val as any) || "draft")}>
-              <SelectTrigger className="w-[170px] text-xs font-semibold text-slate-800">
-                <span>{status === "lunas" ? "🟢 Lunas (Selesai)" : "🟡 Draft (Sementara)"}</span>
+          <div className="flex items-center gap-2 self-end">
+            <Select value={status} onValueChange={(val) => setStatus((val as "draft" | "lunas") || "draft")}>
+              <SelectTrigger className="w-[120px] text-xs font-semibold text-slate-800 h-8">
+                <span>{status === "lunas" ? "Lunas" : "Draft"}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="draft">🟡 Draft (Sementara)</SelectItem>
-                  <SelectItem value="lunas">🟢 Lunas (Selesai)</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="lunas">Lunas</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -891,10 +861,10 @@ export function CatatFinansialEditor({
               type="button"
               onClick={handleSaveReport}
               disabled={saving}
-              className="gap-2 bg-[#060b1c] hover:bg-slate-900 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition"
+              className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 h-8 rounded-lg shadow-sm transition"
             >
-              <Save className="size-4" />
-              {saving ? "Menyimpan..." : "SIMPAN LAPORAN"}
+              <Save className="size-3.5" />
+              {saving ? "Menyimpan..." : "Simpan Nota"}
             </Button>
           </div>
         </div>

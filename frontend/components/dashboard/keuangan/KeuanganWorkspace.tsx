@@ -4,9 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Calendar,
-  Clock,
-  Filter,
   Plus,
   Printer,
   Receipt,
@@ -15,7 +12,6 @@ import {
   Search,
   Tag,
   Wallet,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,14 +33,18 @@ import {
   updateJurnalAdmin,
   deleteJurnalAdmin,
   listKategoriAdmin,
+  listAvailableOrdersForKeuangan,
+  listAvailableGajiForKeuangan,
   type JurnalKeuangan,
   type KategoriKeuangan,
   type KeuanganSummary,
   type CreateJurnalPayload,
   type UpdateJurnalPayload,
+  type KeuanganAvailableOrder,
+  type KeuanganAvailableGaji,
 } from "@/lib/keuangan";
-import { listOrdersAdmin, type Order } from "@/lib/orders";
-import { listGajiAdmin, type Gaji } from "@/lib/gaji";
+import type { Order } from "@/lib/orders";
+import type { Gaji } from "@/lib/gaji";
 import { JurnalTable } from "./JurnalTable";
 import { CatatFinansialEditor } from "./CatatFinansialEditor";
 import { JurnalDeleteDialog } from "./JurnalDeleteDialog";
@@ -79,10 +79,10 @@ export function KeuanganWorkspace() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Data Rujukan Opsi
+  // Data Rujukan Opsi (Anti-Duplikasi dengan Database)
   const [categories, setCategories] = useState<KategoriKeuangan[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [gajiList, setGajiList] = useState<Gaji[]>([]);
+  const [orders, setOrders] = useState<(Order | KeuanganAvailableOrder)[]>([]);
+  const [gajiList, setGajiList] = useState<(Gaji | KeuanganAvailableGaji)[]>([]);
 
   // Filter States
   const [search, setSearch] = useState("");
@@ -120,18 +120,17 @@ export function KeuanganWorkspace() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Memuat data referensi (Kategori, Proyek, Gaji)
+  // Memuat data referensi (Kategori, Proyek Tersedia, Gaji Tersedia)
   const loadReferenceData = useCallback(async () => {
     try {
-      const [kat, ordList, gjRes] = await Promise.all([
+      const [kat, ordList, gjList] = await Promise.all([
         listKategoriAdmin(),
-        listOrdersAdmin("", "", ""),
-        listGajiAdmin({ limit: 100 }),
+        listAvailableOrdersForKeuangan(),
+        listAvailableGajiForKeuangan(),
       ]);
       setCategories(kat);
-      // Filter proyek yang relevan (selesai / closing)
-      setOrders(ordList.filter((o) => o.status === "selesai" || o.status === "deal"));
-      setGajiList(gjRes.data || []);
+      setOrders(ordList);
+      setGajiList(gjList);
     } catch (err) {
       console.error("Gagal memuat data referensi keuangan", err);
     }
@@ -235,6 +234,7 @@ export function KeuanganWorkspace() {
     setOpenedNotes((prev) => ({ ...prev, [created.id]: created }));
     setActiveTab(created.id);
     loadJurnal(true);
+    loadReferenceData();
   };
 
   // Simpan Update Nota Eksisting
@@ -242,6 +242,7 @@ export function KeuanganWorkspace() {
     const updated = await updateJurnalAdmin(id, payload);
     setOpenedNotes((prev) => ({ ...prev, [id]: updated }));
     loadJurnal(true);
+    loadReferenceData();
   };
 
   // Konfirmasi Hapus
@@ -263,6 +264,7 @@ export function KeuanganWorkspace() {
       }
       setDeletingJurnal(null);
       loadJurnal(true);
+      loadReferenceData();
     } catch (err: unknown) {
       setDeleteError(err instanceof Error ? err.message : "Gagal menghapus nota");
     } finally {
@@ -299,28 +301,28 @@ export function KeuanganWorkspace() {
         <button
           type="button"
           onClick={() => setActiveTab("jurnal")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === "jurnal"
               ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Receipt className="size-4" />
-          📑 Jurnal Transaksi ({totalCount})
+          <Receipt className="size-4 text-slate-500" />
+          Jurnal Transaksi ({totalCount})
         </button>
 
         {/* Tab 2: Kategori Akun */}
         <button
           type="button"
           onClick={() => setActiveTab("kategori")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === "kategori"
               ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Tag className="size-4" />
-          🏷️ Kategori Akun ({categories.length})
+          <Tag className="size-4 text-slate-500" />
+          Kategori Akun ({categories.length})
         </button>
 
         {/* Tab-Tab Nota Terbuka (Dinamis) */}
@@ -328,10 +330,10 @@ export function KeuanganWorkspace() {
           <div
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold cursor-pointer rounded-t-lg transition ${
+            className={`flex items-center gap-2 border-b-2 px-3 py-2 text-xs font-semibold cursor-pointer rounded-t-lg transition ${
               activeTab === tab.id
-                ? "border-[#2279cf] bg-blue-50/60 text-[#2279cf]"
-                : "border-transparent bg-slate-50 text-slate-600 hover:bg-slate-100"
+                ? "border-slate-900 bg-slate-50 text-slate-900"
+                : "border-transparent bg-slate-50/50 text-slate-600 hover:bg-slate-100"
             }`}
           >
             <span>{tab.title}</span>
@@ -348,88 +350,88 @@ export function KeuanganWorkspace() {
 
       {/* 2. KONTEN TAB: JURNAL TRANSAKSI (RIWAYAT BUKU KAS) */}
       {activeTab === "jurnal" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Header Baris Judul & Tombol Catat Baru */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-black tracking-tight text-slate-900">
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">
                 Jurnal Transaksi & Buku Kas
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Rekap nota keuangan, mutasi kas operasional, dan riwayat pembukuan kas CV Win Teknik Mandiri.
+              <p className="mt-0.5 text-xs text-slate-500">
+                Rekapitulasi mutasi kas operasional dan riwayat pembukuan kas CV Win Teknik Mandiri.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Tombol Print Tunggal (Mendukung Single atau Multi-Data Checkbox) */}
+              {/* Tombol Print Tunggal */}
               <Button
                 type="button"
                 variant="outline"
                 disabled={selectedIds.length === 0}
                 onClick={() => setShowPrintModal(true)}
-                className="inline-flex items-center gap-2 border-slate-300 text-slate-800 hover:bg-slate-100 font-bold text-xs px-4 py-2 rounded-xl shadow-2xs transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-2xs transition disabled:opacity-40 disabled:cursor-not-allowed"
                 title={
                   selectedIds.length === 0
                     ? "Centang minimal satu nota di tabel untuk mencetak laporan PDF"
                     : "Cetak laporan PDF ber-kop surat resmi"
                 }
               >
-                <Printer className="size-4 text-emerald-600" />
-                Cetak Laporan PDF {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
+                <Printer className="size-3.5 text-slate-600" />
+                Cetak PDF {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
               </Button>
 
               <Button
                 type="button"
                 onClick={handleOpenNewTab}
-                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-xs transition"
               >
-                <Plus className="size-4" />
-                + Catat Transaksi Baru
+                <Plus className="size-3.5" />
+                Catat Transaksi
               </Button>
             </div>
           </div>
 
           {/* 3 KARTU SUMMARY ARUS KAS TOTAL */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-3.5 sm:grid-cols-3">
             {/* Total Pemasukan */}
-            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <ArrowDownRight className="size-6" />
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <ArrowDownRight className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  TOTAL PEMASUKAN
+                <p className="text-xs font-medium text-slate-500">
+                  Total Pemasukan
                 </p>
-                <p className="text-xl font-black text-emerald-600 truncate">
+                <p className="text-lg font-bold text-emerald-600 tabular-nums truncate">
                   {summary.total_pemasukan}
                 </p>
               </div>
             </div>
 
             {/* Total Pengeluaran */}
-            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <ArrowUpRight className="size-6" />
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                <ArrowUpRight className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  TOTAL PENGELUARAN
+                <p className="text-xs font-medium text-slate-500">
+                  Total Pengeluaran
                 </p>
-                <p className="text-xl font-black text-rose-600 truncate">
+                <p className="text-lg font-bold text-rose-600 tabular-nums truncate">
                   {summary.total_pengeluaran}
                 </p>
               </div>
             </div>
 
             {/* Saldo Bersih */}
-            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-900 bg-[#060b1c] p-5 shadow-md text-white">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-slate-800 text-emerald-400">
-                <Wallet className="size-6" />
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Wallet className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  SALDO BERSIH KAS
+                <p className="text-xs font-medium text-slate-500">
+                  Saldo Bersih Kas
                 </p>
-                <p className="text-xl font-black text-emerald-400 tracking-tight truncate">
+                <p className="text-lg font-bold text-slate-900 tabular-nums truncate">
                   {summary.sisa_saldo_kas}
                 </p>
               </div>
@@ -554,7 +556,7 @@ export function KeuanganWorkspace() {
                   <Select
                     value={sortOption}
                     onValueChange={(val) => {
-                      setSortOption((val as any) || "desc");
+                      setSortOption((val as "desc" | "asc" | "nominal_desc" | "nominal_asc") || "desc");
                       setPage(1);
                     }}
                   >

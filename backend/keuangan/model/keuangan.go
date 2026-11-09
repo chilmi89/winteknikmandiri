@@ -59,3 +59,24 @@ type JurnalItem struct {
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 }
+
+// KeuanganOrderOption representasi opsi proyek yang tersedia untuk dicatat di kas.
+type KeuanganOrderOption struct {
+	ID              uuid.UUID `json:"id"`
+	InvoiceNo       string    `json:"invoice_no"`
+	InitialCategory string    `json:"initial_category"`
+	InitialService  string    `json:"initial_service"`
+	CustomerName    string    `json:"customer_name"`
+	TotalAmount     string    `json:"total_amount"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+// KeuanganGajiOption representasi opsi slip gaji yang tersedia untuk dicairkan di kas.
+type KeuanganGajiOption struct {
+	ID        uuid.UUID `json:"id"`
+	KodeGaji  string    `json:"kode_gaji"`
+	TeamName  string    `json:"team_name"`
+	TotalGaji string    `json:"total_gaji"`
+	CreatedAt time.Time `json:"created_at"`
+}

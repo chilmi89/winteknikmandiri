@@ -1,14 +1,10 @@
 "use client";
 
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Clock,
   Edit2,
-  FileText,
   Receipt,
   Trash2,
-  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,13 +63,13 @@ export function JurnalTable({
             <TableHead className="min-w-[260px] text-xs font-bold text-slate-700">
               Laporan & Rincian
             </TableHead>
-            <TableHead className="min-w-[130px] text-xs font-bold text-slate-700">
+            <TableHead className="min-w-[120px] text-right text-xs font-semibold text-slate-700">
               Pemasukan
             </TableHead>
-            <TableHead className="min-w-[130px] text-xs font-bold text-slate-700">
+            <TableHead className="min-w-[120px] text-right text-xs font-semibold text-slate-700">
               Pengeluaran
             </TableHead>
-            <TableHead className="min-w-[140px] text-xs font-bold text-slate-700">
+            <TableHead className="min-w-[130px] text-right text-xs font-semibold text-slate-700">
               Saldo Bersih
             </TableHead>
             <TableHead className="w-[110px] text-xs font-bold text-slate-700">
@@ -111,8 +107,6 @@ export function JurnalTable({
             </TableRow>
           ) : (
             data.map((item) => {
-              const inNum = item.numeric_pemasukan || 0;
-              const outNum = item.numeric_pengeluaran || 0;
               const saldoNum = item.numeric_saldo || 0;
               const isSelected = selectedIds.includes(item.id);
 
@@ -155,12 +149,12 @@ export function JurnalTable({
                   {/* Laporan & Rincian */}
                   <TableCell>
                     <div className="flex flex-col py-0.5">
-                      <span className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-[#2279cf] transition">
+                      <span className="text-xs font-semibold text-slate-900 line-clamp-1 group-hover:text-slate-700 transition">
                         {item.judul || `Rekap Kas ${item.kode_jurnal}`}
                       </span>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                        <span className="text-[11px] font-semibold text-slate-500">
-                          {item.items ? item.items.length : 0} transaksi terlampir
+                        <span className="text-[11px] text-slate-400">
+                          {item.items ? item.items.length : 0} transaksi
                         </span>
                         {item.catatan && (
                           <span className="text-[11px] text-slate-400 italic truncate max-w-[200px]">
@@ -172,23 +166,23 @@ export function JurnalTable({
                   </TableCell>
 
                   {/* Total Pemasukan */}
-                  <TableCell>
-                    <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">
+                  <TableCell className="text-right">
+                    <span className="text-xs font-semibold text-emerald-600 whitespace-nowrap tabular-nums">
                       {item.total_pemasukan || "Rp 0"}
                     </span>
                   </TableCell>
 
                   {/* Total Pengeluaran */}
-                  <TableCell>
-                    <span className="text-xs font-bold text-rose-600 whitespace-nowrap">
+                  <TableCell className="text-right">
+                    <span className="text-xs font-semibold text-rose-600 whitespace-nowrap tabular-nums">
                       {item.total_pengeluaran || "Rp 0"}
                     </span>
                   </TableCell>
 
                   {/* Saldo Bersih */}
-                  <TableCell>
+                  <TableCell className="text-right">
                     <span
-                      className={`text-xs font-black whitespace-nowrap ${
+                      className={`text-xs font-bold whitespace-nowrap tabular-nums ${
                         saldoNum >= 0 ? "text-slate-900" : "text-rose-600"
                       }`}
                     >

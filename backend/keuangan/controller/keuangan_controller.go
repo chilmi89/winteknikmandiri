@@ -309,3 +309,43 @@ func (ctrl *KeuanganController) DeleteJurnal(c *gin.Context) {
 		Message: "Transaksi jurnal berhasil dihapus",
 	})
 }
+
+// ListAvailableOrders godoc
+// @Summary     Daftar invoice proyek deal/selesai yang belum dicatat di nota kas aktif
+// @Tags        keuangan
+// @Produce     json
+// @Param       exclude_jurnal_id query string false "ID Jurnal yang dikecualikan (untuk mode edit)"
+// @Success     200 {object} dto.ListAvailableOrdersEnvelope
+// @Router      /api/v1/keuangan/available-orders [get]
+func (ctrl *KeuanganController) ListAvailableOrders(c *gin.Context) {
+	excludeJurnalID := c.Query("exclude_jurnal_id")
+	items, err := ctrl.svc.ListAvailableOrders(c.Request.Context(), excludeJurnalID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.ListAvailableOrdersEnvelope{
+		Message: "Daftar invoice proyek tersedia berhasil dimuat",
+		Data:    items,
+	})
+}
+
+// ListAvailableGaji godoc
+// @Summary     Daftar slip gaji yang belum dicairkan di nota kas aktif
+// @Tags        keuangan
+// @Produce     json
+// @Param       exclude_jurnal_id query string false "ID Jurnal yang dikecualikan (untuk mode edit)"
+// @Success     200 {object} dto.ListAvailableGajiEnvelope
+// @Router      /api/v1/keuangan/available-gaji [get]
+func (ctrl *KeuanganController) ListAvailableGaji(c *gin.Context) {
+	excludeJurnalID := c.Query("exclude_jurnal_id")
+	items, err := ctrl.svc.ListAvailableGaji(c.Request.Context(), excludeJurnalID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.ListAvailableGajiEnvelope{
+		Message: "Daftar slip gaji tersedia berhasil dimuat",
+		Data:    items,
+	})
+}
