@@ -126,15 +126,15 @@ export default function ServicesClientList() {
               type="button"
               aria-pressed={selectedCategory === "all"}
               onClick={() => handleCategoryChange("all")}
-              className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-200 active:scale-95 ${focusRing} ${
+              className={`group inline-flex shrink-0 items-center gap-2 border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-200 active:scale-95 ${focusRing} ${
                 selectedCategory === "all"
                   ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
-                  : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
+                  : "border-[#0A2540]/20 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
               }`}
             >
               <span className="font-semibold">Semua Layanan</span>
               <span
-                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
+                className={`px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                   selectedCategory === "all"
                     ? "bg-white/25 text-white"
                     : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
@@ -159,10 +159,10 @@ export default function ServicesClientList() {
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => handleCategoryChange(cat.name)}
-                  className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-200 active:scale-95 ${focusRing} ${
+                  className={`group inline-flex shrink-0 items-center gap-2 border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-200 active:scale-95 ${focusRing} ${
                     isSelected
                       ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
-                      : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
+                      : "border-[#0A2540]/20 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
                   }`}
                 >
                   <span
@@ -176,7 +176,7 @@ export default function ServicesClientList() {
                   </span>
                   <span className="font-semibold">{cat.name}</span>
                   <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
+                    className={`px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                       isSelected
                         ? "bg-white/25 text-white"
                         : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
@@ -248,7 +248,7 @@ export default function ServicesClientList() {
       {/* Empty State */}
       {!loading && visibleItems.length === 0 && (
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-dashed border-[#0A2540]/20 bg-white p-12 text-center shadow-xs">
+          <div className="border border-dashed border-[#0A2540]/20 bg-white p-12 text-center shadow-xs">
             <p className="text-base font-semibold text-[#0A2540]">
               Belum ada paket layanan untuk kategori ini
             </p>
@@ -258,7 +258,7 @@ export default function ServicesClientList() {
             <button
               type="button"
               onClick={() => handleCategoryChange("all")}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#A82020] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#8e1919]"
+              className="mt-5 inline-flex items-center gap-2 bg-[#A82020] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#8e1919]"
             >
               Lihat Semua Layanan
             </button>
@@ -273,7 +273,7 @@ export default function ServicesClientList() {
             <button
               type="button"
               onClick={() => setShowAll((prev) => !prev)}
-              className={`group inline-flex items-center gap-2 rounded-xl border-2 border-[#0A2540]/20 bg-white px-7 py-3.5 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[#0A2540] shadow-xs transition-all duration-200 hover:border-[#A82020] hover:text-[#A82020] hover:shadow-md active:scale-95 ${focusRing}`}
+              className={`group inline-flex items-center gap-2 border-2 border-[#0A2540]/20 bg-white px-7 py-3.5 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[#0A2540] shadow-xs transition-all duration-200 hover:border-[#A82020] hover:text-[#A82020] hover:shadow-md active:scale-95 ${focusRing}`}
             >
               {showAll ? (
                 <>

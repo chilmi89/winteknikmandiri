@@ -75,11 +75,6 @@ const legalities: { label: string; value: string; note?: string; mono?: boolean 
     note: "Dokumen legalitas lengkap",
   },
   {
-    label: "NIB (Nomor Induk Berusaha)",
-    value: "Terdaftar Sistem OSS RBA",
-    note: "Izin operasional aktif",
-  },
-  {
     label: "NPWP Badan Usaha",
     value: "Terdaftar KPP Pratama Kediri",
     note: "Wajib pajak badan aktif",
@@ -513,7 +508,7 @@ export default function TentangKamiPage() {
 
                     <div className="border-t border-[#0A2540]/10 bg-[#8ACFF8]/10 p-6">
                       <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-[#0A2540]/70">
-                        KBLI Utama Terdaftar (OSS RBA)
+                        KBLI Bidang Usaha Terdaftar
                       </p>
                       <ul className="mt-3 space-y-2.5">
                         {kbli.map((item) => (

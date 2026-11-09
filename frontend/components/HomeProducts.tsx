@@ -153,20 +153,20 @@ export default function HomeProducts() {
 
         {/* Filter Kategori Layanan (Chips/Pills Slider) */}
         {!loading && categoryFilters.length > 1 && (
-          <div className="mt-8 flex items-center gap-2.5 overflow-x-auto pb-2 no-scrollbar sm:flex-wrap">
+          <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar sm:flex-wrap">
             <button
               type="button"
               aria-pressed={selectedCategory === "all"}
               onClick={() => handleCategoryChange("all")}
-              className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${focusRing} ${
+              className={`group inline-flex shrink-0 items-center gap-2 border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all duration-200 active:scale-95 ${focusRing} ${
                 selectedCategory === "all"
                   ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
-                  : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
+                  : "border-[#0A2540]/20 bg-white text-[#0A2540]/80 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
               }`}
             >
-              <span>Semua Layanan</span>
+              <span className="font-semibold">Semua Layanan</span>
               <span
-                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
+                className={`px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                   selectedCategory === "all"
                     ? "bg-white/25 text-white"
                     : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
@@ -187,15 +187,15 @@ export default function HomeProducts() {
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => handleCategoryChange(cat.name)}
-                  className={`group inline-flex shrink-0 items-center gap-2 rounded-lg border-2 px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${focusRing} ${
+                  className={`group inline-flex shrink-0 items-center gap-2 border-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all duration-200 active:scale-95 ${focusRing} ${
                     isSelected
                       ? "border-[#A82020] bg-[#A82020] text-white shadow-sm"
-                      : "border-[#0A2540]/15 bg-white text-[#0A2540]/75 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
+                      : "border-[#0A2540]/20 bg-white text-[#0A2540]/80 hover:border-[#A82020] hover:text-[#A82020] hover:bg-[#A82020]/5 shadow-2xs"
                   }`}
                 >
-                  <span>{cat.name}</span>
+                  <span className="font-semibold">{cat.name}</span>
                   <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
+                    className={`px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors ${
                       isSelected
                         ? "bg-white/25 text-white"
                         : "bg-[#0A2540]/5 text-[#0A2540]/65 group-hover:bg-[#A82020]/15 group-hover:text-[#A82020]"
@@ -215,22 +215,22 @@ export default function HomeProducts() {
             {Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
-                className="flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white p-0 shadow-xs animate-pulse"
+                className="flex flex-col overflow-hidden border border-[#0A2540]/15 bg-white p-0 shadow-xs animate-pulse"
               >
                 <div className="aspect-[16/10] w-full bg-slate-200" />
                 <div className="flex flex-1 flex-col p-5 space-y-3">
-                  <div className="h-5 w-3/4 rounded bg-slate-200" />
+                  <div className="h-5 w-3/4 bg-slate-200" />
                   <div className="space-y-1.5">
-                    <div className="h-3.5 w-full rounded bg-slate-100" />
-                    <div className="h-3.5 w-4/5 rounded bg-slate-100" />
+                    <div className="h-3.5 w-full bg-slate-100" />
+                    <div className="h-3.5 w-4/5 bg-slate-100" />
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <div className="h-5 w-20 rounded bg-slate-100" />
-                    <div className="h-5 w-24 rounded bg-slate-100" />
+                    <div className="h-5 w-20 bg-slate-100" />
+                    <div className="h-5 w-24 bg-slate-100" />
                   </div>
                   <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
-                    <div className="h-6 w-24 rounded bg-slate-200" />
-                    <div className="h-8 w-20 rounded-lg bg-slate-200" />
+                    <div className="h-6 w-24 bg-slate-200" />
+                    <div className="h-8 w-20 bg-slate-200" />
                   </div>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function HomeProducts() {
                   delay={Math.min(index * 60, 300)}
                   className="h-full"
                 >
-                  <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-[#A82020]/50 hover:shadow-lg">
+                  <div className="group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/15 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-[#A82020] hover:shadow-lg">
                     {/* Top Red Accent Reveal on Hover */}
                     <span
                       aria-hidden="true"
@@ -280,7 +280,7 @@ export default function HomeProducts() {
                       {/* Badge Kategori Tunggal di Pojok Kiri Atas Foto */}
                       {item.category_name && (
                         <div className="absolute left-3 top-3 z-10">
-                          <span className="inline-flex items-center rounded-md bg-[#0A2540]/85 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-white uppercase backdrop-blur-md shadow-xs transition-colors duration-300 group-hover:bg-[#A82020]">
+                          <span className="inline-flex items-center bg-[#0A2540]/85 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-white uppercase backdrop-blur-md shadow-xs transition-colors duration-300 group-hover:bg-[#A82020]">
                             {item.category_name}
                           </span>
                         </div>
@@ -306,9 +306,9 @@ export default function HomeProducts() {
                           {item.highlights.map((h, i) => (
                             <span
                               key={i}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200/70 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                              className="inline-flex items-center gap-1.5 border border-[#0A2540]/15 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600"
                             >
-                              <span className="size-1 rounded-full bg-[#A82020]" />
+                              <span className="size-1 bg-[#A82020]" />
                               <span>{h}</span>
                             </span>
                           ))}
@@ -351,7 +351,7 @@ export default function HomeProducts() {
                           serviceId={item.id}
                           categoryId={item.category_id}
                           label="Pesan"
-                          className="shrink-0 rounded-lg bg-[#A82020] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-all duration-200 hover:bg-[#8e1919] hover:shadow-md active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]"
+                          className="shrink-0 bg-[#A82020] px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-xs transition-all duration-200 hover:bg-[#8e1919] hover:shadow-md active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]"
                         />
                       </div>
                     </div>
@@ -364,7 +364,7 @@ export default function HomeProducts() {
 
         {/* Empty State jika tidak ada item dari API */}
         {!loading && visibleItems.length === 0 && (
-          <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-12 text-center shadow-xs">
+          <div className="mt-10 border border-dashed border-[#0A2540]/20 bg-white/70 p-12 text-center shadow-xs">
             <p className="text-sm font-semibold text-slate-800">
               {selectedCategory === "all"
                 ? "Belum ada paket layanan yang tersedia"
@@ -379,7 +379,7 @@ export default function HomeProducts() {
               <button
                 type="button"
                 onClick={() => handleCategoryChange("all")}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#0A2540] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#103a63]"
+                className="mt-4 inline-flex items-center gap-1.5 bg-[#0A2540] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#103a63]"
               >
                 Lihat Semua Layanan
               </button>
@@ -393,7 +393,7 @@ export default function HomeProducts() {
             <button
               type="button"
               onClick={() => setShowAll((prev) => !prev)}
-              className={`group inline-flex items-center gap-2 rounded-xl border border-slate-300/80 bg-white px-6 py-3 text-xs font-semibold text-[#0A2540] shadow-xs transition-all duration-200 hover:border-[#A82020] hover:text-[#A82020] hover:shadow-md active:scale-95 ${focusRing}`}
+              className={`group inline-flex items-center gap-2 border-2 border-[#0A2540]/20 bg-white px-7 py-3 text-xs font-semibold uppercase tracking-wider text-[#0A2540] shadow-xs transition-all duration-200 hover:border-[#A82020] hover:text-[#A82020] hover:shadow-md active:scale-95 ${focusRing}`}
             >
               {showAll ? (
                 <>
