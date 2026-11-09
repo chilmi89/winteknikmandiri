@@ -15,6 +15,7 @@ import {
   type TeamMemberItem,
   type TeamMemberPayload,
 } from "@/lib/teamMembers";
+import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
 import DataTableToolbar, {
   DataTableToolbarGroup,
@@ -29,6 +30,8 @@ export function TeamManager() {
   const [items, setItems] = useState<TeamMemberItem[]>([]);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,9 +141,20 @@ export function TeamManager() {
 
   const hasFilters = Boolean(search.trim()) || includeInactive;
 
+  const totalCount = filteredItems.length;
+  const pageCount = Math.max(1, Math.ceil(totalCount / limit));
+  const page = Math.floor(offset / limit) + 1;
+  const pageStart = totalCount === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + limit, totalCount);
+
+  const paginatedItems = useMemo(() => {
+    return filteredItems.slice(offset, offset + limit);
+  }, [filteredItems, offset, limit]);
+
   function resetFilters() {
     setSearch("");
     setIncludeInactive(false);
+    setOffset(0);
   }
 
   return (
@@ -223,7 +237,10 @@ export function TeamManager() {
                 ref={searchRef}
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setOffset(0);
+                }}
                 placeholder="Cari nama atau skill tim…"
                 aria-label="Cari tim"
                 className="h-9 rounded-md border-slate-200 bg-white pr-12 pl-9 text-xs text-slate-700 placeholder:text-slate-400"
@@ -231,7 +248,10 @@ export function TeamManager() {
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("");
+                    setOffset(0);
+                  }}
                   aria-label="Hapus kata kunci pencarian"
                   className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                 >
@@ -243,7 +263,10 @@ export function TeamManager() {
             <label className="flex h-9 cursor-pointer items-center gap-2 px-1 text-xs font-medium text-slate-600">
               <Checkbox
                 checked={includeInactive}
-                onCheckedChange={(checked) => setIncludeInactive(Boolean(checked))}
+                onCheckedChange={(checked) => {
+                  setIncludeInactive(Boolean(checked));
+                  setOffset(0);
+                }}
               />
               Tampilkan non-aktif
             </label>
@@ -269,7 +292,7 @@ export function TeamManager() {
         </DataTableToolbar>
 
         <TeamTable
-          items={filteredItems}
+          items={paginatedItems}
           loading={loading}
           onEdit={(it) => setDialog({ item: it })}
           onDelete={(it) => {
@@ -281,11 +304,20 @@ export function TeamManager() {
           hasFilters={hasFilters}
         />
 
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-          <span>
-            Menampilkan {filteredItems.length} dari {items.length} data
-          </span>
-        </div>
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+          total={totalCount}
+          pageSize={limit}
+          loading={loading}
+          onPageChange={(nextPage) => setOffset((nextPage - 1) * limit)}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setOffset(0);
+          }}
+        />
       </DataTableShell>
 
       {/* Dialog Form Tambah / Edit */}

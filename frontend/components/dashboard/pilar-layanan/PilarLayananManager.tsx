@@ -15,6 +15,7 @@ import {
   type PilarLayananItem,
   type PilarLayananPayload,
 } from "@/lib/pilarLayanan";
+import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
 import DataTableToolbar, {
   DataTableToolbarGroup,
@@ -29,6 +30,8 @@ export function PilarLayananManager() {
   const [items, setItems] = useState<PilarLayananItem[]>([]);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,9 +142,20 @@ export function PilarLayananManager() {
 
   const hasFilters = Boolean(search.trim()) || includeInactive;
 
+  const totalCount = filteredItems.length;
+  const pageCount = Math.max(1, Math.ceil(totalCount / limit));
+  const page = Math.floor(offset / limit) + 1;
+  const pageStart = totalCount === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + limit, totalCount);
+
+  const paginatedItems = useMemo(() => {
+    return filteredItems.slice(offset, offset + limit);
+  }, [filteredItems, offset, limit]);
+
   function resetFilters() {
     setSearch("");
     setIncludeInactive(false);
+    setOffset(0);
   }
 
   return (
@@ -222,21 +236,28 @@ export function PilarLayananManager() {
                   ref={searchRef}
                   type="search"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setOffset(0);
+                  }}
                   placeholder="Cari pilar layanan…"
                   aria-label="Cari pilar layanan"
                   className="h-9 rounded-md border-slate-200 bg-white pr-12 pl-9 text-xs text-slate-700 placeholder:text-slate-400"
                 />
-                {search ? (
+                {search && (
                   <button
                     type="button"
-                    onClick={() => setSearch("")}
+                    onClick={() => {
+                      setSearch("");
+                      setOffset(0);
+                    }}
                     aria-label="Hapus kata kunci pencarian"
                     className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                   >
                     <X aria-hidden="true" className="size-3.5" />
                   </button>
-                ) : (
+                )}
+                {!search && (
                   <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[9px] text-slate-400 sm:block">
                     Ctrl K
                   </kbd>
@@ -246,7 +267,10 @@ export function PilarLayananManager() {
               <label className="flex h-9 cursor-pointer items-center gap-2 px-1 text-xs font-medium text-slate-600">
                 <Checkbox
                   checked={includeInactive}
-                  onCheckedChange={(checked) => setIncludeInactive(Boolean(checked))}
+                  onCheckedChange={(checked) => {
+                    setIncludeInactive(Boolean(checked));
+                    setOffset(0);
+                  }}
                 />
                 Tampilkan non-aktif
               </label>
@@ -272,7 +296,7 @@ export function PilarLayananManager() {
           </DataTableToolbar>
 
           <PilarLayananTable
-            items={filteredItems}
+            items={paginatedItems}
             loading={loading}
             onEdit={(it) => setDialog({ item: it })}
             onDelete={(it) => {
@@ -284,12 +308,20 @@ export function PilarLayananManager() {
             hasFilters={hasFilters}
           />
 
-          {/* Footer Ringkasan (Persis seperti FAQ) */}
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-            <span>
-              Menampilkan {filteredItems.length} dari {items.length} data
-            </span>
-          </div>
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            pageStart={pageStart}
+            pageEnd={pageEnd}
+            total={totalCount}
+            pageSize={limit}
+            loading={loading}
+            onPageChange={(nextPage) => setOffset((nextPage - 1) * limit)}
+            onPageSizeChange={(size) => {
+              setLimit(size);
+              setOffset(0);
+            }}
+          />
         </DataTableShell>
       )}
 

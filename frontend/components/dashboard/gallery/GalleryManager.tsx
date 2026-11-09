@@ -24,6 +24,7 @@ import {
   type GalleryPayload,
   type CategoryCountItem,
 } from "@/lib/galleryService";
+import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
 import DataTableToolbar, {
   DataTableToolbarGroup,
@@ -44,6 +45,8 @@ export function GalleryManager() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -166,10 +169,21 @@ export function GalleryManager() {
 
   const hasFilters = Boolean(search.trim()) || Boolean(selectedCategory) || includeInactive;
 
+  const totalCount = filteredItems.length;
+  const pageCount = Math.max(1, Math.ceil(totalCount / limit));
+  const page = Math.floor(offset / limit) + 1;
+  const pageStart = totalCount === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + limit, totalCount);
+
+  const paginatedItems = useMemo(() => {
+    return filteredItems.slice(offset, offset + limit);
+  }, [filteredItems, offset, limit]);
+
   function resetFilters() {
     setSearch("");
     setSelectedCategory("");
     setIncludeInactive(false);
+    setOffset(0);
   }
 
   return (
@@ -252,7 +266,10 @@ export function GalleryManager() {
                 ref={searchRef}
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setOffset(0);
+                }}
                 placeholder="Cari judul, klien, atau lokasi…"
                 aria-label="Cari proyek"
                 className="h-9 rounded-md border-slate-200 bg-white pr-12 pl-9 text-xs text-slate-700 placeholder:text-slate-400"
@@ -260,7 +277,10 @@ export function GalleryManager() {
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("");
+                    setOffset(0);
+                  }}
                   aria-label="Hapus kata kunci pencarian"
                   className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                 >
@@ -274,6 +294,7 @@ export function GalleryManager() {
               value={selectedCategory || ALL_CATEGORIES}
               onValueChange={(val) => {
                 setSelectedCategory(val === ALL_CATEGORIES ? "" : (val ?? ""));
+                setOffset(0);
               }}
             >
               <SelectTrigger
@@ -299,7 +320,10 @@ export function GalleryManager() {
             <label className="flex h-9 cursor-pointer items-center gap-2 px-1 text-xs font-medium text-slate-600">
               <Checkbox
                 checked={includeInactive}
-                onCheckedChange={(checked) => setIncludeInactive(Boolean(checked))}
+                onCheckedChange={(checked) => {
+                  setIncludeInactive(Boolean(checked));
+                  setOffset(0);
+                }}
               />
               Tampilkan non-aktif
             </label>
@@ -325,7 +349,7 @@ export function GalleryManager() {
         </DataTableToolbar>
 
         <GalleryTable
-          items={filteredItems}
+          items={paginatedItems}
           loading={loading}
           onEdit={(it) => setDialog({ item: it })}
           onDelete={(it) => {
@@ -337,11 +361,20 @@ export function GalleryManager() {
           hasFilters={hasFilters}
         />
 
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-          <span>
-            Menampilkan {filteredItems.length} dari {items.length} proyek
-          </span>
-        </div>
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+          total={totalCount}
+          pageSize={limit}
+          loading={loading}
+          onPageChange={(nextPage) => setOffset((nextPage - 1) * limit)}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setOffset(0);
+          }}
+        />
       </DataTableShell>
 
       {/* Dialog Form Tambah / Edit */}

@@ -29,6 +29,7 @@ import {
   type ServiceItem,
   type ServiceItemPayload,
 } from "@/lib/katalogLayanan";
+import DataTablePagination from "@/components/dashboard/data-table/DataTablePagination";
 import DataTableShell from "@/components/dashboard/data-table/DataTableShell";
 import DataTableToolbar, {
   DataTableToolbarGroup,
@@ -50,6 +51,8 @@ export function KatalogManager() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,6 +185,23 @@ export function KatalogManager() {
 
   const hasFilters = Boolean(search.trim()) || Boolean(selectedCategory) || includeInactive;
 
+  const total = filteredItems.length;
+  const pageCount = Math.max(1, Math.ceil(total / limit));
+  const page = Math.floor(offset / limit) + 1;
+  const pageStart = total === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + limit, total);
+
+  const paginatedItems = useMemo(() => {
+    return filteredItems.slice(offset, offset + limit);
+  }, [filteredItems, offset, limit]);
+
+  function resetFilters() {
+    setSearch("");
+    setSelectedCategory("");
+    setIncludeInactive(false);
+    setOffset(0);
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* Header Halaman (Persis Galeri, FAQ, Tim) */}
@@ -302,14 +322,20 @@ export function KatalogManager() {
                   ref={searchRef}
                   type="search"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setOffset(0);
+                  }}
                   placeholder="Cari nama atau deskripsi layanan…"
                   className="h-9 rounded-md border-slate-200 bg-white pr-12 pl-9 text-xs text-slate-700 placeholder:text-slate-400"
                 />
                 {search && (
                   <button
                     type="button"
-                    onClick={() => setSearch("")}
+                    onClick={() => {
+                      setSearch("");
+                      setOffset(0);
+                    }}
                     className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
                   >
                     <X className="size-3.5" />
@@ -320,7 +346,10 @@ export function KatalogManager() {
               {/* Filter Kategori */}
               <Select
                 value={selectedCategory || ALL_CATEGORIES}
-                onValueChange={(val) => setSelectedCategory(val === ALL_CATEGORIES ? "" : (val ?? ""))}
+                onValueChange={(val) => {
+                  setSelectedCategory(val === ALL_CATEGORIES ? "" : (val ?? ""));
+                  setOffset(0);
+                }}
               >
                 <SelectTrigger className="h-9 w-full rounded-md border-slate-200 bg-white text-xs text-slate-600 sm:w-[200px]">
                   <SelectValue placeholder="Semua kategori" />
@@ -342,7 +371,10 @@ export function KatalogManager() {
               <label className="flex h-9 cursor-pointer items-center gap-2 px-1 text-xs font-medium text-slate-600">
                 <Checkbox
                   checked={includeInactive}
-                  onCheckedChange={(checked) => setIncludeInactive(Boolean(checked))}
+                  onCheckedChange={(checked) => {
+                    setIncludeInactive(Boolean(checked));
+                    setOffset(0);
+                  }}
                 />
                 Tampilkan non-aktif
               </label>
@@ -352,11 +384,7 @@ export function KatalogManager() {
               {hasFilters && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setSelectedCategory("");
-                    setIncludeInactive(false);
-                  }}
+                  onClick={resetFilters}
                   className="text-xs text-slate-500 transition-colors hover:text-slate-800"
                 >
                   Reset
@@ -372,24 +400,29 @@ export function KatalogManager() {
           </DataTableToolbar>
 
           <ServiceItemTable
-            items={filteredItems}
+            items={paginatedItems}
             loading={loading}
             onEdit={(it) => setItemDialog({ item: it })}
             onDelete={(it) => setToDeleteItem(it)}
             onCreate={() => setItemDialog({ item: null })}
-            onResetFilters={() => {
-              setSearch("");
-              setSelectedCategory("");
-              setIncludeInactive(false);
-            }}
+            onResetFilters={resetFilters}
             hasFilters={hasFilters}
           />
 
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-            <span>
-              Menampilkan {filteredItems.length} dari {items.length} layanan
-            </span>
-          </div>
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            pageStart={pageStart}
+            pageEnd={pageEnd}
+            total={total}
+            pageSize={limit}
+            loading={loading}
+            onPageChange={(nextPage) => setOffset((nextPage - 1) * limit)}
+            onPageSizeChange={(size) => {
+              setLimit(size);
+              setOffset(0);
+            }}
+          />
         </DataTableShell>
       )}
 
