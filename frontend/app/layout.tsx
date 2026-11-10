@@ -76,8 +76,13 @@ export const metadata: Metadata = {
     images: ["/logo/logo_wtm.png"],
   },
   icons: {
-    icon: "/logo/logo_wtm.png",
-    apple: "/logo/logo_wtm.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "48x48" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   robots: {
     index: true,
