@@ -66,6 +66,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       DB_NAME: ${DB_NAME:-wtm_db}
       DB_SSLMODE: disable
+      GIN_MODE: release
       WA_PHONE: ${WA_PHONE:-6281216622840}
       # Dokumentasi API mati secara default di server; set true untuk membukanya.
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}

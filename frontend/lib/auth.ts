@@ -1,4 +1,5 @@
 import { resolveApiBase } from "@/lib/dashboard/api";
+import { signSession } from "@/lib/session";
 
 export const AUTH_COOKIE_NAME = "wtm_admin_session";
 
@@ -17,7 +18,7 @@ export type LoginResult = {
 
 /**
  * Melakukan verifikasi login ke backend Go Gin (/api/v1/auth/login).
- * Jika berhasil, otomatis menyimpan cookie session browser.
+ * Jika berhasil, menandatangani payload dengan HMAC-SHA256 dan menyimpan cookie session browser.
  */
 export async function loginAdmin(
   identifier: string,
@@ -44,19 +45,23 @@ export async function loginAdmin(
 
     const user: AdminUser = json.data;
 
-    // Pasang session cookie di browser (berlaku 7 hari)
-    const sessionData = encodeURIComponent(
-      JSON.stringify({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        loginAt: Date.now(),
-      })
-    );
+    // Buat token session bertanda tangan kriptografi (HMAC-SHA256)
+    const rawPayload = JSON.stringify({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      loginAt: Date.now(),
+    });
 
-    const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
-    document.cookie = `${AUTH_COOKIE_NAME}=${sessionData}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${
+    const signedToken = await signSession(rawPayload);
+
+    const isSecure =
+      typeof window !== "undefined" && window.location.protocol === "https:";
+
+    document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(
+      signedToken
+    )}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${
       isSecure ? "; Secure" : ""
     }`;
 
@@ -80,10 +85,25 @@ export function getAdminSession(): AdminUser | null {
 
   const cookies = document.cookie.split(";");
   for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    if (name === AUTH_COOKIE_NAME && value) {
+    const [name, rawValue] = cookie.trim().split("=");
+    if (name === AUTH_COOKIE_NAME && rawValue) {
       try {
-        const parsed = JSON.parse(decodeURIComponent(value));
+        const decoded = decodeURIComponent(rawValue);
+        // Cek format token tertanda tangan (Base64.Signature)
+        if (decoded.includes(".")) {
+          const [b64Payload] = decoded.split(".");
+          const jsonStr = decodeURIComponent(escape(atob(b64Payload)));
+          const parsed = JSON.parse(jsonStr);
+          return {
+            id: parsed.id,
+            username: parsed.username,
+            email: parsed.email,
+            name: parsed.name,
+          };
+        }
+
+        // Fallback backward-compatible untuk token biasa
+        const parsed = JSON.parse(decoded);
         return {
           id: parsed.id,
           username: parsed.username,
