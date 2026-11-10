@@ -8,7 +8,6 @@ import GalleryClient from "@/components/GalleryClient";
 import Navbar from "@/components/Navbar";
 import SectionHeading from "@/components/SectionHeading";
 import SiteFooter from "@/components/SiteFooter";
-import StatsBar from "@/components/StatsBar";
 import CompanyFactsList from "@/components/CompanyFactsList";
 import CompanyStatsCards from "@/components/CompanyStatsCards";
 import { waLink } from "@/lib/site";
@@ -150,9 +149,6 @@ export default function GaleriPage() {
             <CompanyFactsList extraFactLabel="Garansi Resmi" extraFactValue="30 Hari Tertulis" />
           </div>
         </section>
-
-        {/* STATS BAR — Real-time dynamic company stats [Image 1] */}
-        <StatsBar />
 
         {/* SECTION 01 — BANNER REKAM JEJAK PROYEK (bg-white, Task 5.2 task.md) */}
         <section
