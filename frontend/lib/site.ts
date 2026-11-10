@@ -1,4 +1,4 @@
-const envPhone = process.env.NEXT_PUBLIC_WA_PHONE || "6283136830913";
+const envPhone = process.env.NEXT_PUBLIC_WA_PHONE || "6281216622840";
 
 export const site = {
   name: "CV Win Teknik Mandiri",
@@ -8,7 +8,7 @@ export const site = {
   description:
     "Kontraktor AC, ducting, dan tata udara untuk hunian, komersial, dan industri di Kediri Raya.",
   phone: envPhone,
-  phoneDisplay: envPhone === "6283136830913" ? "+62 831-3683-0913" : "+62 812-1662-2840",
+  phoneDisplay: "+62 812-1662-2840",
   email: "cswinteknikmandiri@gmail.com",
   address:
     "Dusun Selomanen, Desa Purwokerto, Kec. Ngadiluwih, Kab. Kediri, Jawa Timur",

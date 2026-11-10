@@ -40,7 +40,7 @@ func (s *OrderService) InitiateClickOrder(ctx context.Context, req dto.ClickOrde
 
 	waPhone := os.Getenv("WA_PHONE")
 	if waPhone == "" {
-		waPhone = "6283136830913"
+		waPhone = "6281216622840"
 	}
 
 	cleanPrice := ""

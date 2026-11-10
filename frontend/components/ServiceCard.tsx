@@ -120,7 +120,7 @@ export default function ServiceCard({
             />
 
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_WA_PHONE || "6283136830913"}?text=${encodeURIComponent(
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WA_PHONE || "6281216622840"}?text=${encodeURIComponent(
                 "Halo CV Win Teknik Mandiri, saya ingin berkonsultasi mengenai kebutuhan proyek AC dan ducting. Apakah saya bisa mendapatkan informasi lebih lanjut terkait layanan dan penawaran yang tersedia? Terima kasih."
               )}`}
               target="_blank"

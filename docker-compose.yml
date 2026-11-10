@@ -66,6 +66,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-Wtm_S3cur3#P0stgr3s!2026}
       DB_NAME: ${DB_NAME:-wtm_db}
       DB_SSLMODE: disable
+      WA_PHONE: ${WA_PHONE:-6281216622840}
       # Dokumentasi API mati secara default di server; set true untuk membukanya.
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
       # Konfigurasi MinIO Object Storage
@@ -97,6 +98,7 @@ services:
     restart: always
     environment:
       PORT: 3000
+      NEXT_PUBLIC_WA_PHONE: ${WA_PHONE:-6281216622840}
       # API dipanggil lewat path relatif (/api/...) sehingga diteruskan Caddy.
     # Tanpa ports host: frontend hanya diakses Caddy lewat network internal.
     expose:
