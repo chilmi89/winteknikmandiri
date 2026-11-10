@@ -1,9 +1,14 @@
 {
 	# Email untuk notifikasi sertifikat SSL Let's Encrypt saat deploy ke VPS
-	email {$CADDY_EMAIL:admin@winteknikmandiri.com}
+	email {$CADDY_EMAIL:cswinteknikmandiri@gmail.com}
 }
 
-{$DOMAIN:localhost} {
+# Redirect otomatis www ke non-www murni
+www.winteknikmandiri.com {
+	redir https://winteknikmandiri.com{uri} permanent
+}
+
+{$DOMAIN:winteknikmandiri.com} {
 	# Kompresi performa tinggi
 	encode gzip zstd
 
@@ -24,7 +29,7 @@
 	}
 
 	# Routing Media / Objek Storage Publik (MinIO)
-	# Mengakses: https://domain.com/media/wtm-media/services/foto.jpg
+	# Mengakses: https://winteknikmandiri.com/media/wtm-media/services/foto.jpg
 	# Diteruskan ke MinIO sebagai: minio:9000/wtm-media/services/foto.jpg
 	handle_path /media/* {
 		header Cache-Control "public, max-age=86400"
