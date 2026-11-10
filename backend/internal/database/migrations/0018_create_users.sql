@@ -20,5 +20,5 @@ CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users (deleted_at);
 -- Seed akun admin awal jika tabel masih kosong (password default: admin123)
 -- Hash bcrypt cost 10 untuk 'admin123': $2a$10$wB5W3YkC9v4L9dK1L.b3AevnC4jR8F9gH1Q9n2Z3a4b5c6d7e8f9
 INSERT INTO users (username, email, name, password_hash, is_active)
-SELECT 'admin', 'admin@winteknikmandiri.com', 'Administrator WTM', '$2a$10$zY70lXW7Fm/2WvhFv.9gfeQjM7n1F6c5.U0W4t9i1s2a3b4c5d6e7', TRUE
+SELECT 'admin', 'admin@winteknikmandiri.com', 'Administrator WTM', '$2a$10$y7btEwNwwoIegLgVTw4hQ.EWBbGemsgUi7CaPuqn909xh2Wjz/Veq', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
