@@ -16,6 +16,7 @@ import {
 import { galleryProjects as fallbackProjects } from "@/lib/gallery";
 
 const SLIDE_SIZE = 6;
+const AUTO_SLIDE_INTERVAL = 3500; // 3.5 detik (lebih lincah)
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
@@ -27,7 +28,8 @@ export default function GalleryClient() {
 
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   // Touch swipe support untuk mobile/tablet
@@ -85,6 +87,30 @@ export default function GalleryClient() {
   }, [filteredProjects]);
 
   const totalSlides = slides.length;
+  const currentCards = slides[currentSlide] || [];
+
+  // Pergantian slide dengan animasi fade-out lalu staggered fade-in
+  const changeSlide = (targetIndex: number) => {
+    if (isExiting || totalSlides <= 1 || targetIndex === currentSlide) return;
+    setIsExiting(true);
+    setTimeout(() => {
+      setCurrentSlide(targetIndex);
+      setIsExiting(false);
+    }, 200); // 200ms fade-out sebelum menampilkan konten baru
+  };
+
+  // Navigasi manual slide
+  const handlePrev = () => {
+    if (totalSlides <= 1 || isExiting) return;
+    const prevIndex = (currentSlide - 1 + totalSlides) % totalSlides;
+    changeSlide(prevIndex);
+  };
+
+  const handleNext = () => {
+    if (totalSlides <= 1 || isExiting) return;
+    const nextIndex = (currentSlide + 1) % totalSlides;
+    changeSlide(nextIndex);
+  };
 
   // Reset slide saat kategori berubah
   const handleCategoryChange = (cat: string) => {
@@ -92,27 +118,17 @@ export default function GalleryClient() {
     setCurrentSlide(0);
   };
 
-  // Navigasi manual slide
-  const handlePrev = () => {
-    if (totalSlides <= 1) return;
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  };
-
-  const handleNext = () => {
-    if (totalSlides <= 1) return;
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  };
-
-  // Auto-slide setiap 5 detik dengan jeda jika pointer hover
+  // Auto-slide setiap 3.5 detik (pause saat hover atau saat modal zoom terbuka)
   useEffect(() => {
-    if (totalSlides <= 1 || isPaused) return;
+    if (totalSlides <= 1 || isHovered || isExiting || previewIndex !== null) return;
 
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % totalSlides);
-    }, 5000);
+      const nextIndex = (currentSlide + 1) % totalSlides;
+      changeSlide(nextIndex);
+    }, AUTO_SLIDE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [totalSlides, isPaused]);
+  }, [totalSlides, isHovered, isExiting, previewIndex, currentSlide]);
 
   // Pastikan currentSlide valid bila filter menghasilkan slide lebih sedikit
   useEffect(() => {
@@ -243,7 +259,7 @@ export default function GalleryClient() {
         </nav>
       </div>
 
-      {/* GALERI SLIDER 6 GRID (2 BARIS X 3 KOLOM) ALA TOKOPEDIA */}
+      {/* GALERI SLIDER 6 GRID (2 BARIS X 3 KOLOM) DENGAN STAGGERED FADE PER CARD */}
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {/* Header Informasi Galeri */}
         <div className="flex flex-col gap-2 border-b border-[#0A2540]/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -252,7 +268,7 @@ export default function GalleryClient() {
               Menampilkan {filteredProjects.length} Dokumentasi Proyek
             </p>
             <p className="mt-0.5 text-xs text-[#0A2540]/50">
-              Geser untuk melihat proyek lainnya atau klik kartu untuk memperbesar foto
+              Klik kartu mana saja untuk melihat foto resolusi penuh (Zoom)
             </p>
           </div>
 
@@ -276,144 +292,145 @@ export default function GalleryClient() {
         ) : (
           <div
             className="group/slider relative mt-8"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Tombol Panah Kiri (Tokopedia Style) */}
-            {totalSlides > 1 && (
-              <button
-                type="button"
-                onClick={handlePrev}
-                aria-label="Slide sebelumnya"
-                className={`absolute -left-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/95 text-[#0A2540] shadow-[0_8px_24px_rgba(10,37,64,0.14)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white sm:-left-5 sm:size-12 ${focusRing}`}
-              >
-                <ChevronLeft className="size-5 sm:size-6" />
-              </button>
-            )}
+            {/* GRID & TOMBOL PANAH WRAPPER 
+                (Panah diposisikan relatif terhadap grid 2 baris sehingga berada persis di celah tengah antara baris 1 dan baris 2, di luar area foto) */}
+            <div className="relative">
+              {/* Tombol Panah Kiri (Lebih Besar & Rapi di Luar Foto) */}
+              {totalSlides > 1 && (
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={isExiting}
+                  aria-label="Slide sebelumnya"
+                  className={`absolute -left-3.5 sm:-left-6 lg:-left-8 xl:-left-12 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
+                >
+                  <ChevronLeft className="size-6 sm:size-7" />
+                </button>
+              )}
 
-            {/* Tombol Panah Kanan (Tokopedia Style) */}
-            {totalSlides > 1 && (
-              <button
-                type="button"
-                onClick={handleNext}
-                aria-label="Slide selanjutnya"
-                className={`absolute -right-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/95 text-[#0A2540] shadow-[0_8px_24px_rgba(10,37,64,0.14)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white sm:-right-5 sm:size-12 ${focusRing}`}
-              >
-                <ChevronRight className="size-5 sm:size-6" />
-              </button>
-            )}
+              {/* Tombol Panah Kanan (Lebih Besar & Rapi di Luar Foto) */}
+              {totalSlides > 1 && (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={isExiting}
+                  aria-label="Slide selanjutnya"
+                  className={`absolute -right-3.5 sm:-right-6 lg:-right-8 xl:-right-12 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
+                >
+                  <ChevronRight className="size-6 sm:size-7" />
+                </button>
+              )}
 
-            {/* Slider Track with padding so card lift hover is not clipped */}
-            <div className="overflow-hidden px-1 py-3 -my-3">
-              <div
-                className="flex transition-transform duration-700 ease-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {slides.map((slideItems, sIdx) => (
-                  <div key={sIdx} className="w-full shrink-0">
-                    {/* Grid 6 Kartu (2 Baris x 3 Kolom) */}
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {slideItems.map((item) => {
-                        const globalIndex = filteredProjects.findIndex(
-                          (p) => p.id === item.id
-                        );
+              {/* Grid 6 Kartu (2 Baris x 3 Kolom) dengan Animasi Fade In & Out Bertahap per Card */}
+              <div className="grid min-h-[580px] gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {currentCards.map((item, idx) => {
+                  const globalIndex = filteredProjects.findIndex(
+                    (p) => p.id === item.id
+                  );
 
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() =>
-                              setPreviewIndex(
-                                globalIndex >= 0 ? globalIndex : 0
-                              )}
-                            aria-label={`Lihat preview foto ${item.title}`}
-                            className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white text-left transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-2 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)] ${focusRing}`}
-                          >
-                            {/* Top Red Line Reveal */}
-                            <span
-                              aria-hidden="true"
-                              className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
-                            />
+                  return (
+                    <button
+                      key={`${currentSlide}-${item.id}`}
+                      type="button"
+                      onClick={() =>
+                        setPreviewIndex(globalIndex >= 0 ? globalIndex : 0)
+                      }
+                      aria-label={`Lihat preview foto ${item.title}`}
+                      style={{
+                        animationDelay: isExiting ? "0ms" : `${idx * 45}ms`,
+                        animationDuration: isExiting ? "180ms" : "280ms",
+                      }}
+                      className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white text-left transition-[transform,border-color,box-shadow,opacity] duration-300 hover:-translate-y-2 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)] ${focusRing} ${
+                        isExiting
+                          ? "opacity-0 scale-[0.98] transition-all duration-180 ease-in"
+                          : "animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+                      }`}
+                    >
+                      {/* Top Red Line Reveal */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
+                      />
 
-                            {/* Card Sheen Effect */}
-                            <span
-                              aria-hidden="true"
-                              className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                            />
+                      {/* Card Sheen Effect */}
+                      <span
+                        aria-hidden="true"
+                        className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
+                      />
 
-                            {/* Photo Box */}
-                            <div className="relative aspect-[16/11] w-full overflow-hidden bg-[#0A2540]">
-                              <Image
-                                src={item.image_url}
-                                alt={item.title}
-                                fill
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-                                className="object-cover transition-[transform,filter] duration-700 group-hover:scale-[1.06] group-hover:brightness-105"
-                              />
-                              <div
-                                aria-hidden="true"
-                                className="absolute inset-0 bg-[#A82020]/0 transition-colors duration-500 group-hover:bg-[#A82020]/15"
-                              />
+                      {/* Photo Box */}
+                      <div className="relative aspect-[16/11] w-full overflow-hidden bg-[#0A2540]">
+                        <Image
+                          src={item.image_url}
+                          alt={item.title}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                          className="object-cover transition-[transform,filter] duration-700 group-hover:scale-[1.06] group-hover:brightness-105"
+                        />
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-0 bg-[#A82020]/0 transition-colors duration-500 group-hover:bg-[#A82020]/15"
+                        />
 
-                              {/* Badge Kategori */}
-                              <span className="absolute left-3 top-3 bg-[#0A2540]/85 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#A82020]">
-                                {item.category}
-                              </span>
+                        {/* Badge Kategori */}
+                        <span className="absolute left-3 top-3 bg-[#0A2540]/85 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#A82020]">
+                          {item.category}
+                        </span>
 
-                              {/* Zoom Hint */}
-                              <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 bg-[#0A2540]/80 px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                                <Maximize2 className="size-3" aria-hidden="true" />
-                                Zoom
-                              </span>
-                            </div>
+                        {/* Zoom Hint */}
+                        <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 bg-[#0A2540]/80 px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                          <Maximize2 className="size-3" aria-hidden="true" />
+                          Zoom
+                        </span>
+                      </div>
 
-                            {/* Keterangan Proyek */}
-                            <div className="flex flex-1 flex-col justify-between p-5">
-                              <div>
-                                {item.client && (
-                                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#A82020]">
-                                    {item.client}
-                                  </p>
-                                )}
-                                <h3 className="mt-1.5 text-base font-semibold leading-snug text-[#0A2540] transition-colors duration-300 group-hover:text-[#A82020]">
-                                  {item.title}
-                                </h3>
-                                {item.scope && (
-                                  <p className="mt-2 text-xs text-[#0A2540]/65">
-                                    Lingkup: {item.scope}
-                                  </p>
-                                )}
-                              </div>
+                      {/* Keterangan Proyek */}
+                      <div className="flex flex-1 flex-col justify-between p-5">
+                        <div>
+                          {item.client && (
+                            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#A82020]">
+                              {item.client}
+                            </p>
+                          )}
+                          <h3 className="mt-1.5 text-base font-semibold leading-snug text-[#0A2540] transition-colors duration-300 group-hover:text-[#A82020]">
+                            {item.title}
+                          </h3>
+                          {item.scope && (
+                            <p className="mt-2 text-xs text-[#0A2540]/65">
+                              Lingkup: {item.scope}
+                            </p>
+                          )}
+                        </div>
 
-                              <div className="mt-4 flex items-center justify-between border-t border-[#0A2540]/10 pt-3 text-[11px] text-[#0A2540]/60">
-                                <span className="font-mono uppercase tracking-[0.12em]">
-                                  {item.location || "Kediri"}
-                                </span>
-                                <span className="font-mono text-[10.5px] text-[#A82020] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                  Buka foto →
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                        <div className="mt-4 flex items-center justify-between border-t border-[#0A2540]/10 pt-3 text-[11px] text-[#0A2540]/60">
+                          <span className="font-mono uppercase tracking-[0.12em]">
+                            {item.location || "Kediri"}
+                          </span>
+                          <span className="font-mono text-[10.5px] text-[#A82020] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            Buka foto →
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Bottom Slider Navigation Bar: Info, Dots / Pills, Quick Controls */}
+            {/* Bottom Slider Navigation Bar (Terpisah di bawah grid sehingga tidak menggeser titik tengah tombol panah) */}
             {totalSlides > 1 && (
               <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-[#0A2540]/10 pt-6 sm:flex-row">
                 {/* Status info & Jeda badge */}
                 <div className="flex items-center gap-2.5">
                   <span
                     className={`inline-block size-2 rounded-full ${
-                      isPaused ? "bg-[#0A2540]/30" : "bg-[#A82020] animate-pulse"
+                      isHovered ? "bg-[#0A2540]/30" : "bg-[#A82020] animate-pulse"
                     }`}
                     aria-hidden="true"
                   />
@@ -421,7 +438,7 @@ export default function GalleryClient() {
                     Halaman <strong className="text-[#0A2540]">{currentSlide + 1}</strong> dari{" "}
                     <strong>{totalSlides}</strong> ({filteredProjects.length} Foto)
                   </span>
-                  {isPaused && (
+                  {isHovered && (
                     <span className="rounded bg-[#A82020]/10 px-2 py-0.5 font-mono text-[9.5px] font-medium uppercase tracking-wider text-[#A82020]">
                       Jeda
                     </span>
@@ -441,7 +458,8 @@ export default function GalleryClient() {
                       role="tab"
                       aria-selected={currentSlide === idx}
                       aria-label={`Buka halaman ${idx + 1}`}
-                      onClick={() => setCurrentSlide(idx)}
+                      disabled={isExiting}
+                      onClick={() => changeSlide(idx)}
                       className={`h-2.5 rounded-full transition-all duration-300 ${focusRing} ${
                         currentSlide === idx
                           ? "w-8 bg-[#A82020] shadow-sm"
@@ -456,8 +474,9 @@ export default function GalleryClient() {
                   <button
                     type="button"
                     onClick={handlePrev}
+                    disabled={isExiting}
                     aria-label="Halaman sebelumnya"
-                    className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[#0A2540]/70 transition-colors hover:text-[#A82020] ${focusRing}`}
+                    className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[#0A2540]/70 transition-colors hover:text-[#A82020] disabled:opacity-40 ${focusRing}`}
                   >
                     ← Prev
                   </button>
@@ -465,8 +484,9 @@ export default function GalleryClient() {
                   <button
                     type="button"
                     onClick={handleNext}
+                    disabled={isExiting}
                     aria-label="Halaman selanjutnya"
-                    className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[#0A2540]/70 transition-colors hover:text-[#A82020] ${focusRing}`}
+                    className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[#0A2540]/70 transition-colors hover:text-[#A82020] disabled:opacity-40 ${focusRing}`}
                   >
                     Next →
                   </button>
@@ -477,7 +497,7 @@ export default function GalleryClient() {
         )}
       </div>
 
-      {/* LIGHTBOX MODAL ZOOM PREVIEW */}
+      {/* LIGHTBOX MODAL ZOOM PREVIEW (Klik foto manapun langsung terbuka) */}
       {previewIndex !== null && activeProject && (
         <div
           role="dialog"
