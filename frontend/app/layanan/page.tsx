@@ -12,18 +12,21 @@ import { serviceDetails } from "@/lib/services";
 import { waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Jasa AC Kediri: Service AC Rumah, Pemasangan & AC Komersial",
+  title: "Service AC Kediri & Tarif Biaya Cuci, Pasang, Freon 2026 | CV Win Teknik Mandiri",
   description:
-    "Pilihan jasa AC Kediri terlengkap: service AC rumah split, cuci higienis, bongkar pasang standar vakum, tambah freon, dan kontraktor AC komersial bergaransi tertulis 30 hari.",
+    "Daftar lengkap layanan & biaya service AC Kediri: cuci AC rumah split higienis, bongkar pasang standar vakum, isi freon murni R32/R410A, dan kontraktor AC komersial VRF bergaransi tertulis 30 hari.",
   keywords: [
-    "jasa ac kediri",
     "service ac kediri",
+    "biaya service ac kediri",
+    "tarif cuci ac kediri",
+    "harga pasang ac kediri",
+    "isi freon ac kediri",
+    "jasa ac kediri",
     "ac kediri",
-    "ac rumah",
-    "ac komersial",
-    "kontraktor ac",
+    "kontraktor ac kediri",
     "cuci ac kediri",
     "pasang ac kediri",
+    "service ac panggilan kediri",
   ],
   alternates: {
     canonical: "/layanan",

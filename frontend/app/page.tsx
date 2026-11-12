@@ -13,22 +13,36 @@ import ParallaxMedia from "@/components/ParallaxMedia";
 import PricingTable from "@/components/PricingTable";
 import ContactCta from "@/components/ContactCta";
 import SectionHeading from "@/components/SectionHeading";
+import CoverageAreaSection from "@/components/CoverageAreaSection";
 import { site, waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Service AC Kediri & Kontraktor AC Komersial Terpercaya | CV Win Teknik Mandiri",
+  title: "Service AC Kediri #1 Bergaransi & Kontraktor AC Komersial | CV Win Teknik Mandiri",
   description:
-    "Jasa service AC Kediri profesional, cuci AC rumah higienis, bongkar pasang AC standar vakum pipa, isi freon murni, dan kontraktor AC komersial gedung bergaransi 30 hari.",
+    "Jasa service AC Kediri panggilan cepat & kontraktor AC komersial. Melayani cuci AC rumah higienis, bongkar pasang standar vakum, isi freon murni, perbaikan kompresor/PCB di seluruh Kota & Kabupaten Kediri bergaransi tertulis 30 hari.",
   keywords: [
     "service ac kediri",
     "ac kediri",
-    "jasa ac kediri",
-    "jasa ac",
-    "ac rumah",
-    "ac komersial",
-    "kontraktor ac",
+    "jasa service ac kediri",
+    "service ac panggilan kediri",
     "cuci ac kediri",
     "pasang ac kediri",
+    "bongkar pasang ac kediri",
+    "isi freon ac kediri",
+    "tambah freon ac kediri",
+    "kontraktor ac kediri",
+    "tukang ac kediri",
+    "teknisi ac kediri",
+    "service ac terdekat kediri",
+    "service ac murah kediri",
+    "service ac ngadiluwih",
+    "service ac pare kediri",
+    "service ac mojoroto",
+    "service ac pesantren kediri",
+    "service ac kras kediri",
+    "service ac kandat",
+    "service ac wates kediri",
+    "service ac gurah",
   ],
   alternates: {
     canonical: "/",
@@ -175,7 +189,8 @@ export default function Home() {
           </div>
         </section>
 
-        
+        {/* SECTION 05 — WILAYAH JANGKAUAN SERVICE AC KEDIRI RAYA (SEO Local Dominance) */}
+        <CoverageAreaSection />
 
         <section id="faq" className="scroll-mt-20 bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
