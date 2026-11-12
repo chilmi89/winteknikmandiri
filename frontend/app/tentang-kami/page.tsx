@@ -4,8 +4,6 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeCheck,
-  CheckCircle2,
-  HardHat,
   MessageCircle,
   ShieldCheck,
 } from "lucide-react";
@@ -545,68 +543,6 @@ export default function TentangKamiPage() {
             <div className="mt-10">
               <TeamSection />
             </div>
-
-            {/* Banner Kru Lapangan Berpengalaman dengan Hover Merah */}
-            <ScrollReveal direction="up" delay={150}>
-              <div className="group relative mt-10 overflow-hidden border border-[#0A2540]/10 bg-white p-6 transition-[border-color,box-shadow,transform] duration-500 hover:-translate-y-1 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.3),0_0_0_1px_rgba(168,32,32,0.2)] sm:p-8">
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 z-30 h-[2px] origin-left scale-x-0 bg-[#A82020] transition-transform duration-500 ease-out group-hover:scale-x-100"
-                />
-                <span
-                  aria-hidden="true"
-                  className="card-sheen pointer-events-none absolute inset-y-0 left-0 z-20 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0"
-                />
-
-                <div className="grid items-center gap-8 lg:grid-cols-12">
-                  <div className="lg:col-span-5">
-                    <div className="relative aspect-[16/10] overflow-hidden border border-[#0A2540]/10 bg-[#0A2540]">
-                      <Image
-                        src="/gallery/Foto%20TIM/Industrial%20Team%20Portrait%20in%20Safety%20Gear.png"
-                        alt="Kru teknisi CV Win Teknik Mandiri berseragam safety gear"
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 420px"
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
-                      />
-                    </div>
-                  </div>
-                  <div className="lg:col-span-7">
-                    <div className="flex items-center gap-2">
-                      <HardHat className="size-4 text-[#A82020]" />
-                      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#A82020]">
-                        Kualifikasi & Keselamatan Kerja
-                      </p>
-                    </div>
-                    <h3 className="mt-2.5 text-2xl font-bold tracking-tight text-[#0A2540] transition-colors group-hover:text-[#A82020] sm:text-[1.75rem]">
-                      Kru lapangan ber-SOP dan bergaransi resmi.
-                    </h3>
-                    <p className="mt-2.5 text-sm leading-relaxed text-[#0A2540]/75">
-                      Dari penarikan pipa refrigerant, flaring tanpa retak, proses
-                      vakum minimal 20 menit, hingga uji arus dan suhu serah terima
-                      — seluruh prosedur dilakukan terstandar demi ketahanan unit AC jangka panjang.
-                    </p>
-                    <ul className="mt-5 grid gap-3 text-xs text-[#0A2540]/85 sm:grid-cols-2">
-                      <li className="flex items-center gap-2.5">
-                        <CheckCircle2 className="size-4 text-[#A82020]" />
-                        <span>Manifold gauge digital & pompa vakum 2-stage</span>
-                      </li>
-                      <li className="flex items-center gap-2.5">
-                        <CheckCircle2 className="size-4 text-[#A82020]" />
-                        <span>Pipa tembaga tebal standar R32/R410A</span>
-                      </li>
-                      <li className="flex items-center gap-2.5">
-                        <CheckCircle2 className="size-4 text-[#A82020]" />
-                        <span>Survei beban pendinginan & kalkulasi CFM</span>
-                      </li>
-                      <li className="flex items-center gap-2.5">
-                        <CheckCircle2 className="size-4 text-[#A82020]" />
-                        <span>Garansi pengerjaan 30 hari tertulis</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
 
             {/* Cuplikan Dokumentasi Proyek — Minimalis & Tautan ke Galeri Penuh */}
             <div className="mt-14">
