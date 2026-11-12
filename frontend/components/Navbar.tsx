@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, LogIn } from "lucide-react";
+import { ChevronDown, Globe, LogIn } from "lucide-react";
 import { site } from "@/lib/site";
 import {
   InstagramIcon,
@@ -30,6 +30,39 @@ interface NavbarProps {
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
+
+const tentangKamiSections = [
+  {
+    number: "00",
+    label: "Profil Lengkap",
+    sublabel: "Ringkasan profil & fakta legalitas",
+    href: "/tentang-kami",
+  },
+  {
+    number: "01",
+    label: "Our Journey",
+    sublabel: "Rekam jejak & milestone sejak 2014",
+    href: "/tentang-kami#perjalanan",
+  },
+  {
+    number: "02",
+    label: "Visi & Misi",
+    sublabel: "Standar & komitmen mutu pengerjaan",
+    href: "/tentang-kami#visi-misi",
+  },
+  {
+    number: "03",
+    label: "Legalitas Usaha",
+    sublabel: "Izin Kemenkumham, NIB, NPWP & KBLI",
+    href: "/tentang-kami#legalitas",
+  },
+  {
+    number: "04",
+    label: "Our Team & Workshop",
+    sublabel: "Personil teknisi spesialis & sertifikasi",
+    href: "/tentang-kami#tim",
+  },
+];
 
 function getSocialMeta(item: SosialMediaItem, lightText: boolean) {
   const key = (item.icon || item.nama).toLowerCase();
@@ -89,8 +122,11 @@ export default function Navbar({
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
+  const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
   const [socials, setSocials] = useState<SosialMediaItem[]>(defaultSosialMedia);
   const pathname = usePathname();
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -128,6 +164,24 @@ export default function Navbar({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
+
+  // Tutup dropdown saat rute berpindah
+  useEffect(() => {
+    setAboutDropdownOpen(false);
+    setOpen(false);
+  }, [pathname]);
+
+  const handleMouseEnterAbout = () => {
+    if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
+    setAboutDropdownOpen(true);
+  };
+
+  const handleMouseLeaveAbout = () => {
+    if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setAboutDropdownOpen(false);
+    }, 180);
+  };
 
   return (
     <header
@@ -171,6 +225,76 @@ export default function Navbar({
               link.href === "/"
                 ? pathname === "/"
                 : pathname === link.href;
+
+            // Dropdown menu khusus untuk Tentang Kami
+            if (link.href === "/tentang-kami") {
+              return (
+                <div
+                  key={link.href}
+                  className="relative"
+                  onMouseEnter={handleMouseEnterAbout}
+                  onMouseLeave={handleMouseLeaveAbout}
+                >
+                  <Link
+                    href={link.href}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-expanded={aboutDropdownOpen}
+                    onClick={() => setAboutDropdownOpen(false)}
+                    className={`relative inline-flex h-10 items-center gap-1.5 text-[13px] font-medium tracking-wide transition-colors after:absolute after:bottom-1 after:left-0 after:h-[2px] after:w-full after:transition-all ${
+                      lightText
+                        ? isActive
+                          ? "text-white after:bg-white after:opacity-100"
+                          : "text-white/75 after:bg-white after:opacity-0 hover:text-white hover:after:opacity-100"
+                        : isActive
+                          ? "text-[#A82020] after:bg-[#A82020] after:opacity-100"
+                          : "text-[#0A2540]/70 after:bg-[#A82020] after:opacity-0 hover:text-[#0A2540] hover:after:opacity-100"
+                    } ${focusRing}`}
+                  >
+                    <span>{link.label}</span>
+                    <ChevronDown
+                      className={`size-3.5 transition-transform duration-200 ${
+                        aboutDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Link>
+
+                  {/* Dropdown Panel Desktop */}
+                  {aboutDropdownOpen && (
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 pt-2 z-50 w-76">
+                      <div className="overflow-hidden rounded-xl border border-[#0A2540]/10 bg-white/98 p-1.5 shadow-[0_16px_40px_rgba(10,37,64,0.14)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 border-b border-[#0A2540]/5">
+                          <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#0A2540]/50">
+                            Bagian Profil Perusahaan
+                          </p>
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          {tentangKamiSections.map((sec) => (
+                            <Link
+                              key={sec.href}
+                              href={sec.href}
+                              onClick={() => setAboutDropdownOpen(false)}
+                              className="group flex items-start gap-2.5 rounded-lg p-2 transition-colors hover:bg-[#F4FAFE]"
+                            >
+                              <span className="font-mono text-[11px] font-bold text-[#A82020] mt-0.5 transition-transform group-hover:scale-110">
+                                {sec.number}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-[#0A2540] group-hover:text-[#A82020] transition-colors leading-tight">
+                                  {sec.label}
+                                </p>
+                                <p className="text-[10.5px] text-[#0A2540]/60 truncate mt-0.5">
+                                  {sec.sublabel}
+                                </p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <Link
@@ -299,6 +423,69 @@ export default function Navbar({
                     ? pathname === "/"
                     : pathname === link.href;
 
+                // Sub-menu accordion untuk Tentang Kami di mobile
+                if (link.href === "/tentang-kami") {
+                  return (
+                    <li key={link.href} className="py-1">
+                      <div className="flex items-center justify-between py-2.5">
+                        <Link
+                          href={link.href}
+                          onClick={() => setOpen(false)}
+                          aria-current={isActive ? "page" : undefined}
+                          className={`text-sm font-medium transition-colors ${
+                            isActive
+                              ? "text-[#A82020] font-semibold"
+                              : "text-[#0A2540]/80 hover:text-[#0A2540]"
+                          } ${focusRing}`}
+                        >
+                          {link.label}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setMobileAboutOpen((val) => !val)}
+                          aria-label="Buka sub-menu bagian Tentang Kami"
+                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#0A2540]/60 hover:bg-[#0A2540]/5 hover:text-[#A82020]"
+                        >
+                          <span className="font-mono text-[10px] uppercase tracking-wider">Bagian</span>
+                          <ChevronDown
+                            className={`size-3.5 transition-transform duration-200 ${
+                              mobileAboutOpen ? "rotate-180 text-[#A82020]" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Sub-menu accordion */}
+                      <div
+                        className={`grid transition-all duration-200 ease-in-out ${
+                          mobileAboutOpen
+                            ? "grid-rows-[1fr] opacity-100 mb-2"
+                            : "grid-rows-[0fr] opacity-0 pointer-events-none"
+                        }`}
+                      >
+                        <div className="overflow-hidden border-l-2 border-[#A82020]/25 pl-3 space-y-1 py-1">
+                          {tentangKamiSections.map((sec) => (
+                            <Link
+                              key={sec.href}
+                              href={sec.href}
+                              onClick={() => {
+                                setOpen(false);
+                                setMobileAboutOpen(false);
+                              }}
+                              className="flex items-center gap-2 py-1.5 text-xs text-[#0A2540]/75 hover:text-[#A82020] transition-colors"
+                            >
+                              <span className="font-mono text-[10.5px] font-bold text-[#A82020]">
+                                {sec.number}
+                              </span>
+                              <span>{sec.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                }
+
                 return (
                   <li key={link.href}>
                     <Link
@@ -357,7 +544,7 @@ export default function Navbar({
                 className={`flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#0A2540]/20 bg-[#0A2540]/[0.02] text-xs font-semibold text-[#0A2540] transition-colors hover:bg-[#0A2540]/5 ${focusRing}`}
               >
                 <LogIn className="size-3.5" aria-hidden="true" />
-                <span>Login ke Akun</span>
+                <span>Masuk ke Akun Admin</span>
               </Link>
             </div>
           </nav>
