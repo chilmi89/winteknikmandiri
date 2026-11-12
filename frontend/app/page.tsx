@@ -13,7 +13,6 @@ import ParallaxMedia from "@/components/ParallaxMedia";
 import PricingTable from "@/components/PricingTable";
 import ContactCta from "@/components/ContactCta";
 import SectionHeading from "@/components/SectionHeading";
-import CoverageAreaSection from "@/components/CoverageAreaSection";
 import { site, waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -188,9 +187,6 @@ export default function Home() {
             <PricingTable />
           </div>
         </section>
-
-        {/* SECTION 05 — WILAYAH JANGKAUAN SERVICE AC KEDIRI RAYA (SEO Local Dominance) */}
-        <CoverageAreaSection />
 
         <section id="faq" className="scroll-mt-20 bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
