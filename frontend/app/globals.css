@@ -343,6 +343,29 @@
   }
 }
 
+/* Gallery Slider Staggered Slide-In Animations */
+@keyframes card-slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(54px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes card-slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-54px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* =========================================================
    DASHBOARD (Admin) — shared utilities & micro-animations
    ========================================================= */

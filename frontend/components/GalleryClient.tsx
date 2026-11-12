@@ -16,7 +16,7 @@ import {
 import { galleryProjects as fallbackProjects } from "@/lib/gallery";
 
 const SLIDE_SIZE = 6;
-const AUTO_SLIDE_INTERVAL = 3500; // 3.5 detik (lebih lincah)
+const AUTO_SLIDE_INTERVAL = 3800; // 3.8 detik
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A82020]";
@@ -30,6 +30,7 @@ export default function GalleryClient() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<"next" | "prev">("next");
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   // Touch swipe support untuk mobile/tablet
@@ -89,42 +90,44 @@ export default function GalleryClient() {
   const totalSlides = slides.length;
   const currentCards = slides[currentSlide] || [];
 
-  // Pergantian slide dengan animasi fade-out lalu staggered fade-in
-  const changeSlide = (targetIndex: number) => {
+  // Pergantian slide dengan animasi keluar lalu meluncur masuk per-card satu demi satu
+  const changeSlide = (targetIndex: number, dir: "next" | "prev" = "next") => {
     if (isExiting || totalSlides <= 1 || targetIndex === currentSlide) return;
+    setSlideDirection(dir);
     setIsExiting(true);
     setTimeout(() => {
       setCurrentSlide(targetIndex);
       setIsExiting(false);
-    }, 200); // 200ms fade-out sebelum menampilkan konten baru
+    }, 200); // 200ms fase keluar sebelum memunculkan kartu baru satu per satu
   };
 
   // Navigasi manual slide
   const handlePrev = () => {
     if (totalSlides <= 1 || isExiting) return;
     const prevIndex = (currentSlide - 1 + totalSlides) % totalSlides;
-    changeSlide(prevIndex);
+    changeSlide(prevIndex, "prev");
   };
 
   const handleNext = () => {
     if (totalSlides <= 1 || isExiting) return;
     const nextIndex = (currentSlide + 1) % totalSlides;
-    changeSlide(nextIndex);
+    changeSlide(nextIndex, "next");
   };
 
   // Reset slide saat kategori berubah
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
     setCurrentSlide(0);
+    setSlideDirection("next");
   };
 
-  // Auto-slide setiap 3.5 detik (pause saat hover atau saat modal zoom terbuka)
+  // Auto-slide setiap 3.8 detik (pause saat hover atau saat modal zoom terbuka)
   useEffect(() => {
     if (totalSlides <= 1 || isHovered || isExiting || previewIndex !== null) return;
 
     const interval = setInterval(() => {
       const nextIndex = (currentSlide + 1) % totalSlides;
-      changeSlide(nextIndex);
+      changeSlide(nextIndex, "next");
     }, AUTO_SLIDE_INTERVAL);
 
     return () => clearInterval(interval);
@@ -259,7 +262,7 @@ export default function GalleryClient() {
         </nav>
       </div>
 
-      {/* GALERI SLIDER 6 GRID (2 BARIS X 3 KOLOM) DENGAN STAGGERED FADE PER CARD */}
+      {/* GALERI SLIDER 6 GRID (2 BARIS X 3 KOLOM) DENGAN ANIMASI DATANG DARI KANAN PER CARD */}
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {/* Header Informasi Galeri */}
         <div className="flex flex-col gap-2 border-b border-[#0A2540]/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -299,35 +302,36 @@ export default function GalleryClient() {
             onTouchEnd={handleTouchEnd}
           >
             {/* GRID & TOMBOL PANAH WRAPPER 
-                (Panah diposisikan relatif terhadap grid 2 baris sehingga berada persis di celah tengah antara baris 1 dan baris 2, di luar area foto) */}
-            <div className="relative">
-              {/* Tombol Panah Kiri (Lebih Besar & Rapi di Luar Foto) */}
+                Diberikan padding samping lega (px-2 sm:px-14 lg:px-18) agar tombol panah 
+                berada di luar area kartu dengan jarak ruang lega (breathing room) dan TIDAK MENABRAK KARTU */}
+            <div className="relative px-2 sm:px-14 lg:px-18">
+              {/* Tombol Panah Kiri (Terpisah Rapi, Tidak Mepet Kartu) */}
               {totalSlides > 1 && (
                 <button
                   type="button"
                   onClick={handlePrev}
                   disabled={isExiting}
                   aria-label="Slide sebelumnya"
-                  className={`absolute -left-3.5 sm:-left-6 lg:-left-8 xl:-left-12 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
+                  className={`absolute left-0 sm:left-1 lg:left-2 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
                 >
                   <ChevronLeft className="size-6 sm:size-7" />
                 </button>
               )}
 
-              {/* Tombol Panah Kanan (Lebih Besar & Rapi di Luar Foto) */}
+              {/* Tombol Panah Kanan (Terpisah Rapi, Tidak Mepet Kartu) */}
               {totalSlides > 1 && (
                 <button
                   type="button"
                   onClick={handleNext}
                   disabled={isExiting}
                   aria-label="Slide selanjutnya"
-                  className={`absolute -right-3.5 sm:-right-6 lg:-right-8 xl:-right-12 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
+                  className={`absolute right-0 sm:right-1 lg:right-2 top-1/2 z-30 flex size-12 sm:size-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#0A2540]/15 bg-white/98 text-[#0A2540] shadow-[0_10px_30px_rgba(10,37,64,0.18)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[#A82020] hover:bg-[#A82020] hover:text-white disabled:pointer-events-none disabled:opacity-50 ${focusRing}`}
                 >
                   <ChevronRight className="size-6 sm:size-7" />
                 </button>
               )}
 
-              {/* Grid 6 Kartu (2 Baris x 3 Kolom) dengan Animasi Fade In & Out Bertahap per Card */}
+              {/* Grid 6 Kartu (2 Baris x 3 Kolom) dengan Animasi Datang dari Kanan per Card Satu per Satu */}
               <div className="grid min-h-[580px] gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {currentCards.map((item, idx) => {
                   const globalIndex = filteredProjects.findIndex(
@@ -342,15 +346,27 @@ export default function GalleryClient() {
                         setPreviewIndex(globalIndex >= 0 ? globalIndex : 0)
                       }
                       aria-label={`Lihat preview foto ${item.title}`}
-                      style={{
-                        animationDelay: isExiting ? "0ms" : `${idx * 45}ms`,
-                        animationDuration: isExiting ? "180ms" : "280ms",
-                      }}
-                      className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white text-left transition-[transform,border-color,box-shadow,opacity] duration-300 hover:-translate-y-2 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)] ${focusRing} ${
+                      style={
                         isExiting
-                          ? "opacity-0 scale-[0.98] transition-all duration-180 ease-in"
-                          : "animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
-                      }`}
+                          ? {
+                              transform:
+                                slideDirection === "next"
+                                  ? "translateX(-36px)"
+                                  : "translateX(36px)",
+                              opacity: 0,
+                              transition:
+                                "transform 200ms ease-in, opacity 200ms ease-in",
+                            }
+                          : {
+                              animation: `${
+                                slideDirection === "next"
+                                  ? "card-slide-in-right"
+                                  : "card-slide-in-left"
+                              } 340ms cubic-bezier(0.16, 1, 0.3, 1) both`,
+                              animationDelay: `${idx * 60}ms`,
+                            }
+                      }
+                      className={`group relative flex h-full flex-col overflow-hidden border border-[#0A2540]/10 bg-white text-left shadow-sm transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-2 hover:border-[#A82020] hover:shadow-[0_24px_50px_-24px_rgba(10,37,64,0.35),0_0_0_1px_rgba(168,32,32,0.25)] ${focusRing}`}
                     >
                       {/* Top Red Line Reveal */}
                       <span
@@ -423,7 +439,7 @@ export default function GalleryClient() {
               </div>
             </div>
 
-            {/* Bottom Slider Navigation Bar (Terpisah di bawah grid sehingga tidak menggeser titik tengah tombol panah) */}
+            {/* Bottom Slider Navigation Bar */}
             {totalSlides > 1 && (
               <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-[#0A2540]/10 pt-6 sm:flex-row">
                 {/* Status info & Jeda badge */}
@@ -459,7 +475,9 @@ export default function GalleryClient() {
                       aria-selected={currentSlide === idx}
                       aria-label={`Buka halaman ${idx + 1}`}
                       disabled={isExiting}
-                      onClick={() => changeSlide(idx)}
+                      onClick={() =>
+                        changeSlide(idx, idx > currentSlide ? "next" : "prev")
+                      }
                       className={`h-2.5 rounded-full transition-all duration-300 ${focusRing} ${
                         currentSlide === idx
                           ? "w-8 bg-[#A82020] shadow-sm"
@@ -497,7 +515,7 @@ export default function GalleryClient() {
         )}
       </div>
 
-      {/* LIGHTBOX MODAL ZOOM PREVIEW (Klik foto manapun langsung terbuka) */}
+      {/* LIGHTBOX MODAL ZOOM PREVIEW */}
       {previewIndex !== null && activeProject && (
         <div
           role="dialog"
