@@ -37,7 +37,6 @@ export default function HomeServices() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <SectionHeading
-            index="02"
             eyebrow="Pilar Layanan"
             title="Lima pilar, satu standar pengerjaan."
             accent="satu standar pengerjaan."

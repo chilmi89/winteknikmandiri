@@ -5,7 +5,6 @@ import { ArrowRight, ArrowUpRight, MessageCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import StatsBar from "@/components/StatsBar";
-import HomeProducts from "@/components/HomeProducts";
 import HomeServices from "@/components/HomeServices";
 import FaqAccordion from "@/components/FaqAccordion";
 import SiteFooter from "@/components/SiteFooter";
@@ -66,7 +65,6 @@ export default function Home() {
       <main id="main">
         <HeroSection />
         <StatsBar />
-        <HomeProducts />
         <HomeServices />
 
         <section
@@ -100,7 +98,6 @@ export default function Home() {
 
               <div className="lg:col-span-6">
                 <SectionHeading
-                  index="03"
                   eyebrow="Profil"
                   title="Layanan dengan administrasi yang jelas."
                   accent="administrasi yang jelas."
@@ -158,7 +155,6 @@ export default function Home() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
               <SectionHeading
-                index="04"
                 eyebrow="Tarif & Estimasi"
                 title="Tabel harga transparan, tanpa biaya tersembunyi."
                 accent="tanpa biaya tersembunyi."
@@ -194,7 +190,6 @@ export default function Home() {
               <div className="lg:col-span-4">
                 <div className="lg:sticky lg:top-28">
                   <SectionHeading
-                    index="06"
                     eyebrow="FAQ"
                     title="Pertanyaan yang sering diajukan."
                     accent="sering diajukan."
